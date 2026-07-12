@@ -1,26 +1,193 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-newsreader);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  /* 위험도 배지 전용 색 — 브랜드 팔레트와 분리된 "인장(印章)" 톤 */
+  --color-risk-high: var(--risk-high);
+  --color-risk-high-foreground: var(--risk-high-foreground);
+  --color-risk-high-bg: var(--risk-high-bg);
+  --color-risk-medium: var(--risk-medium);
+  --color-risk-medium-foreground: var(--risk-medium-foreground);
+  --color-risk-medium-bg: var(--risk-medium-bg);
+  --color-risk-low: var(--risk-low);
+  --color-risk-low-foreground: var(--risk-low-foreground);
+  --color-risk-low-bg: var(--risk-low-bg);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /* Reevely 브랜드 팔레트: 네이비(#213448) → 스틸블루(#547792) → 라이트블루그레이(#94B4C1) → 크림(#ECEFCA) */
+  --background: #ECEFCA;
+  --foreground: #213448;
+  --card: #FFFFFF;
+  --card-foreground: #213448;
+  --popover: #FFFFFF;
+  --popover-foreground: #213448;
+  --primary: #547792;
+  --primary-foreground: #ECEFCA;
+  --secondary: #94B4C1;
+  --secondary-foreground: #213448;
+  --muted: color-mix(in oklab, #94B4C1 28%, #ECEFCA 72%);
+  --muted-foreground: color-mix(in oklab, #213448 65%, #547792 35%);
+  --accent: #94B4C1;
+  --accent-foreground: #213448;
+  --destructive: #A3402E;
+  --border: color-mix(in oklab, #213448 15%, transparent);
+  --input: color-mix(in oklab, #213448 18%, transparent);
+  --ring: #547792;
+  --chart-1: #213448;
+  --chart-2: #547792;
+  --chart-3: #94B4C1;
+  --chart-4: #A3402E;
+  --chart-5: #B8863B;
+  --radius: 0.625rem;
+  --sidebar: #ECEFCA;
+  --sidebar-foreground: #213448;
+  --sidebar-primary: #547792;
+  --sidebar-primary-foreground: #ECEFCA;
+  --sidebar-accent: #94B4C1;
+  --sidebar-accent-foreground: #213448;
+  --sidebar-border: color-mix(in oklab, #213448 15%, transparent);
+  --sidebar-ring: #547792;
+
+  /* 위험도 배지 — 브랜드 블루 계열과 구분되는 톤 다운된 인장(印章) 색 */
+  --risk-high: #A3402E;
+  --risk-high-foreground: #ECEFCA;
+  --risk-high-bg: color-mix(in oklab, #A3402E 14%, #ECEFCA 86%);
+  --risk-medium: #B8863B;
+  --risk-medium-foreground: #213448;
+  --risk-medium-bg: color-mix(in oklab, #B8863B 16%, #ECEFCA 84%);
+  --risk-low: #3F7A6B;
+  --risk-low-foreground: #ECEFCA;
+  --risk-low-bg: color-mix(in oklab, #3F7A6B 14%, #ECEFCA 86%);
+}
+
+.dark {
+  --background: #213448;
+  --foreground: #ECEFCA;
+  --card: color-mix(in oklab, #213448 82%, #547792 18%);
+  --card-foreground: #ECEFCA;
+  --popover: color-mix(in oklab, #213448 82%, #547792 18%);
+  --popover-foreground: #ECEFCA;
+  --primary: #94B4C1;
+  --primary-foreground: #213448;
+  --secondary: color-mix(in oklab, #547792 45%, #213448 55%);
+  --secondary-foreground: #ECEFCA;
+  --muted: color-mix(in oklab, #547792 25%, #213448 75%);
+  --muted-foreground: color-mix(in oklab, #94B4C1 75%, #ECEFCA 25%);
+  --accent: #547792;
+  --accent-foreground: #ECEFCA;
+  --destructive: #C2604A;
+  --border: color-mix(in oklab, #ECEFCA 16%, transparent);
+  --input: color-mix(in oklab, #ECEFCA 20%, transparent);
+  --ring: #94B4C1;
+  --chart-1: #ECEFCA;
+  --chart-2: #94B4C1;
+  --chart-3: #547792;
+  --chart-4: #C2604A;
+  --chart-5: #D4A05A;
+  --sidebar: color-mix(in oklab, #213448 82%, #547792 18%);
+  --sidebar-foreground: #ECEFCA;
+  --sidebar-primary: #94B4C1;
+  --sidebar-primary-foreground: #213448;
+  --sidebar-accent: #547792;
+  --sidebar-accent-foreground: #ECEFCA;
+  --sidebar-border: color-mix(in oklab, #ECEFCA 16%, transparent);
+  --sidebar-ring: #94B4C1;
+
+  --risk-high: #C2604A;
+  --risk-high-foreground: #213448;
+  --risk-high-bg: color-mix(in oklab, #C2604A 22%, #213448 78%);
+  --risk-medium: #D4A05A;
+  --risk-medium-foreground: #213448;
+  --risk-medium-bg: color-mix(in oklab, #D4A05A 22%, #213448 78%);
+  --risk-low: #5CA592;
+  --risk-low-foreground: #213448;
+  --risk-low-bg: color-mix(in oklab, #5CA592 22%, #213448 78%);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 로그인 화면 시그니처 모션 — 댓글을 조용히 훑는 스캔 라인 */
+/* top은 containing block의 높이 기준으로 % 계산되므로 부모 전체를 가로지른다 */
+@keyframes scan-sweep {
+  0% {
+    top: -2%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+.animate-scan-sweep {
+  animation: scan-sweep 6s ease-in-out infinite;
 }

@@ -1,65 +1,91 @@
-import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { LogoutButton } from "@/components/auth/logout-button";
+import { createClient } from "@/lib/supabase/server";
+
+const ERROR_MESSAGES: Record<string, string> = {
+  auth: "로그인 처리 중 문제가 발생했습니다. 다시 시도해 주세요.",
+  no_provider_token: "구글로부터 접근 권한을 받지 못했습니다. 다시 시도해 주세요.",
+  channel_connect: "유튜브 채널 연동에 실패했습니다. 채널이 있는 계정으로 다시 로그인해 주세요.",
+};
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+  const errorMessage = error ? ERROR_MESSAGES[error] : undefined;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="font-mono text-sm text-muted-foreground">
+          {user.email}
+        </p>
+        <h1 className="font-heading text-3xl text-foreground">
+          로그인됐습니다.
+        </h1>
+        <Link
+          href="/onboarding"
+          className="text-sm text-primary underline underline-offset-4"
+        >
+          채널 연동 확인하기
+        </Link>
+        <LogoutButton />
+      </main>
+    );
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="flex flex-1 flex-col md:flex-row">
+      {/* 왼쪽: 브랜드 패널 — 항상 다크 네이비(팔레트 반전) */}
+      <section className="relative flex flex-1 flex-col overflow-hidden bg-foreground px-8 py-12 text-background sm:px-12 md:py-16">
+        <div
+          aria-hidden
+          className="animate-scan-sweep pointer-events-none absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+        <p className="font-heading text-2xl italic tracking-tight">
+          Reevely
+        </p>
+
+        <div className="flex flex-1 items-center">
+          <div className="max-w-sm space-y-3">
+            <h1 className="font-heading text-3xl leading-snug sm:text-4xl">
+              악플이 아니라,
+              <br />
+              기록을 남깁니다.
+            </h1>
+            <p className="text-sm text-secondary">
+              당신 채널의 댓글을 조용히 지켜보고, 필요한 순간 증거로
+              남겨둡니다.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 오른쪽: 크림 배경 — 실제 로그인 동작 */}
+      <section className="flex flex-1 flex-col items-center justify-center gap-6 bg-background px-8 py-16 sm:px-12">
+        <div className="w-full max-w-xs space-y-6 text-center">
+          <h2 className="font-heading text-2xl text-foreground">시작하기</h2>
+          {errorMessage && (
+            <p className="rounded-md bg-risk-high-bg px-3 py-2 text-xs text-risk-high">
+              {errorMessage}
+            </p>
+          )}
+          <GoogleSignInButton />
+          <p className="text-xs text-muted-foreground">
+            유튜브 채널 읽기 권한만 요청합니다.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </section>
+    </main>
   );
 }
