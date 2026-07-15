@@ -11,6 +11,7 @@ type YouTubeChannelsResponse = {
       thumbnails?: { default?: { url?: string } };
     };
     statistics?: { subscriberCount?: string; hiddenSubscriberCount?: boolean };
+    contentDetails?: { relatedPlaylists?: { uploads?: string } };
   }>;
 };
 
@@ -26,7 +27,7 @@ export async function connectChannel({
   refreshToken,
 }: ConnectChannelInput) {
   const response = await fetch(
-    "https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true",
+    "https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,contentDetails&mine=true",
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
 
@@ -50,6 +51,8 @@ export async function connectChannel({
       channel.statistics?.subscriberCount != null
         ? Number(channel.statistics.subscriberCount)
         : null,
+    uploadsPlaylistId:
+      channel.contentDetails?.relatedPlaylists?.uploads ?? null,
     encryptedRefreshToken: refreshToken ? encrypt(refreshToken) : undefined,
   });
 }

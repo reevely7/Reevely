@@ -60,17 +60,21 @@
 
 :root {
   /* Reevely 브랜드 팔레트: 네이비(#213448) → 스틸블루(#547792) → 라이트블루그레이(#94B4C1) → 크림(#ECEFCA) */
-  --background: #ECEFCA;
+  /* 배경은 크림 대신 스틸블루를 살짝 섞은 차가운 오프화이트 — 사이드바(네이비 계열)와
+     톤을 맞추기 위함. 크림(#ECEFCA)은 이제 텍스트/뱃지 전경색 등 다른 역할로만 쓴다. */
+  --background: color-mix(in oklab, #547792 8%, white 92%);
   --foreground: #213448;
-  --card: #FFFFFF;
+  /* 카드/팝오버는 완전 흰색 대신 배경보다 살짝만 밝은 오프화이트로 — 그래도
+     배경과는 구분되도록 (paper-on-surface 느낌) */
+  --card: color-mix(in oklab, #547792 3%, white 97%);
   --card-foreground: #213448;
-  --popover: #FFFFFF;
+  --popover: color-mix(in oklab, #547792 3%, white 97%);
   --popover-foreground: #213448;
   --primary: #547792;
   --primary-foreground: #ECEFCA;
   --secondary: #94B4C1;
   --secondary-foreground: #213448;
-  --muted: color-mix(in oklab, #94B4C1 28%, #ECEFCA 72%);
+  --muted: color-mix(in oklab, #94B4C1 28%, var(--background) 72%);
   --muted-foreground: color-mix(in oklab, #213448 65%, #547792 35%);
   --accent: #94B4C1;
   --accent-foreground: #213448;
@@ -96,13 +100,13 @@
   /* 위험도 배지 — 브랜드 블루 계열과 구분되는 톤 다운된 인장(印章) 색 */
   --risk-high: #A3402E;
   --risk-high-foreground: #ECEFCA;
-  --risk-high-bg: color-mix(in oklab, #A3402E 14%, #ECEFCA 86%);
+  --risk-high-bg: color-mix(in oklab, #A3402E 14%, var(--background) 86%);
   --risk-medium: #B8863B;
   --risk-medium-foreground: #213448;
-  --risk-medium-bg: color-mix(in oklab, #B8863B 16%, #ECEFCA 84%);
+  --risk-medium-bg: color-mix(in oklab, #B8863B 16%, var(--background) 84%);
   --risk-low: #3F7A6B;
   --risk-low-foreground: #ECEFCA;
-  --risk-low-bg: color-mix(in oklab, #3F7A6B 14%, #ECEFCA 86%);
+  --risk-low-bg: color-mix(in oklab, #3F7A6B 14%, var(--background) 86%);
 }
 
 .dark {

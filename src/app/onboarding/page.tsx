@@ -1,6 +1,10 @@
 import Image from "next/image";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { LogoutButton } from "@/components/auth/logout-button";
+import { Button } from "@/components/ui/button";
 import { getChannelByUserId } from "@/lib/db/queries/channels";
 import { createClient } from "@/lib/supabase/server";
 
@@ -18,14 +22,18 @@ export default async function OnboardingPage() {
 
   if (!channel) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
         <h1 className="font-heading text-2xl text-foreground">
-          채널 연동에 실패했습니다.
+          연동된 채널이 없습니다.
         </h1>
         <p className="max-w-sm text-sm text-muted-foreground">
-          연동된 구글 계정에서 유튜브 채널을 찾지 못했습니다. 채널이 있는
-          계정으로 다시 로그인해 주세요.
+          채널 연동을 해제했거나, 연동된 구글 계정에 유튜브 채널이 없는
+          경우입니다. 채널이 있는 계정으로 다시 연동해 주세요.
         </p>
+        <div className="w-full max-w-xs">
+          <GoogleSignInButton />
+        </div>
+        <LogoutButton />
       </main>
     );
   }
@@ -41,6 +49,7 @@ export default async function OnboardingPage() {
             alt={channel.channelTitle}
             width={64}
             height={64}
+            priority
             className="rounded-full"
           />
         )}
@@ -54,9 +63,10 @@ export default async function OnboardingPage() {
         )}
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        채널 연동이 완료됐습니다. 댓글 분석 기능은 다음 단계에서 연결됩니다.
-      </p>
+      <Button
+        nativeButton={false}
+        render={<Link href="/dashboard">대시보드로 이동</Link>}
+      />
     </main>
   );
 }

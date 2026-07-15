@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/process-comments",
+      "schedule": "0 * * * *"
+    }
+  ]
+}

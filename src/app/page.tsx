@@ -1,7 +1,7 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
-import { LogoutButton } from "@/components/auth/logout-button";
+import { getChannelByUserId } from "@/lib/db/queries/channels";
 import { createClient } from "@/lib/supabase/server";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -24,32 +24,17 @@ export default async function Home({
   } = await supabase.auth.getUser();
 
   if (user) {
-    return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="font-mono text-sm text-muted-foreground">
-          {user.email}
-        </p>
-        <h1 className="font-heading text-3xl text-foreground">
-          로그인됐습니다.
-        </h1>
-        <Link
-          href="/onboarding"
-          className="text-sm text-primary underline underline-offset-4"
-        >
-          채널 연동 확인하기
-        </Link>
-        <LogoutButton />
-      </main>
-    );
+    const channel = await getChannelByUserId(user.id);
+    redirect(channel ? "/dashboard" : "/onboarding");
   }
 
   return (
     <main className="flex flex-1 flex-col md:flex-row">
-      {/* 왼쪽: 브랜드 패널 — 항상 다크 네이비(팔레트 반전) */}
-      <section className="relative flex flex-1 flex-col overflow-hidden bg-foreground px-8 py-12 text-background sm:px-12 md:py-16">
+      {/* 왼쪽: 브랜드 패널 — 항상 다크 네이비(팔레트 반전), 다크모드 토글과 무관하게 고정 */}
+      <section className="relative flex flex-1 flex-col overflow-hidden bg-[#213448] px-8 py-12 text-[#ECEFCA] sm:px-12 md:py-16">
         <div
           aria-hidden
-          className="animate-scan-sweep pointer-events-none absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent"
+          className="animate-scan-sweep pointer-events-none absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-[#547792] to-transparent"
         />
 
         <p className="font-heading text-2xl italic tracking-tight">
@@ -63,7 +48,7 @@ export default async function Home({
               <br />
               기록을 남깁니다.
             </h1>
-            <p className="text-sm text-secondary">
+            <p className="text-sm text-[#94B4C1]">
               당신 채널의 댓글을 조용히 지켜보고, 필요한 순간 증거로
               남겨둡니다.
             </p>

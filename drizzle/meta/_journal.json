@@ -15,6 +15,34 @@
       "when": 1783840365931,
       "tag": "0001_cloudy_the_renegades",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783841291132,
+      "tag": "0002_sudden_terrax",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1783841826080,
+      "tag": "0003_clumsy_crystal",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784115855481,
+      "tag": "0004_large_cardiac",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784115880197,
+      "tag": "0005_sticky_diamondback",
+      "breakpoints": true
     }
   ]
 }
