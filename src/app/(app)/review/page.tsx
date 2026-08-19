@@ -13,7 +13,7 @@ export default async function ReviewPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/");
+    redirect("/login");
   }
 
   const queue = await getReviewQueue(user.id);

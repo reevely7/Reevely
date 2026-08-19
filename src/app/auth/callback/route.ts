@@ -16,7 +16,7 @@ export async function GET(request: Request) {
       const accessToken = data.session.provider_token;
 
       if (!accessToken) {
-        return NextResponse.redirect(`${origin}/?error=no_provider_token`);
+        return NextResponse.redirect(`${origin}/login?error=no_provider_token`);
       }
 
       try {
@@ -29,10 +29,10 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}${next}`);
       } catch (e) {
         console.error("채널 연동 실패:", e);
-        return NextResponse.redirect(`${origin}/?error=channel_connect`);
+        return NextResponse.redirect(`${origin}/login?error=channel_connect`);
       }
     }
   }
 
-  return NextResponse.redirect(`${origin}/?error=auth`);
+  return NextResponse.redirect(`${origin}/login?error=auth`);
 }
