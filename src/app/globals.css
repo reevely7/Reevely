@@ -58,52 +58,53 @@
 }
 
 :root {
-  /* Reevely 다크 팔레트: 거의 블랙에 가까운 슬레이트 + 웜 앰버 포인트.
+  /* Reevely 다크 팔레트: 완전 무채색(R=G=B) 스모크 그래파이트 + 골든 위트 포인트.
      라이트모드는 없음 — :root 하나가 유일한 팔레트. */
-  --background: #0b0e14;
-  --foreground: #f2f3f7;
-  --card: #141822;
-  --card-foreground: #f2f3f7;
-  --popover: #141822;
-  --popover-foreground: #f2f3f7;
-  --primary: #d9a441;
-  --primary-foreground: #0b0e14;
-  --secondary: #1b202c;
-  --secondary-foreground: #f2f3f7;
-  --muted: #171b25;
-  --muted-foreground: #8b90a3;
-  --accent: #1b202c;
-  --accent-foreground: #f2f3f7;
+  --background: #191919;
+  --foreground: #ececec;
+  --card: #1f1f1f;
+  --card-foreground: #ececec;
+  --popover: #1f1f1f;
+  --popover-foreground: #ececec;
+  --primary: #ccae5f;
+  --primary-foreground: #18150f;
+  --secondary: #222222;
+  --secondary-foreground: #ececec;
+  --muted: #1c1c1c;
+  --muted-foreground: #979797;
+  --accent: #222222;
+  --accent-foreground: #ececec;
   --destructive: #e5484d;
-  --destructive-foreground: #f2f3f7;
+  --destructive-foreground: #ececec;
   --border: rgba(255, 255, 255, 0.06);
   --input: rgba(255, 255, 255, 0.12);
-  --ring: #d9a441;
-  --chart-1: #d9a441;
-  --chart-2: #e8be73;
-  --chart-3: #8b90a3;
-  --chart-4: #ff8a8a;
+  --ring: #ccae5f;
+  --chart-1: #ccae5f;
+  --chart-2: #ddc37c;
+  --chart-3: #979797;
+  --chart-4: #e2726f;
   --chart-5: #4fa8a0;
   --radius: 0.625rem;
-  --sidebar: #0e1218;
-  --sidebar-foreground: #f2f3f7;
-  --sidebar-primary: #d9a441;
-  --sidebar-primary-foreground: #0b0e14;
-  --sidebar-accent: #1b202c;
-  --sidebar-accent-foreground: #f2f3f7;
+  --sidebar: #141414;
+  --sidebar-foreground: #ececec;
+  --sidebar-primary: #ccae5f;
+  --sidebar-primary-foreground: #18150f;
+  --sidebar-accent: #222222;
+  --sidebar-accent-foreground: #ececec;
   --sidebar-border: rgba(255, 255, 255, 0.06);
-  --sidebar-ring: #d9a441;
+  --sidebar-ring: #ccae5f;
 
-  /* 위험도 배지 — 슬레이트 배경 위에서 눈이 편하도록 재조정한 톤 */
-  --risk-high: #ff8a8a;
-  --risk-high-foreground: #0b0e14;
-  --risk-high-bg: rgba(255, 138, 138, 0.14);
-  --risk-medium: #e8be73;
-  --risk-medium-foreground: #0b0e14;
-  --risk-medium-bg: rgba(232, 190, 115, 0.16);
-  --risk-low: #9da2b5;
-  --risk-low-foreground: #0b0e14;
-  --risk-low-bg: rgba(139, 144, 163, 0.14);
+  /* 위험도 배지 — accent(골드)와 분리된 고정 시맨틱 컬러. Medium은 accent와 헷갈리지
+     않도록 주황 쪽으로 밀어둠 */
+  --risk-high: #e2726f;
+  --risk-high-foreground: #18150f;
+  --risk-high-bg: rgba(226, 114, 111, 0.15);
+  --risk-medium: #d99a52;
+  --risk-medium-foreground: #18150f;
+  --risk-medium-bg: rgba(217, 154, 82, 0.16);
+  --risk-low: #979797;
+  --risk-low-foreground: #18150f;
+  --risk-low-bg: rgba(151, 151, 151, 0.14);
 }
 
 @layer base {
