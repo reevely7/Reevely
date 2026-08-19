@@ -22,17 +22,25 @@ type YouTubePlaylistItemsResponse = {
   }>;
 };
 
+type YouTubeCommentSnippet = {
+  textOriginal: string;
+  authorChannelId?: { value: string };
+  publishedAt: string;
+};
+
 type YouTubeCommentThreadsResponse = {
   items?: Array<{
     snippet: {
       topLevelComment: {
         id: string;
-        snippet: {
-          textOriginal: string;
-          authorChannelId?: { value: string };
-          publishedAt: string;
-        };
+        snippet: YouTubeCommentSnippet;
       };
+    };
+    // part=replies로 요청 시 스레드당 최대 5개까지 유튜브가 자동으로 붙여줌
+    // (그 이상은 comments.list를 parentId로 별도 호출해야 하며, 쿼터가
+    // 스레드 수만큼 늘어나 유료 플랜 확장 시 별도로 다룰 예정)
+    replies?: {
+      comments?: Array<{ id: string; snippet: YouTubeCommentSnippet }>;
     };
   }>;
 };
@@ -69,7 +77,7 @@ export async function syncComments(channel: SyncableChannel) {
 
   for (const videoId of videoIds) {
     const commentsRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${videoId}&maxResults=${MAX_COMMENTS_PER_VIDEO}&order=time&textFormat=plainText`,
+      `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet,replies&videoId=${videoId}&maxResults=${MAX_COMMENTS_PER_VIDEO}&order=time&textFormat=plainText`,
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
 
@@ -81,19 +89,30 @@ export async function syncComments(channel: SyncableChannel) {
     const commentsData: YouTubeCommentThreadsResponse =
       await commentsRes.json();
     const commentItems = commentsData.items ?? [];
-    totalFetched += commentItems.length;
 
-    const rows = commentItems.map((item) => {
-      const top = item.snippet.topLevelComment;
-      return {
-        userId: channel.userId,
-        videoId,
-        youtubeCommentId: top.id,
-        authorChannelId: top.snippet.authorChannelId?.value ?? "unknown",
-        text: top.snippet.textOriginal,
-        createdAt: new Date(top.snippet.publishedAt),
-      };
+    const toRow = (id: string, snippet: YouTubeCommentSnippet) => ({
+      userId: channel.userId,
+      videoId,
+      youtubeCommentId: id,
+      authorChannelId: snippet.authorChannelId?.value ?? "unknown",
+      text: snippet.textOriginal,
+      createdAt: new Date(snippet.publishedAt),
     });
+
+    // 최상위 댓글 + 대댓글 합산 개수를 MAX_COMMENTS_PER_VIDEO로 제한한다.
+    // (대댓글이 스레드당 최대 5개씩 딸려오므로, 스레드 수만 제한하면 영상 하나당
+    // 최대 수백 개까지 늘어날 수 있어 원래의 비용 방어 취지가 깨진다)
+    const rows = commentItems
+      .flatMap((item) => {
+        const top = item.snippet.topLevelComment;
+        const replies = item.replies?.comments ?? [];
+        return [
+          toRow(top.id, top.snippet),
+          ...replies.map((reply) => toRow(reply.id, reply.snippet)),
+        ];
+      })
+      .slice(0, MAX_COMMENTS_PER_VIDEO);
+    totalFetched += rows.length;
 
     totalNew += await insertNewComments(rows);
   }

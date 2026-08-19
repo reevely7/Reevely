@@ -1,9 +1,14 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { buttonVariants } from "@/components/ui/button";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { getChannelByUserId } from "@/lib/db/queries/channels";
 import { createClient } from "@/lib/supabase/server";
+
+const ERROR_MESSAGES: Record<string, string> = {
+  auth: "로그인 처리 중 문제가 발생했습니다. 다시 시도해 주세요.",
+  no_provider_token: "구글로부터 접근 권한을 받지 못했습니다. 다시 시도해 주세요.",
+  channel_connect: "유튜브 채널 연동에 실패했습니다. 채널이 있는 계정으로 다시 로그인해 주세요.",
+};
 
 const STEPS = [
   {
@@ -24,7 +29,14 @@ const STEPS = [
   },
 ];
 
-export default async function LandingPage() {
+export default async function LandingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+  const errorMessage = error ? ERROR_MESSAGES[error] : undefined;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -37,15 +49,35 @@ export default async function LandingPage() {
 
   return (
     <main className="flex flex-1 flex-col">
+      {/* 상단 내비게이션 */}
+      <header className="flex items-center justify-between px-8 py-5 sm:px-12">
+        <p className="text-lg font-semibold tracking-tight text-foreground">
+          Reevely
+        </p>
+        <div className="flex items-center gap-2">
+          <GoogleSignInButton
+            label="로그인"
+            variant="ghost"
+            size="sm"
+            className="w-auto"
+          />
+          <GoogleSignInButton
+            label="회원가입"
+            variant="outline"
+            size="sm"
+            className="w-auto"
+          />
+        </div>
+      </header>
+
       {/* 히어로 */}
-      <section className="relative overflow-hidden bg-background px-8 py-20 text-foreground sm:px-12 md:py-28">
+      <section className="relative overflow-hidden bg-background px-8 py-16 text-foreground sm:px-12 md:py-24">
         <div
           aria-hidden
           className="animate-scan-sweep pointer-events-none absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent"
         />
 
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 text-center">
-          <p className="text-lg font-semibold tracking-tight">Reevely</p>
           <h1 className="text-4xl leading-snug font-semibold tracking-tight sm:text-5xl">
             악플이 아니라,
             <br />
@@ -56,9 +88,18 @@ export default async function LandingPage() {
             대신 지켜보고, AI로 위험도를 판정해 필요한 순간 증거로
             남겨둡니다.
           </p>
-          <Link href="/login" className={buttonVariants({ size: "lg" })}>
-            시작하기
-          </Link>
+          {errorMessage && (
+            <p className="rounded-md bg-risk-high-bg px-3 py-2 text-xs text-risk-high">
+              {errorMessage}
+            </p>
+          )}
+          <GoogleSignInButton
+            label="시작하기"
+            className="h-12 w-auto px-10 text-base"
+          />
+          <p className="text-xs text-muted-foreground">
+            유튜브 채널 읽기 권한만 요청합니다.
+          </p>
         </div>
       </section>
 
@@ -129,9 +170,10 @@ export default async function LandingPage() {
           <p className="text-sm text-muted-foreground">
             유튜브 채널 읽기 권한만 요청합니다.
           </p>
-          <Link href="/login" className={buttonVariants({ size: "lg" })}>
-            시작하기
-          </Link>
+          <GoogleSignInButton
+            label="시작하기"
+            className="h-12 w-auto px-10 text-base"
+          />
         </div>
       </section>
     </main>

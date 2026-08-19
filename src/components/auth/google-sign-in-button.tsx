@@ -5,7 +5,19 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
-export function GoogleSignInButton() {
+type Props = {
+  label?: string;
+  className?: string;
+  variant?: "default" | "outline" | "secondary" | "ghost" | "link";
+  size?: "default" | "sm" | "lg";
+};
+
+export function GoogleSignInButton({
+  label = "Google 계정으로 계속하기",
+  className,
+  variant = "default",
+  size = "lg",
+}: Props) {
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleSignIn() {
@@ -29,12 +41,13 @@ export function GoogleSignInButton() {
 
   return (
     <Button
-      size="lg"
-      className="w-full"
+      variant={variant}
+      size={size}
+      className={className ?? "w-full"}
       onClick={handleSignIn}
       disabled={isLoading}
     >
-      {isLoading ? "이동하는 중…" : "Google 계정으로 계속하기"}
+      {isLoading ? "이동하는 중…" : label}
     </Button>
   );
 }

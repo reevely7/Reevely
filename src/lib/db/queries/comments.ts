@@ -2,7 +2,11 @@ import "server-only";
 
 import { and, eq, isNull, sql, type SQL } from "drizzle-orm";
 
-import type { CommentAnalysis } from "@/lib/ai/analyze-comment";
+import {
+  MODEL,
+  PROMPT_VERSION,
+  type CommentAnalysis,
+} from "@/lib/ai/analyze-comment";
 import { db } from "@/lib/db";
 import { comments } from "@/lib/db/schema";
 
@@ -21,7 +25,9 @@ export async function insertNewComments(rows: NewCommentInput[]) {
   const inserted = await db
     .insert(comments)
     .values(rows)
-    .onConflictDoNothing({ target: comments.youtubeCommentId })
+    .onConflictDoNothing({
+      target: [comments.platform, comments.youtubeCommentId],
+    })
     .returning({ id: comments.id });
 
   return inserted.length;
@@ -157,7 +163,7 @@ export async function updateCommentStatus(
 ) {
   const updated = await db
     .update(comments)
-    .set({ status })
+    .set({ status, isHumanReviewed: true })
     .where(and(eq(comments.id, commentId), eq(comments.userId, userId)))
     .returning({ id: comments.id });
 
@@ -189,6 +195,8 @@ export async function saveAnalysisResult(
       category: analysis.category,
       confidence: analysis.confidence.toFixed(2),
       reason: analysis.reason,
+      aiModel: MODEL,
+      promptVersion: PROMPT_VERSION,
       status,
       analyzedAt: new Date(),
     })
