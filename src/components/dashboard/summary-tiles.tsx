@@ -24,7 +24,7 @@ export function SummaryTiles({ summary }: { summary: Summary }) {
       {TILES.map((tile) => (
         <div
           key={tile.key}
-          className="rounded-lg border border-border bg-card px-4 py-3"
+          className="rounded-2xl bg-card px-4 py-4"
         >
           <div className="flex items-center gap-1.5">
             {tile.dotClassName && (

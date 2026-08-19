@@ -49,7 +49,9 @@ export default async function DashboardPage({
   return (
     <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
       <header>
-        <p className="font-heading text-xl text-foreground">대시보드</p>
+        <p className="text-xl font-semibold tracking-tight text-foreground">
+          대시보드
+        </p>
         <p className="text-xs text-muted-foreground">
           위험도별로 플래그된 댓글입니다.
         </p>
