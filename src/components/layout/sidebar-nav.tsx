@@ -20,21 +20,15 @@ export function SidebarNav({ reviewCount }: { reviewCount: number }) {
           <Link
             key={item.href}
             href={item.href}
-            className={`relative flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
+            className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
               isActive
-                ? "bg-[#547792]/25 text-[#ECEFCA]"
-                : "text-[#94B4C1] hover:bg-[#547792]/15 hover:text-[#ECEFCA]"
+                ? "bg-sidebar-accent text-primary"
+                : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
             }`}
           >
-            {isActive && (
-              <span
-                aria-hidden
-                className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-[#547792]"
-              />
-            )}
             <span>{item.label}</span>
             {item.href === "/review" && reviewCount > 0 && (
-              <span className="font-mono text-xs text-[#547792]">
+              <span className="font-mono text-xs text-primary">
                 {reviewCount}
               </span>
             )}
