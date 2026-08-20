@@ -3,8 +3,9 @@ import Link from "next/link";
 
 import { LogoutButton } from "@/components/auth/logout-button";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
+import { SyncCountdown } from "@/components/layout/sync-countdown";
 import { getNextSyncAt } from "@/lib/db/queries/channels";
-import { formatRelativeTime } from "@/lib/format/relative-time";
+import { formatClockTime } from "@/lib/format/clock-time";
 
 type Channel = {
   channelTitle: string;
@@ -52,10 +53,10 @@ export function AppSidebar({
         </div>
 
         {channel.lastSyncedAt && (
-          <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
-            마지막 확인 {formatRelativeTime(channel.lastSyncedAt)}
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            최근 댓글 업데이트 {formatClockTime(channel.lastSyncedAt)}
             <br />
-            다음 확인 {formatRelativeTime(nextSyncAt)}
+            다음 댓글 업데이트 <SyncCountdown target={nextSyncAt} />
           </p>
         )}
 
