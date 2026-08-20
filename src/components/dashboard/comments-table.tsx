@@ -50,11 +50,11 @@ const STATUS_LABELS: Record<string, string> = {
   whitelisted: "화이트리스트",
 };
 
-// accent(골드)는 "확정"에, 위험도와 겹치지 않는 risk-medium 톤은 "검토 필요"에
-// 재사용해 새 색상을 만들지 않고 기존 팔레트 안에서만 상태를 구분한다.
+// "확정"은 블루(status-confirmed), "검토 필요"는 퍼플(status-needs-review)로 분리해
+// 골드(primary)·주황골드(risk-medium)와도, 서로와도 헷갈리지 않게 한다.
 const STATUS_PILL_CLASSES: Record<string, string> = {
-  confirmed: "bg-primary/15 text-primary",
-  needs_review: "bg-risk-medium-bg text-risk-medium",
+  confirmed: "bg-status-confirmed-bg text-status-confirmed",
+  needs_review: "bg-status-needs-review-bg text-status-needs-review",
   reported_false: "bg-muted text-muted-foreground",
   whitelisted: "bg-muted text-muted-foreground",
 };

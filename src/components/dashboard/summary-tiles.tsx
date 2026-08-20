@@ -15,7 +15,11 @@ const TILES: Array<{
   { key: "high", label: "High", dotClassName: "bg-risk-high" },
   { key: "medium", label: "Medium", dotClassName: "bg-risk-medium" },
   { key: "low", label: "Low", dotClassName: "bg-risk-low" },
-  { key: "needsReview", label: "검토 필요", dotClassName: "bg-primary" },
+  {
+    key: "needsReview",
+    label: "검토 필요",
+    dotClassName: "bg-status-needs-review",
+  },
 ];
 
 export function SummaryTiles({ summary }: { summary: Summary }) {

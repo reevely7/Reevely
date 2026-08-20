@@ -2,14 +2,18 @@ import { redirect } from "next/navigation";
 
 import { CommentFilters } from "@/components/dashboard/comment-filters";
 import { CommentsTable } from "@/components/dashboard/comments-table";
+import { Pagination } from "@/components/dashboard/pagination";
 import { SummaryTiles } from "@/components/dashboard/summary-tiles";
 import {
+  countFlaggedComments,
   getDashboardSummary,
   getFlaggedComments,
   getFlaggedFilterOptions,
   type CommentFilters as CommentFiltersType,
 } from "@/lib/db/queries/comments";
 import { createClient } from "@/lib/supabase/server";
+
+const PAGE_SIZE = 15;
 
 export default async function DashboardPage({
   searchParams,
@@ -20,6 +24,7 @@ export default async function DashboardPage({
     status?: string;
     video?: string;
     sort?: string;
+    page?: string;
   }>;
 }) {
   const supabase = await createClient();
@@ -39,12 +44,15 @@ export default async function DashboardPage({
     videoId: params.video,
     sort: params.sort as CommentFiltersType["sort"],
   };
+  const page = Math.max(1, Number(params.page) || 1);
 
-  const [summary, rows, filterOptions] = await Promise.all([
+  const [summary, rows, filterOptions, totalCount] = await Promise.all([
     getDashboardSummary(user.id),
-    getFlaggedComments(user.id, filters),
+    getFlaggedComments(user.id, filters, page, PAGE_SIZE),
     getFlaggedFilterOptions(user.id),
+    countFlaggedComments(user.id, filters),
   ]);
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
@@ -65,6 +73,10 @@ export default async function DashboardPage({
       />
 
       <CommentsTable rows={rows} />
+
+      {totalPages > 1 && (
+        <Pagination currentPage={page} totalPages={totalPages} />
+      )}
     </main>
   );
 }

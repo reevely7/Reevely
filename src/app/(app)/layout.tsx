@@ -28,7 +28,12 @@ export default async function AppLayout({
   const nextSyncAt = getNextSyncAt(channel);
 
   return (
-    <div className="flex flex-1 flex-col md:flex-row">
+    // body가 min-h-full(최소 높이)만 갖고 있어 콘텐츠가 길어지면 body 자체가
+    // 늘어나면서 사이드바까지 페이지와 함께 스크롤되던 문제 — 여기서 뷰포트
+    // 높이를 못박고 넘치는 부분은 안쪽 콘텐츠 div만 스크롤하게 가둔다.
+    // flex-1(flex-basis: 0%)을 h-dvh와 같이 주면 flex 알고리즘이 높이를
+    // 무시해버려서 반드시 빼야 한다 (실제 재현 테스트로 확인함).
+    <div className="flex h-dvh flex-col overflow-hidden md:flex-row">
       <AppSidebar
         channel={channel}
         reviewCount={reviewCount}

@@ -49,6 +49,11 @@
   --color-risk-low-foreground: var(--risk-low-foreground);
   --color-risk-low-bg: var(--risk-low-bg);
   --color-highlight: var(--highlight);
+  /* 상태 배지 전용 색 — primary(골드)·risk-medium(주황골드)과 헷갈리지 않도록 분리 */
+  --color-status-confirmed: var(--status-confirmed);
+  --color-status-confirmed-bg: var(--status-confirmed-bg);
+  --color-status-needs-review: var(--status-needs-review);
+  --color-status-needs-review-bg: var(--status-needs-review-bg);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -111,6 +116,14 @@
   --risk-low: #979797;
   --risk-low-foreground: #18150f;
   --risk-low-bg: rgba(151, 151, 151, 0.14);
+
+  /* "확정" 상태 배지 — 골드(primary)·주황골드(risk-medium)와 구분되는 블루 톤 */
+  --status-confirmed: #6e93d6;
+  --status-confirmed-bg: rgba(110, 147, 214, 0.16);
+
+  /* "검토 필요" 상태 배지 — risk-medium(주황)과 구분되는 퍼플 톤 */
+  --status-needs-review: #a687d9;
+  --status-needs-review-bg: rgba(166, 135, 217, 0.16);
 }
 
 @layer base {

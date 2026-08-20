@@ -92,10 +92,7 @@ export type CommentFilters = {
   sort?: "newest" | "risk";
 };
 
-export async function getFlaggedComments(
-  userId: string,
-  filters: CommentFilters,
-) {
+function buildFlaggedConditions(userId: string, filters: CommentFilters) {
   const conditions = [
     eq(comments.userId, userId),
     eq(comments.isMalicious, true),
@@ -106,6 +103,17 @@ export async function getFlaggedComments(
   if (filters.status) conditions.push(eq(comments.status, filters.status));
   if (filters.videoId) conditions.push(eq(comments.videoId, filters.videoId));
 
+  return conditions;
+}
+
+export async function getFlaggedComments(
+  userId: string,
+  filters: CommentFilters,
+  page: number,
+  pageSize: number,
+) {
+  const conditions = buildFlaggedConditions(userId, filters);
+
   const orderBy: SQL =
     filters.sort === "risk"
       ? sql`case ${comments.riskLevel} when 'high' then 0 when 'medium' then 1 else 2 end asc, ${comments.createdAt} desc`
@@ -115,7 +123,23 @@ export async function getFlaggedComments(
     .select()
     .from(comments)
     .where(and(...conditions))
-    .orderBy(orderBy);
+    .orderBy(orderBy)
+    .limit(pageSize)
+    .offset((page - 1) * pageSize);
+}
+
+export async function countFlaggedComments(
+  userId: string,
+  filters: CommentFilters,
+) {
+  const conditions = buildFlaggedConditions(userId, filters);
+
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(comments)
+    .where(and(...conditions));
+
+  return row?.count ?? 0;
 }
 
 export async function getFlaggedFilterOptions(userId: string) {

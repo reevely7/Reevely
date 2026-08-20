@@ -42,3 +42,6 @@ next-env.d.ts
 
 # brainstorming companion
 .superpowers/
+
+# playwright MCP 도구 세션 아티팩트 (스크린샷/로그)
+.playwright-mcp/

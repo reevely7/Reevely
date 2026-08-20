@@ -26,6 +26,8 @@ export function CommentFilters({ categories, videoIds }: Props) {
     } else {
       params.delete(key);
     }
+    // 필터가 바뀌면 결과 수가 달라지므로 페이지네이션은 1페이지로 리셋
+    params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
   }
 
