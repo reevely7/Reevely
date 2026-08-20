@@ -47,9 +47,11 @@ AI 기반 악성 댓글 탐지 및 증거관리 SaaS.
 ## 이번 MVP 범위
 
 **만드는 것**: 유튜브 채널 1개 OAuth 연동 · 댓글 가져오기 · AI 위험도/유형 판정 ·
-대시보드 리스트(위험도별 색상, 판정 근거, confidence 표시) · 오탐 신고 버튼
+대시보드 리스트(위험도별 색상, 판정 근거, confidence 표시) · 오탐 신고 버튼 ·
+작성자별 댓글 이력 조회(`authorChannelId` 기준으로 같은 작성자가 남긴 다른 악성
+댓글을 한 페이지에서 확인, `/authors/[authorChannelId]`)
 
-**만들지 않는 것 (나중 단계)**: 증거 PDF 생성, 삭제 요청 워크플로우, 반복 작성자 추적,
+**만들지 않는 것 (나중 단계)**: 증거 PDF 생성, 삭제 요청 워크플로우,
 외부 공유 링크, 인스타그램 연동, 결제/구독, 우회표현(초성·은어) 탐지 고도화
 
 ## DB 스키마
@@ -116,6 +118,7 @@ src/
     onboarding/                            채널 연동 확인 화면
     dashboard/                             메인 대시보드
     review/                                검토 필요 큐
+    authors/[authorChannelId]/             작성자별 댓글 이력
     settings/                              연동 해제·계정 삭제
     components/ui/                         shadcn/ui 컴포넌트
   components/

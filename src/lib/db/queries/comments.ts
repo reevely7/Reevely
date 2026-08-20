@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, isNull, sql, type SQL } from "drizzle-orm";
+import { and, eq, ilike, isNull, sql, type SQL } from "drizzle-orm";
 
 import {
   MODEL,
@@ -84,11 +84,14 @@ export async function getDashboardSummary(userId: string) {
   return summary;
 }
 
+export type CommentRiskLevel = "high" | "medium" | "low";
+
 export type CommentFilters = {
-  riskLevel?: "high" | "medium" | "low";
+  riskLevel?: CommentRiskLevel;
   category?: string;
   status?: "confirmed" | "needs_review" | "reported_false" | "whitelisted";
   videoId?: string;
+  search?: string;
   sort?: "newest" | "risk";
 };
 
@@ -102,6 +105,7 @@ function buildFlaggedConditions(userId: string, filters: CommentFilters) {
   if (filters.category) conditions.push(eq(comments.category, filters.category));
   if (filters.status) conditions.push(eq(comments.status, filters.status));
   if (filters.videoId) conditions.push(eq(comments.videoId, filters.videoId));
+  if (filters.search) conditions.push(ilike(comments.text, `%${filters.search}%`));
 
   return conditions;
 }
@@ -160,6 +164,23 @@ export async function getFlaggedFilterOptions(userId: string) {
   ).map(([videoId, videoTitle]) => ({ videoId, videoTitle }));
 
   return { categories, videos };
+}
+
+export async function getCommentsByAuthor(
+  userId: string,
+  authorChannelId: string,
+) {
+  return db
+    .select()
+    .from(comments)
+    .where(
+      and(
+        eq(comments.userId, userId),
+        eq(comments.authorChannelId, authorChannelId),
+        eq(comments.isMalicious, true),
+      ),
+    )
+    .orderBy(sql`${comments.createdAt} desc`);
 }
 
 export async function getReviewQueue(userId: string) {

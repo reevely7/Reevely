@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from "react";
 import { ChevronDown, ChevronRight, Inbox } from "lucide-react";
+import Link from "next/link";
 
 import { StatusActionButton } from "@/components/comments/status-action-button";
 import { RiskBadge } from "@/components/dashboard/risk-badge";
@@ -10,6 +11,7 @@ type Row = {
   id: string;
   text: string;
   authorDisplayName: string | null;
+  authorChannelId: string;
   platform: string;
   videoTitle: string | null;
   videoType: string | null;
@@ -73,13 +75,18 @@ function InfoTile({
   label,
   value,
   href,
+  internalHref,
   span,
 }: {
   label: string;
   value: string;
   href?: string;
+  internalHref?: string;
   span?: string;
 }) {
+  const linkClassName =
+    "block truncate text-[13px] font-medium text-primary underline underline-offset-2";
+
   return (
     <div
       className={`rounded-lg border border-border bg-background/50 px-3 py-2 ${span ?? ""}`}
@@ -87,12 +94,16 @@ function InfoTile({
       <p className="text-[10px] tracking-wide text-muted-foreground uppercase">
         {label}
       </p>
-      {href ? (
+      {internalHref ? (
+        <Link href={internalHref} className={linkClassName} title={value}>
+          {value}
+        </Link>
+      ) : href ? (
         <a
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="block truncate text-[13px] font-medium text-primary underline underline-offset-2"
+          className={linkClassName}
           title={value}
         >
           {value}
@@ -236,6 +247,7 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
                           <InfoTile
                             label="작성자"
                             value={row.authorDisplayName ?? "알 수 없음"}
+                            internalHref={`/authors/${encodeURIComponent(row.authorChannelId)}`}
                           />
                           <InfoTile
                             label="플랫폼"

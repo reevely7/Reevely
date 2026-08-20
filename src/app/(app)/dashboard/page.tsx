@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { CommentFilters } from "@/components/dashboard/comment-filters";
+import { CommentSearch } from "@/components/dashboard/comment-search";
 import { CommentsTable } from "@/components/dashboard/comments-table";
 import { Pagination } from "@/components/dashboard/pagination";
 import { SummaryTiles } from "@/components/dashboard/summary-tiles";
@@ -23,6 +24,7 @@ export default async function DashboardPage({
     category?: string;
     status?: string;
     video?: string;
+    search?: string;
     sort?: string;
     page?: string;
   }>;
@@ -42,6 +44,7 @@ export default async function DashboardPage({
     category: params.category,
     status: params.status as CommentFiltersType["status"],
     videoId: params.video,
+    search: params.search,
     sort: params.sort as CommentFiltersType["sort"],
   };
   const page = Math.max(1, Number(params.page) || 1);
@@ -56,13 +59,16 @@ export default async function DashboardPage({
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
-      <header>
-        <p className="text-xl font-semibold tracking-tight text-foreground">
-          대시보드
-        </p>
-        <p className="text-xs text-muted-foreground">
-          위험도별로 플래그된 댓글입니다.
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-xl font-semibold tracking-tight text-foreground">
+            대시보드
+          </p>
+          <p className="text-xs text-muted-foreground">
+            위험도별로 플래그된 댓글입니다.
+          </p>
+        </div>
+        <CommentSearch />
       </header>
 
       <SummaryTiles summary={summary} />
@@ -70,6 +76,8 @@ export default async function DashboardPage({
       <CommentFilters
         categories={filterOptions.categories}
         videos={filterOptions.videos}
+        totalCount={summary.total}
+        filteredCount={totalCount}
       />
 
       <CommentsTable rows={rows} />
