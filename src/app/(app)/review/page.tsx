@@ -57,6 +57,9 @@ export default async function ReviewPage() {
                 </div>
                 <p className="text-sm text-card-foreground">{comment.text}</p>
                 <p className="text-xs text-muted-foreground">
+                  작성자: {comment.authorDisplayName ?? "알 수 없음"}
+                </p>
+                <p className="text-xs text-muted-foreground">
                   {comment.reason}
                 </p>
               </div>

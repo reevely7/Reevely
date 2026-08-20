@@ -66,6 +66,8 @@ export const comments = pgTable(
     // 아래 unique 제약은 platform과 묶어서 건다)
     youtubeCommentId: text("youtube_comment_id").notNull(),
     authorChannelId: text("author_channel_id").notNull(),
+    // 작성자가 유튜브에 공개 설정한 표시 이름 (실명 아님)
+    authorDisplayName: text("author_display_name"),
     text: text("text").notNull(),
     // AI 판정 결과 (미분석 상태면 전부 null)
     isMalicious: boolean("is_malicious"),

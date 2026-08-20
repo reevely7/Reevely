@@ -11,7 +11,7 @@ export const MODEL = "gpt-4o-mini";
 
 // SYSTEM_PROMPT나 CommentAnalysisSchema(카테고리 등)를 바꿀 때마다 올린다.
 // 파인튜닝용 데이터 축적 시 어느 버전의 판정 기준으로 라벨링됐는지 구분하기 위함.
-export const PROMPT_VERSION = "v3";
+export const PROMPT_VERSION = "v5";
 
 export const CommentAnalysisSchema = z.object({
   is_malicious: z.boolean(),
@@ -84,9 +84,11 @@ const SYSTEM_PROMPT = `너는 유튜브 크리에이터를 보호하기 위해 �
    → 예외: 공개된 활동에 대한 근거 있는 지적(광고 미표기 지적, 발언 오류
      정정 등)은 사실 주장이어도 악성이 아니다. 해당없음으로 종료.
 6단계. 사실 주장 없이 대상을 공격하는가?
-   → 외모·능력·성격에 대한 비하, 욕설, 실행 의사 없는 저주성 폭언
-     ("죽어라", "뒤져라")이면 category="인신공격".
-   → 위 수준까지는 아니지만 노골적인 조롱·냉소·빈정거림이면
+   → 욕설·비속어, 또는 외모·능력·성격을 직접 깎아내리는 단어(못생겼다,
+     멍청하다, 병신 등)를 사용했거나 실행 의사 없는 저주성 폭언("죽어라",
+     "뒤져라")이면 category="인신공격". 판단 기준은 "모욕적인 단어를
+     직접 썼는가"다.
+   → 그런 단어 없이 반어법·비꼬는 어투·뉘앙스만으로 깎아내리면
      category="비아냥". 단, 신랄해도 콘텐츠에 대한 감상이면 악성이 아니다.
      구분 기준: 공격의 표적이 사람이면 비아냥, 콘텐츠 자체면 해당없음.
 7단계. 명백히 공격적이지만 위 어디에도 맞지 않으면 category="기타".
@@ -96,6 +98,11 @@ const SYSTEM_PROMPT = `너는 유튜브 크리에이터를 보호하기 위해 �
 [여러 카테고리에 겹칠 때의 우선순위]
 협박 > 성희롱 > 혐오표현 > 명예훼손 > 허위사실 > 인신공격 > 비아냥 > 기타
 가장 앞선 하나만 category로 답하라.
+
+[일관성 규칙 — 반드시 지킬 것]
+is_malicious와 category는 항상 일치해야 한다. category가 "해당없음"이면
+is_malicious는 반드시 false이고, 그 외 어떤 category든(기타 포함)
+is_malicious는 반드시 true다. 이 둘이 어긋나는 답은 절대 허용되지 않는다.
 
 [risk_level 기준]
 - high: 협박, 성희롱, 범죄·성적 이력을 주장하는 명예훼손
@@ -127,7 +134,9 @@ const SYSTEM_PROMPT = `너는 유튜브 크리에이터를 보호하기 위해 �
 - "광고 표기 안 하셨네요. 실망입니다" → 해당없음 (공개 활동에 대한
   근거 있는 지적, 정당한 비판)
 - "이걸 콘텐츠라고 만드냐ㅋㅋ 나이 먹고 뭐하는 짓인지" → 비아냥, low
-  (콘텐츠 평가를 넘어 사람을 향한 조롱)
+  (모욕적 단어 없이 뉘앙스로만 깎아내림. 콘텐츠 평가를 넘어 사람을 향한 조롱)
+- "ㅄ이 무슨 방송을 하냐 정신차려라" → 인신공격, medium (초성으로 위장했지만
+  "병신"이라는 모욕적 단어를 직접 사용함. 비아냥이 아님에 주의)
 - "솔직히 이번 건 노잼이었음. 예전 영상이 나았다" → 해당없음 (신랄하지만
   콘텐츠에 대한 감상)
 - "여자가 게임하면 다 그렇지 뭐" → 혐오표현, medium (성별이라는 집단
@@ -144,6 +153,8 @@ export async function analyzeComment(text: string): Promise<CommentAnalysis> {
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: text },
     ],
+    // 같은 댓글은 항상 같은 판정이 나와야 하는 분류 작업이라 온도를 0으로 고정
+    temperature: 0,
     // 판정 결과는 짧은 JSON 하나뿐이라 300이면 충분 — 폭주 비용 방어용 상한
     max_tokens: 300,
     response_format: zodResponseFormat(

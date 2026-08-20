@@ -15,6 +15,7 @@ type NewCommentInput = {
   videoId: string;
   youtubeCommentId: string;
   authorChannelId: string;
+  authorDisplayName: string | null;
   text: string;
   createdAt: Date;
 };

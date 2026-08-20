@@ -9,6 +9,7 @@ import { RiskBadge } from "@/components/dashboard/risk-badge";
 type Row = {
   id: string;
   text: string;
+  authorDisplayName: string | null;
   riskLevel: string | null;
   category: string | null;
   confidence: string | null;
@@ -48,6 +49,7 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
             <th className="w-8 px-4 py-3 font-medium" />
             <th className="px-2 py-3 font-medium">위험도</th>
             <th className="px-2 py-3 font-medium">댓글</th>
+            <th className="px-2 py-3 font-medium">작성자</th>
             <th className="px-2 py-3 font-medium">유형</th>
             <th className="px-2 py-3 font-medium">confidence</th>
             <th className="px-2 py-3 font-medium">날짜</th>
@@ -81,6 +83,9 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
                     {row.text}
                   </td>
                   <td className="px-2 py-3 text-muted-foreground">
+                    {row.authorDisplayName ?? "알 수 없음"}
+                  </td>
+                  <td className="px-2 py-3 text-muted-foreground">
                     {row.category ?? "미분류"}
                   </td>
                   <td className="px-2 py-3 font-mono text-muted-foreground tabular-nums">
@@ -96,7 +101,7 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
 
                 {isExpanded && (
                   <tr className="border-b border-border bg-background/60 last:border-0">
-                    <td colSpan={7} className="px-4 py-4">
+                    <td colSpan={8} className="px-4 py-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1 space-y-2">
                           <p className="text-[13px] text-card-foreground">

@@ -57,6 +57,13 @@
       "when": 1787160020625,
       "tag": "0007_parched_blur",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787215790533,
+      "tag": "0008_little_switch",
+      "breakpoints": true
     }
   ]
 }

@@ -25,6 +25,7 @@ type YouTubePlaylistItemsResponse = {
 type YouTubeCommentSnippet = {
   textOriginal: string;
   authorChannelId?: { value: string };
+  authorDisplayName?: string;
   publishedAt: string;
 };
 
@@ -95,6 +96,7 @@ export async function syncComments(channel: SyncableChannel) {
       videoId,
       youtubeCommentId: id,
       authorChannelId: snippet.authorChannelId?.value ?? "unknown",
+      authorDisplayName: snippet.authorDisplayName ?? null,
       text: snippet.textOriginal,
       createdAt: new Date(snippet.publishedAt),
     });
