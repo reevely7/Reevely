@@ -6,16 +6,32 @@ import { usePathname } from "next/navigation";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "대시보드" },
   { href: "/review", label: "검토 필요" },
+  { href: "/notifications", label: "알림" },
   { href: "/settings", label: "설정" },
 ];
 
-export function SidebarNav({ reviewCount }: { reviewCount: number }) {
+const BADGE_COUNT_HREF: Record<string, "reviewCount" | "unreadNotificationCount"> = {
+  "/review": "reviewCount",
+  "/notifications": "unreadNotificationCount",
+};
+
+export function SidebarNav({
+  reviewCount,
+  unreadNotificationCount,
+}: {
+  reviewCount: number;
+  unreadNotificationCount: number;
+}) {
   const pathname = usePathname();
+  const counts = { reviewCount, unreadNotificationCount };
 
   return (
     <nav className="flex flex-col gap-1">
       {NAV_ITEMS.map((item) => {
         const isActive = pathname === item.href;
+        const countKey = BADGE_COUNT_HREF[item.href];
+        const count = countKey ? counts[countKey] : 0;
+
         return (
           <Link
             key={item.href}
@@ -27,10 +43,8 @@ export function SidebarNav({ reviewCount }: { reviewCount: number }) {
             }`}
           >
             <span>{item.label}</span>
-            {item.href === "/review" && reviewCount > 0 && (
-              <span className="font-mono text-xs text-primary">
-                {reviewCount}
-              </span>
+            {count > 0 && (
+              <span className="font-mono text-xs text-primary">{count}</span>
             )}
           </Link>
         );

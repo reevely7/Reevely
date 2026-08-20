@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { analyzePendingComments } from "@/lib/ai/analyze-pending-comments";
 import { getAllChannels, isSyncDue } from "@/lib/db/queries/channels";
+import { maybeCreateWeeklyDigest } from "@/lib/db/queries/notifications";
 import { syncComments } from "@/lib/youtube/sync-comments";
 
 // 수동 트리거 버튼은 없앴고, 이 cron이 전체 파이프라인의 유일한 진입점이다.
@@ -47,6 +48,14 @@ export async function GET(request: Request) {
     } catch (e) {
       entry.analyze = "failed";
       console.error(`[cron] 분석 실패 (${channel.channelTitle}):`, e);
+    }
+
+    // 별도 주간 cron 없이, 매시간 도는 이 cron 안에서 "때가 됐을 때만"
+    // 생성된다 (maybeCreateWeeklyDigest 내부에서 최근 7일 이내 생성 여부 확인)
+    try {
+      await maybeCreateWeeklyDigest(channel.userId);
+    } catch (e) {
+      console.error(`[cron] 주간 다이제스트 실패 (${channel.channelTitle}):`, e);
     }
 
     results.push(entry);

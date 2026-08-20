@@ -8,6 +8,7 @@ import {
   getCommentsByAuthor,
   type CommentRiskLevel,
 } from "@/lib/db/queries/comments";
+import { isSubscribedToAuthor } from "@/lib/db/queries/notifications";
 import { createClient } from "@/lib/supabase/server";
 
 function formatDate(date: Date): string {
@@ -36,10 +37,11 @@ export default async function AuthorPage({
   }
 
   const { authorChannelId } = await params;
-  const comments = await getCommentsByAuthor(
-    user.id,
-    decodeURIComponent(authorChannelId),
-  );
+  const decodedAuthorChannelId = decodeURIComponent(authorChannelId);
+  const [comments, isSubscribed] = await Promise.all([
+    getCommentsByAuthor(user.id, decodedAuthorChannelId),
+    isSubscribedToAuthor(user.id, decodedAuthorChannelId),
+  ]);
   const displayName = comments[0]?.authorDisplayName ?? "알 수 없음";
   const initial = displayName.replace(/^@/, "").charAt(0).toUpperCase() || "?";
 
@@ -150,6 +152,8 @@ export default async function AuthorPage({
               comments={comments}
               displayName={displayName}
               initial={initial}
+              authorChannelId={decodedAuthorChannelId}
+              initialSubscribed={isSubscribed}
             />
           </div>
         </div>

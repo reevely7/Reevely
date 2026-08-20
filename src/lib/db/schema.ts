@@ -99,3 +99,57 @@ export const comments = pgTable(
     ),
   ],
 );
+
+// 크리에이터가 "새 댓글 알림 받기"로 구독한 작성자 목록. cron 분석 파이프라인이
+// 새로 분석된 악성 댓글의 authorChannelId가 여기 있으면 notifications 행을 만든다.
+export const authorSubscriptions = pgTable(
+  "author_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    authorChannelId: text("author_channel_id").notNull(),
+    // 알림 목록에 표시할 스냅샷 (댓글 재조회 없이 바로 보여주기 위함)
+    authorDisplayName: text("author_display_name"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique("author_subscriptions_user_author_unique").on(
+      table.userId,
+      table.authorChannelId,
+    ),
+  ],
+);
+
+export const notificationTypeEnum = pgEnum("notification_type", [
+  // 구독 중인 작성자의 새 악성 댓글 — comments를 조인해서 위험도·유형·본문을 보여준다
+  "new_comment",
+  // 아직 구독 안 한 작성자가 누적 3번째 악성 댓글을 남겼을 때의 구독 제안
+  "repeat_author",
+  // 검토 필요 큐가 임계치 이상 쌓였을 때
+  "review_backlog",
+  // 특정 영상에 짧은 시간 안에 악성 댓글이 몰릴 때
+  "video_spike",
+  // 주간 요약 리포트
+  "weekly_digest",
+]);
+
+// notifications 1행 = 알림 1건. new_comment 타입은 comments를 조인해서 위험도·
+// 본문 등을 그대로 보여주고(commentId만 있으면 됨), 그 외 타입은 댓글 하나에
+// 매이지 않는 알림이라 title/message/href를 생성 시점에 미리 만들어 저장한다.
+// refId는 종류별 중복 방지용 보조 키(작성자ID, 영상ID 등)로만 쓴다.
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  type: notificationTypeEnum("type").notNull().default("new_comment"),
+  commentId: uuid("comment_id"),
+  title: text("title"),
+  message: text("message"),
+  href: text("href"),
+  refId: text("ref_id"),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

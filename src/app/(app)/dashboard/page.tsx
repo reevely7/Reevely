@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { CommentFilters } from "@/components/dashboard/comment-filters";
 import { CommentSearch } from "@/components/dashboard/comment-search";
 import { CommentsTable } from "@/components/dashboard/comments-table";
+import { NotificationBell } from "@/components/dashboard/notification-bell";
 import { Pagination } from "@/components/dashboard/pagination";
 import { SummaryTiles } from "@/components/dashboard/summary-tiles";
 import {
@@ -12,9 +13,14 @@ import {
   getFlaggedFilterOptions,
   type CommentFilters as CommentFiltersType,
 } from "@/lib/db/queries/comments";
+import {
+  countUnreadNotifications,
+  getNotifications,
+} from "@/lib/db/queries/notifications";
 import { createClient } from "@/lib/supabase/server";
 
 const PAGE_SIZE = 15;
+const RECENT_NOTIFICATIONS_LIMIT = 8;
 
 export default async function DashboardPage({
   searchParams,
@@ -49,11 +55,20 @@ export default async function DashboardPage({
   };
   const page = Math.max(1, Number(params.page) || 1);
 
-  const [summary, rows, filterOptions, totalCount] = await Promise.all([
+  const [
+    summary,
+    rows,
+    filterOptions,
+    totalCount,
+    unreadNotificationCount,
+    recentNotifications,
+  ] = await Promise.all([
     getDashboardSummary(user.id),
     getFlaggedComments(user.id, filters, page, PAGE_SIZE),
     getFlaggedFilterOptions(user.id),
     countFlaggedComments(user.id, filters),
+    countUnreadNotifications(user.id),
+    getNotifications(user.id, RECENT_NOTIFICATIONS_LIMIT),
   ]);
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
@@ -68,7 +83,13 @@ export default async function DashboardPage({
             위험도별로 플래그된 댓글입니다.
           </p>
         </div>
-        <CommentSearch />
+        <div className="flex items-end gap-2">
+          <CommentSearch />
+          <NotificationBell
+            notifications={recentNotifications}
+            unreadCount={unreadNotificationCount}
+          />
+        </div>
       </header>
 
       <SummaryTiles summary={summary} />

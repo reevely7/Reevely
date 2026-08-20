@@ -49,14 +49,24 @@ AI 기반 악성 댓글 탐지 및 증거관리 SaaS.
 **만드는 것**: 유튜브 채널 1개 OAuth 연동 · 댓글 가져오기 · AI 위험도/유형 판정 ·
 대시보드 리스트(위험도별 색상, 판정 근거, confidence 표시) · 오탐 신고 버튼 ·
 작성자별 댓글 이력 조회(`authorChannelId` 기준으로 같은 작성자가 남긴 다른 악성
-댓글을 한 페이지에서 확인, `/authors/[authorChannelId]`)
+댓글을 한 페이지에서 확인, `/authors/[authorChannelId]`) · 인앱 알림 시스템
+(`/notifications`, 대시보드 헤더 벨 아이콘 드롭다운. 전부 cron 분석 파이프라인
+안에서 생성되고, 별도 이메일·푸시 발송은 하지 않는 인앱 전용):
+  - `new_comment` — 구독한 작성자의 새 악성 댓글 (작성자 페이지 "새 댓글 알림 받기")
+  - `repeat_author` — 미구독 작성자가 누적 3번째 악성 댓글을 남기면 구독 제안
+  - `review_backlog` — 검토 필요 큐가 5건 이상 쌓이면
+  - `video_spike` — 한 분석 배치 안에서 특정 영상에 악성 댓글 3건 이상 몰리면
+  - `weekly_digest` — 주간 위험 댓글 요약 (전용 cron 없이 매시간 cron 안에서
+    "마지막 생성 후 7일 지났을 때만" 실행)
 
 **만들지 않는 것 (나중 단계)**: 증거 PDF 생성, 삭제 요청 워크플로우,
-외부 공유 링크, 인스타그램 연동, 결제/구독, 우회표현(초성·은어) 탐지 고도화
+외부 공유 링크, 인스타그램 연동, 결제/구독, 우회표현(초성·은어) 탐지 고도화,
+알림 이메일/푸시 발송(외부 서비스 연동 필요)
 
 ## DB 스키마
 
-`comments`, `channels` 테이블 정의는 `src/lib/db/schema.ts` 참조 (실제 컬럼은 이 파일이 최신 기준).
+`comments`, `channels`, `author_subscriptions`, `notifications` 테이블 정의는
+`src/lib/db/schema.ts` 참조 (실제 컬럼은 이 파일이 최신 기준).
 
 **개인정보 최소 수집 원칙**: 댓글 작성자의 실명·구글 계정 개인정보는 절대 저장하지
 않는다. 공개된 채널ID·채널 닉네임(작성자가 유튜브에 공개 설정한 표시 이름)까지만
@@ -114,23 +124,30 @@ src/
   app/
     api/cron/process-comments/route.ts     Vercel Cron 진입점 (1시간마다, 신선도 기반 폴링)
     api/comments/[id]/status/route.ts      오탐 신고·검토 확정 (PATCH)
+    api/authors/[authorChannelId]/subscription/route.ts  알림 구독 on/off (PATCH)
+    api/notifications/[id]/read/route.ts   알림 읽음 처리 (PATCH)
+    api/notifications/read-all/route.ts    알림 전체 읽음 처리 (PATCH)
     auth/callback/route.ts                 OAuth 콜백 (채널 연동 포함)
     onboarding/                            채널 연동 확인 화면
     dashboard/                             메인 대시보드
     review/                                검토 필요 큐
-    authors/[authorChannelId]/             작성자별 댓글 이력
+    authors/[authorChannelId]/             작성자별 댓글 이력·알림 구독
+    notifications/                         알림 목록
     settings/                              연동 해제·계정 삭제
     components/ui/                         shadcn/ui 컴포넌트
   components/
     auth/          로그인·로그아웃 버튼
     comments/       오탐 신고/검토 확정 버튼 (status-action-button)
-    dashboard/      요약 카드, 필터, 테이블
+    dashboard/      요약 카드, 필터, 테이블, 알림 벨(드롭다운)
+    authors/        작성자별 댓글 피드(필터·내보내기·알림 구독)
+    notifications/  알림 목록 행, 전체 읽음 버튼
+    icons/          커스텀 SVG 아이콘 (bell-icon 등)
     settings/       계정 삭제 확인 버튼
   lib/
     db/
       index.ts       Drizzle 클라이언트 (server-only)
       schema.ts      테이블 정의
-      queries/        DB 쿼리 함수 (comments, channels)
+      queries/        DB 쿼리 함수 (comments, channels, notifications)
     supabase/        client.ts(브라우저)/server.ts(서버)/middleware.ts — Auth
     youtube/         채널 연동, 댓글 sync, 토큰 갱신
     ai/              OpenAI 판정 로직

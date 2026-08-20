@@ -78,10 +78,14 @@ export function AuthorCommentFeed({
   comments,
   displayName,
   initial,
+  authorChannelId,
+  initialSubscribed,
 }: {
   comments: AuthorComment[];
   displayName: string;
   initial: string;
+  authorChannelId: string;
+  initialSubscribed: boolean;
 }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBlockGuide, setShowBlockGuide] = useState(false);
@@ -89,6 +93,8 @@ export function AuthorCommentFeed({
   const [categoryFilter, setCategoryFilter] = useState("");
   const [sort, setSort] = useState<"newest" | "risk">("newest");
   const [search, setSearch] = useState("");
+  const [subscribed, setSubscribed] = useState(initialSubscribed);
+  const [isSubscribing, setIsSubscribing] = useState(false);
 
   const categories = useMemo(
     () =>
@@ -140,6 +146,26 @@ export function AuthorCommentFeed({
   function handleExportSelected() {
     const selected = comments.filter((c) => selectedIds.has(c.id));
     downloadCsv(selected, `reevely-${safeFileName(displayName)}-선택.csv`);
+  }
+
+  async function handleToggleSubscribe() {
+    setIsSubscribing(true);
+    const nextSubscribed = !subscribed;
+    const res = await fetch(
+      `/api/authors/${encodeURIComponent(authorChannelId)}/subscription`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subscribed: nextSubscribed,
+          authorDisplayName: displayName,
+        }),
+      },
+    );
+    if (res.ok) {
+      setSubscribed(nextSubscribed);
+    }
+    setIsSubscribing(false);
   }
 
   const hasActiveFilters = Boolean(
@@ -317,14 +343,19 @@ export function AuthorCommentFeed({
           <Button
             size="lg"
             variant="outline"
-            className="px-4"
-            disabled
-            title="알림 기능은 아직 준비 중입니다"
+            className={
+              subscribed
+                ? "border-status-confirmed/30 bg-status-confirmed-bg px-4 text-status-confirmed hover:bg-status-confirmed-bg/70 hover:text-status-confirmed"
+                : "px-4"
+            }
+            disabled={isSubscribing}
+            onClick={handleToggleSubscribe}
           >
-            새 댓글 알림 받기
-            <span className="ml-1 text-[10px] text-muted-foreground">
-              준비 중
-            </span>
+            {isSubscribing
+              ? "처리 중…"
+              : subscribed
+                ? "알림 받는 중"
+                : "새 댓글 알림 받기"}
           </Button>
           <Button
             size="lg"

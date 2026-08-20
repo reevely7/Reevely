@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { getChannelByUserId, getNextSyncAt } from "@/lib/db/queries/channels";
 import { countReviewQueue } from "@/lib/db/queries/comments";
+import { countUnreadNotifications } from "@/lib/db/queries/notifications";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AppLayout({
@@ -24,7 +25,10 @@ export default async function AppLayout({
     redirect("/onboarding");
   }
 
-  const reviewCount = await countReviewQueue(user.id);
+  const [reviewCount, unreadNotificationCount] = await Promise.all([
+    countReviewQueue(user.id),
+    countUnreadNotifications(user.id),
+  ]);
   const nextSyncAt = getNextSyncAt(channel);
 
   return (
@@ -37,6 +41,7 @@ export default async function AppLayout({
       <AppSidebar
         channel={channel}
         reviewCount={reviewCount}
+        unreadNotificationCount={unreadNotificationCount}
         nextSyncAt={nextSyncAt}
       />
       <div className="flex flex-1 flex-col overflow-y-auto bg-background">

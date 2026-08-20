@@ -21,10 +21,12 @@ type Channel = {
 export function AppSidebar({
   channel,
   reviewCount,
+  unreadNotificationCount,
   nextSyncAt,
 }: {
   channel: Channel;
   reviewCount: number;
+  unreadNotificationCount: number;
   nextSyncAt: Date;
 }) {
   const pathname = usePathname();
@@ -90,7 +92,10 @@ export function AppSidebar({
             </button>
           </div>
 
-          <SidebarNav reviewCount={reviewCount} />
+          <SidebarNav
+            reviewCount={reviewCount}
+            unreadNotificationCount={unreadNotificationCount}
+          />
         </div>
 
         <div className="flex flex-col gap-3 border-t border-sidebar-border pt-4">

@@ -7,6 +7,7 @@ import {
   getChannelByUserId,
 } from "@/lib/db/queries/channels";
 import { deleteCommentsByUserId } from "@/lib/db/queries/comments";
+import { deleteNotificationsByUserId } from "@/lib/db/queries/notifications";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -31,6 +32,7 @@ export default async function SettingsPage() {
 
   async function deleteAccount() {
     "use server";
+    await deleteNotificationsByUserId(userId);
     await deleteCommentsByUserId(userId);
     await deleteChannelByUserId(userId);
 

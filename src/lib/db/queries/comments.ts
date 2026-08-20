@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, ilike, isNull, sql, type SQL } from "drizzle-orm";
+import { and, eq, gte, ilike, isNull, lt, sql, type SQL } from "drizzle-orm";
 
 import {
   MODEL,
@@ -50,6 +50,46 @@ export async function countUnanalyzedCommentsByUserId(userId: string) {
     .select({ count: sql<number>`count(*)::int` })
     .from(comments)
     .where(and(eq(comments.userId, userId), isNull(comments.analyzedAt)));
+
+  return row?.count ?? 0;
+}
+
+// 반복 작성자 구독 제안 알림에 쓰는 누적 악성 댓글 수
+export async function countMaliciousCommentsByAuthor(
+  userId: string,
+  authorChannelId: string,
+) {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.userId, userId),
+        eq(comments.authorChannelId, authorChannelId),
+        eq(comments.isMalicious, true),
+      ),
+    );
+
+  return row?.count ?? 0;
+}
+
+// 주간 다이제스트 알림에 쓰는 기간별 악성 댓글 수 (from 이상, to 미만)
+export async function countMaliciousCommentsInRange(
+  userId: string,
+  from: Date,
+  to: Date,
+) {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.userId, userId),
+        eq(comments.isMalicious, true),
+        gte(comments.createdAt, from),
+        lt(comments.createdAt, to),
+      ),
+    );
 
   return row?.count ?? 0;
 }
