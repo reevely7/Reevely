@@ -38,6 +38,11 @@ function formatDetectedAt(date: Date): string {
   return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+function formatDate(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
+}
+
 const STATUS_LABELS: Record<string, string> = {
   confirmed: "확정",
   needs_review: "검토 필요",
@@ -68,13 +73,11 @@ function InfoTile({
   label,
   value,
   href,
-  mono,
   span,
 }: {
   label: string;
   value: string;
   href?: string;
-  mono?: boolean;
   span?: string;
 }) {
   return (
@@ -96,7 +99,7 @@ function InfoTile({
         </a>
       ) : (
         <p
-          className={`truncate text-[13px] font-medium text-card-foreground ${mono ? "font-mono tabular-nums" : ""}`}
+          className="truncate text-[13px] font-medium text-card-foreground"
           title={value}
         >
           {value}
@@ -130,7 +133,7 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
             <th className="px-2 py-3 font-medium">댓글</th>
             <th className="px-2 py-3 font-medium">작성자</th>
             <th className="px-2 py-3 font-medium">유형</th>
-            <th className="px-2 py-3 font-medium">confidence</th>
+            <th className="px-2 py-3 font-medium">AI 확신도</th>
             <th className="px-2 py-3 font-medium">날짜</th>
             <th className="px-2 py-3 font-medium">상태</th>
           </tr>
@@ -167,11 +170,13 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
                   <td className="px-2 py-3 text-muted-foreground">
                     {row.category ?? "미분류"}
                   </td>
-                  <td className="px-2 py-3 font-mono text-muted-foreground tabular-nums">
-                    {row.confidence ?? "-"}
+                  <td className="px-2 py-3 text-muted-foreground">
+                    {row.confidence
+                      ? `${Math.round(Number(row.confidence) * 100)}%`
+                      : "-"}
                   </td>
-                  <td className="px-2 py-3 font-mono text-muted-foreground tabular-nums">
-                    {row.createdAt.toLocaleDateString("ko-KR")}
+                  <td className="px-2 py-3 text-muted-foreground">
+                    {formatDate(row.createdAt)}
                   </td>
                   <td className="px-2 py-3 text-muted-foreground">
                     {STATUS_LABELS[row.status] ?? row.status}
@@ -255,13 +260,12 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
                             value={row.authorDisplayName ?? "알 수 없음"}
                           />
                           <InfoTile
-                            label="confidence"
+                            label="AI 확신도"
                             value={
                               row.confidence
                                 ? `${Math.round(Number(row.confidence) * 100)}%`
                                 : "-"
                             }
-                            mono
                           />
                           <InfoTile
                             label="탐지 시각"
