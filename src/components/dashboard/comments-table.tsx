@@ -69,17 +69,17 @@ function InfoTile({
   value,
   href,
   mono,
-  wide,
+  span,
 }: {
   label: string;
   value: string;
   href?: string;
   mono?: boolean;
-  wide?: boolean;
+  span?: string;
 }) {
   return (
     <div
-      className={`rounded-lg border border-border bg-background/50 px-3 py-2 ${wide ? "col-span-2 sm:col-span-4" : ""}`}
+      className={`rounded-lg border border-border bg-background/50 px-3 py-2 ${span ?? ""}`}
     >
       <p className="text-[10px] tracking-wide text-muted-foreground uppercase">
         {label}
@@ -143,7 +143,7 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
               <Fragment key={row.id}>
                 <tr
                   onClick={() => setExpandedId(isExpanded ? null : row.id)}
-                  className="cursor-pointer border-b border-border last:border-0 hover:bg-accent/50"
+                  className={`cursor-pointer border-b border-border border-l-2 last:border-0 ${isExpanded ? "border-l-primary bg-highlight/10" : "border-l-transparent hover:bg-accent/50"}`}
                 >
                   <td className="px-4 py-3 text-muted-foreground">
                     {isExpanded ? (
@@ -222,16 +222,23 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
 
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                           {row.platform === "youtube" && row.videoTitle && (
-                            <InfoTile
-                              label="영상 제목"
-                              value={row.videoTitle}
-                              href={
-                                row.videoType === "shorts"
-                                  ? `https://www.youtube.com/shorts/${row.videoId}`
-                                  : `https://www.youtube.com/watch?v=${row.videoId}`
-                              }
-                              wide
-                            />
+                            <>
+                              <InfoTile
+                                label="영상 제목"
+                                value={row.videoTitle}
+                                href={
+                                  row.videoType === "shorts"
+                                    ? `https://www.youtube.com/shorts/${row.videoId}`
+                                    : `https://www.youtube.com/watch?v=${row.videoId}`
+                                }
+                                span="col-span-1 sm:col-span-3"
+                              />
+                              <InfoTile
+                                label="댓글"
+                                value="댓글로 이동"
+                                href={`https://www.youtube.com/watch?v=${row.videoId}&lc=${row.youtubeCommentId}`}
+                              />
+                            </>
                           )}
                           <InfoTile
                             label="플랫폼"
@@ -260,11 +267,13 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
                             label="탐지 시각"
                             value={formatDetectedAt(row.createdAt)}
                           />
-                          <InfoTile
-                            label="댓글"
-                            value="댓글로 이동"
-                            href={`https://www.youtube.com/watch?v=${row.videoId}&lc=${row.youtubeCommentId}`}
-                          />
+                          {!(row.platform === "youtube" && row.videoTitle) && (
+                            <InfoTile
+                              label="댓글"
+                              value="댓글로 이동"
+                              href={`https://www.youtube.com/watch?v=${row.videoId}&lc=${row.youtubeCommentId}`}
+                            />
+                          )}
                         </div>
                       </div>
                     </td>
