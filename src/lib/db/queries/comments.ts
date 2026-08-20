@@ -94,6 +94,37 @@ export async function countMaliciousCommentsInRange(
   return row?.count ?? 0;
 }
 
+// 주간 요약 페이지에 쓰는 기간별 위험도 분해 (from 이상, to 미만)
+export async function getRiskBreakdownInRange(
+  userId: string,
+  from: Date,
+  to: Date,
+) {
+  const rows = await db
+    .select({
+      riskLevel: comments.riskLevel,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.userId, userId),
+        eq(comments.isMalicious, true),
+        gte(comments.createdAt, from),
+        lt(comments.createdAt, to),
+      ),
+    )
+    .groupBy(comments.riskLevel);
+
+  const breakdown = { high: 0, medium: 0, low: 0 };
+  for (const row of rows) {
+    if (row.riskLevel === "high") breakdown.high = row.count;
+    if (row.riskLevel === "medium") breakdown.medium = row.count;
+    if (row.riskLevel === "low") breakdown.low = row.count;
+  }
+  return breakdown;
+}
+
 export async function getUnanalyzedComments(userId: string, limit: number) {
   return db
     .select()

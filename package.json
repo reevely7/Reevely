@@ -11,7 +11,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "eval:prompt": "tsx --conditions=react-server --env-file=.env.local scripts/eval-prompt.ts",
-    "golden:candidates": "tsx scripts/export-review-candidates.ts"
+    "golden:candidates": "tsx scripts/export-review-candidates.ts",
+    "test:weekly-digest": "tsx --conditions=react-server --env-file=.env.local scripts/test-weekly-digest.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

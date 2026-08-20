@@ -205,7 +205,7 @@ export async function maybeCreateWeeklyDigest(userId: string) {
     type: "weekly_digest",
     title: "이번 주 요약",
     message: `이번 주 위험 댓글 ${thisWeek}건 (지난주 대비 ${formatWeeklyDiff(thisWeek, lastWeek)})`,
-    href: "/dashboard",
+    href: "/summary",
   });
 }
 
