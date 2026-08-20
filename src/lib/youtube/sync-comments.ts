@@ -46,6 +46,60 @@ type YouTubeCommentThreadsResponse = {
   }>;
 };
 
+type YouTubeVideosListResponse = {
+  items?: Array<{
+    id: string;
+    snippet: { title: string };
+  }>;
+};
+
+type VideoMeta = { title: string; type: "video" | "shorts" };
+
+// 유튜브 데이터 API에는 쇼츠 여부를 알려주는 공식 필드가 없다. 대신 유튜브
+// 자체 라우팅 동작을 이용한다: 쇼츠가 아닌 videoId로 /shorts/{id}에 접속하면
+// /watch로 302/303 리다이렉트되고, 실제 쇼츠는 200으로 그대로 응답한다.
+// Data API 쿼터를 쓰지 않는 별도의 공개 페이지 요청이라 sync당 요청 수만
+// 늘어날 뿐 유닛 비용은 없다.
+async function detectVideoType(videoId: string): Promise<"video" | "shorts"> {
+  try {
+    const res = await fetch(`https://www.youtube.com/shorts/${videoId}`, {
+      redirect: "manual",
+    });
+    return res.status === 200 ? "shorts" : "video";
+  } catch {
+    return "video";
+  }
+}
+
+async function fetchVideoMeta(
+  videoIds: string[],
+  accessToken: string,
+): Promise<Map<string, VideoMeta>> {
+  const metaById = new Map<string, VideoMeta>();
+  if (videoIds.length === 0) return metaById;
+
+  const res = await fetch(
+    `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoIds.join(",")}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  if (!res.ok) return metaById;
+
+  const data: YouTubeVideosListResponse = await res.json();
+  const titleById = new Map(
+    (data.items ?? []).map((item) => [item.id, item.snippet.title]),
+  );
+
+  await Promise.all(
+    videoIds.map(async (id) => {
+      const title = titleById.get(id);
+      if (!title) return;
+      metaById.set(id, { title, type: await detectVideoType(id) });
+    }),
+  );
+
+  return metaById;
+}
+
 export async function syncComments(channel: SyncableChannel) {
   if (!channel.uploadsPlaylistId) {
     throw new Error(
@@ -73,6 +127,8 @@ export async function syncComments(channel: SyncableChannel) {
     ? new Date(items[0].contentDetails.videoPublishedAt)
     : null;
 
+  const videoMetaById = await fetchVideoMeta(videoIds, accessToken);
+
   let totalFetched = 0;
   let totalNew = 0;
 
@@ -90,10 +146,13 @@ export async function syncComments(channel: SyncableChannel) {
     const commentsData: YouTubeCommentThreadsResponse =
       await commentsRes.json();
     const commentItems = commentsData.items ?? [];
+    const videoMeta = videoMetaById.get(videoId);
 
     const toRow = (id: string, snippet: YouTubeCommentSnippet) => ({
       userId: channel.userId,
       videoId,
+      videoTitle: videoMeta?.title ?? null,
+      videoType: videoMeta?.type ?? null,
       youtubeCommentId: id,
       authorChannelId: snippet.authorChannelId?.value ?? "unknown",
       authorDisplayName: snippet.authorDisplayName ?? null,

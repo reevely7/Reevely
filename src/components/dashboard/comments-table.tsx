@@ -10,6 +10,9 @@ type Row = {
   id: string;
   text: string;
   authorDisplayName: string | null;
+  platform: string;
+  videoTitle: string | null;
+  videoType: string | null;
   riskLevel: string | null;
   category: string | null;
   confidence: string | null;
@@ -20,12 +23,88 @@ type Row = {
   createdAt: Date;
 };
 
+const PLATFORM_LABELS: Record<string, string> = {
+  youtube: "유튜브",
+  instagram: "인스타그램",
+};
+
+const VIDEO_TYPE_LABELS: Record<string, string> = {
+  video: "동영상",
+  shorts: "쇼츠",
+};
+
+function formatDetectedAt(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 const STATUS_LABELS: Record<string, string> = {
   confirmed: "확정",
   needs_review: "검토 필요",
   reported_false: "오탐 신고됨",
   whitelisted: "화이트리스트",
 };
+
+// accent(골드)는 "확정"에, 위험도와 겹치지 않는 risk-medium 톤은 "검토 필요"에
+// 재사용해 새 색상을 만들지 않고 기존 팔레트 안에서만 상태를 구분한다.
+const STATUS_PILL_CLASSES: Record<string, string> = {
+  confirmed: "bg-primary/15 text-primary",
+  needs_review: "bg-risk-medium-bg text-risk-medium",
+  reported_false: "bg-muted text-muted-foreground",
+  whitelisted: "bg-muted text-muted-foreground",
+};
+
+function StatusPill({ status }: { status: string }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_PILL_CLASSES[status] ?? "bg-muted text-muted-foreground"}`}
+    >
+      {STATUS_LABELS[status] ?? status}
+    </span>
+  );
+}
+
+function InfoTile({
+  label,
+  value,
+  href,
+  mono,
+  wide,
+}: {
+  label: string;
+  value: string;
+  href?: string;
+  mono?: boolean;
+  wide?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-lg border border-border bg-background/50 px-3 py-2 ${wide ? "col-span-2 sm:col-span-4" : ""}`}
+    >
+      <p className="text-[10px] tracking-wide text-muted-foreground uppercase">
+        {label}
+      </p>
+      {href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block truncate text-[13px] font-medium text-primary underline underline-offset-2"
+          title={value}
+        >
+          {value}
+        </a>
+      ) : (
+        <p
+          className={`truncate text-[13px] font-medium text-card-foreground ${mono ? "font-mono tabular-nums" : ""}`}
+          title={value}
+        >
+          {value}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function CommentsTable({ rows }: { rows: Row[] }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -100,29 +179,20 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
                 </tr>
 
                 {isExpanded && (
-                  <tr className="border-b border-border bg-background/60 last:border-0">
+                  <tr className="border-b border-border bg-background/40 last:border-0">
                     <td colSpan={8} className="px-4 py-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0 flex-1 space-y-2">
-                          <p className="text-[13px] text-card-foreground">
-                            {row.text}
-                          </p>
-                          {row.reason && (
-                            <p className="text-[12px] text-muted-foreground">
-                              {row.reason}
-                            </p>
-                          )}
-                          <a
-                            href={`https://www.youtube.com/watch?v=${row.videoId}&lc=${row.youtubeCommentId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-block text-[12px] text-primary underline underline-offset-2"
-                          >
-                            댓글로 이동
-                          </a>
-                        </div>
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {row.riskLevel && (
+                              <RiskBadge riskLevel={row.riskLevel} />
+                            )}
+                            <StatusPill status={row.status} />
+                            <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+                              {row.category ?? "미분류"}
+                            </span>
+                          </div>
 
-                        <div className="shrink-0">
                           {row.status === "reported_false" ? (
                             <span className="text-[11px] text-muted-foreground">
                               오탐 신고됨
@@ -134,6 +204,67 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
                               label="오탐 신고"
                             />
                           )}
+                        </div>
+
+                        <div className="rounded-lg border border-border bg-background/50 px-4 py-3">
+                          <p className="text-[13px] leading-relaxed text-card-foreground">
+                            “{row.text}”
+                          </p>
+                          {row.reason && (
+                            <p className="mt-2 text-[12px] text-muted-foreground">
+                              <span className="text-primary/80">
+                                AI 판정 근거·
+                              </span>
+                              {row.reason}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                          {row.platform === "youtube" && row.videoTitle && (
+                            <InfoTile
+                              label="영상 제목"
+                              value={row.videoTitle}
+                              href={
+                                row.videoType === "shorts"
+                                  ? `https://www.youtube.com/shorts/${row.videoId}`
+                                  : `https://www.youtube.com/watch?v=${row.videoId}`
+                              }
+                              wide
+                            />
+                          )}
+                          <InfoTile
+                            label="플랫폼"
+                            value={PLATFORM_LABELS[row.platform] ?? row.platform}
+                          />
+                          {row.platform === "youtube" && row.videoType && (
+                            <InfoTile
+                              label="영상 종류"
+                              value={VIDEO_TYPE_LABELS[row.videoType] ?? row.videoType}
+                            />
+                          )}
+                          <InfoTile
+                            label="작성자"
+                            value={row.authorDisplayName ?? "알 수 없음"}
+                          />
+                          <InfoTile
+                            label="confidence"
+                            value={
+                              row.confidence
+                                ? `${Math.round(Number(row.confidence) * 100)}%`
+                                : "-"
+                            }
+                            mono
+                          />
+                          <InfoTile
+                            label="탐지 시각"
+                            value={formatDetectedAt(row.createdAt)}
+                          />
+                          <InfoTile
+                            label="댓글"
+                            value="댓글로 이동"
+                            href={`https://www.youtube.com/watch?v=${row.videoId}&lc=${row.youtubeCommentId}`}
+                          />
                         </div>
                       </div>
                     </td>

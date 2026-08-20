@@ -13,6 +13,8 @@ import { comments } from "@/lib/db/schema";
 type NewCommentInput = {
   userId: string;
   videoId: string;
+  videoTitle: string | null;
+  videoType: "video" | "shorts" | null;
   youtubeCommentId: string;
   authorChannelId: string;
   authorDisplayName: string | null;

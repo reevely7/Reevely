@@ -52,6 +52,10 @@ export const commentStatusEnum = pgEnum("comment_status", [
   "whitelisted",
 ]);
 
+// 유튜브 API는 쇼츠 여부를 직접 알려주지 않아 /shorts/{id} 라우팅 동작으로
+// 판별한다 (src/lib/youtube/sync-comments.ts의 detectVideoType 참조)
+export const videoTypeEnum = pgEnum("video_type", ["video", "shorts"]);
+
 export const comments = pgTable(
   "comments",
   {
@@ -62,6 +66,9 @@ export const comments = pgTable(
     // 이 댓글이 어느 플랫폼에서 수집됐는지. MVP는 유튜브만 실제 수집.
     platform: platformEnum("platform").notNull().default("youtube"),
     videoId: text("video_id").notNull(),
+    // 영상 제목·종류(동영상/쇼츠)는 유튜브 전용. 인스타그램 연동 시에는 null.
+    videoTitle: text("video_title"),
+    videoType: videoTypeEnum("video_type"),
     // 재-sync 시 중복 저장을 막기 위한 원본 댓글 ID (플랫폼별로 유일하면 되므로
     // 아래 unique 제약은 platform과 묶어서 건다)
     youtubeCommentId: text("youtube_comment_id").notNull(),
