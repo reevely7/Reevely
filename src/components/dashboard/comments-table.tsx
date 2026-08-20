@@ -211,12 +211,12 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
                           )}
                         </div>
 
-                        <div className="rounded-lg border border-border bg-background/50 px-4 py-3">
-                          <p className="text-[13px] leading-relaxed text-card-foreground">
+                        <div className="rounded-lg border border-border bg-background/50 px-5 py-4">
+                          <p className="text-sm leading-relaxed text-card-foreground">
                             “{row.text}”
                           </p>
                           {row.reason && (
-                            <p className="mt-2 text-[12px] text-muted-foreground">
+                            <p className="mt-2 text-[13px] text-muted-foreground">
                               <span className="text-primary/80">
                                 AI 판정 근거·
                               </span>
@@ -227,37 +227,42 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
 
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                           {row.platform === "youtube" && row.videoTitle && (
-                            <>
-                              <InfoTile
-                                label="영상 제목"
-                                value={row.videoTitle}
-                                href={
-                                  row.videoType === "shorts"
-                                    ? `https://www.youtube.com/shorts/${row.videoId}`
-                                    : `https://www.youtube.com/watch?v=${row.videoId}`
-                                }
-                                span="col-span-1 sm:col-span-3"
-                              />
-                              <InfoTile
-                                label="댓글"
-                                value="댓글로 이동"
-                                href={`https://www.youtube.com/watch?v=${row.videoId}&lc=${row.youtubeCommentId}`}
-                              />
-                            </>
+                            <InfoTile
+                              label="영상 제목"
+                              value={row.videoTitle}
+                              href={
+                                row.videoType === "shorts"
+                                  ? `https://www.youtube.com/shorts/${row.videoId}`
+                                  : `https://www.youtube.com/watch?v=${row.videoId}`
+                              }
+                              span="col-span-2"
+                            />
                           )}
+                          <InfoTile
+                            label="댓글"
+                            value="댓글로 이동"
+                            href={`https://www.youtube.com/watch?v=${row.videoId}&lc=${row.youtubeCommentId}`}
+                          />
+                          <InfoTile
+                            label="작성자"
+                            value={row.authorDisplayName ?? "알 수 없음"}
+                          />
                           <InfoTile
                             label="플랫폼"
                             value={PLATFORM_LABELS[row.platform] ?? row.platform}
                           />
                           {row.platform === "youtube" && row.videoType && (
                             <InfoTile
-                              label="영상 종류"
-                              value={VIDEO_TYPE_LABELS[row.videoType] ?? row.videoType}
+                              label="콘텐츠 형식"
+                              value={
+                                VIDEO_TYPE_LABELS[row.videoType] ??
+                                row.videoType
+                              }
                             />
                           )}
                           <InfoTile
-                            label="작성자"
-                            value={row.authorDisplayName ?? "알 수 없음"}
+                            label="탐지 시각"
+                            value={formatDetectedAt(row.createdAt)}
                           />
                           <InfoTile
                             label="AI 확신도"
@@ -267,17 +272,6 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
                                 : "-"
                             }
                           />
-                          <InfoTile
-                            label="탐지 시각"
-                            value={formatDetectedAt(row.createdAt)}
-                          />
-                          {!(row.platform === "youtube" && row.videoTitle) && (
-                            <InfoTile
-                              label="댓글"
-                              value="댓글로 이동"
-                              href={`https://www.youtube.com/watch?v=${row.videoId}&lc=${row.youtubeCommentId}`}
-                            />
-                          )}
                         </div>
                       </div>
                     </td>
