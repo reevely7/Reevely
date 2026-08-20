@@ -131,9 +131,7 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
             <th className="w-8 px-4 py-3 font-medium" />
             <th className="px-2 py-3 font-medium">위험도</th>
             <th className="px-2 py-3 font-medium">댓글</th>
-            <th className="px-2 py-3 font-medium">작성자</th>
             <th className="px-2 py-3 font-medium">유형</th>
-            <th className="px-2 py-3 font-medium">AI 확신도</th>
             <th className="px-2 py-3 font-medium">날짜</th>
             <th className="px-2 py-3 font-medium">상태</th>
           </tr>
@@ -165,15 +163,7 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
                     {row.text}
                   </td>
                   <td className="px-2 py-3 text-muted-foreground">
-                    {row.authorDisplayName ?? "알 수 없음"}
-                  </td>
-                  <td className="px-2 py-3 text-muted-foreground">
                     {row.category ?? "미분류"}
-                  </td>
-                  <td className="px-2 py-3 text-muted-foreground">
-                    {row.confidence
-                      ? `${Math.round(Number(row.confidence) * 100)}%`
-                      : "-"}
                   </td>
                   <td className="px-2 py-3 text-muted-foreground">
                     {formatDate(row.createdAt)}
@@ -185,7 +175,7 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
 
                 {isExpanded && (
                   <tr className="border-b border-border bg-background/40 last:border-0">
-                    <td colSpan={8} className="px-4 py-4">
+                    <td colSpan={6} className="px-4 py-4">
                       <div className="flex flex-col gap-4">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div className="flex flex-wrap items-center gap-2">
