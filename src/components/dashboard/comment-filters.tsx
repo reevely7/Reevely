@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -11,10 +12,25 @@ const STATUS_LABELS: Record<string, string> = {
 
 type Props = {
   categories: string[];
-  videoIds: string[];
+  videos: Array<{ videoId: string; videoTitle: string | null }>;
 };
 
-export function CommentFilters({ categories, videoIds }: Props) {
+function FilterSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <div className="relative">
+      <select
+        {...props}
+        className="h-8 appearance-none rounded-md border border-border bg-background py-1 pr-7 pl-2 text-sm text-foreground"
+      />
+      <ChevronDown
+        className="pointer-events-none absolute top-1/2 right-2 size-3.5 -translate-y-1/2 text-muted-foreground"
+        aria-hidden
+      />
+    </div>
+  );
+}
+
+export function CommentFilters({ categories, videos }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -31,13 +47,9 @@ export function CommentFilters({ categories, videoIds }: Props) {
     router.push(`${pathname}?${params.toString()}`);
   }
 
-  const selectClassName =
-    "h-8 rounded-md border border-border bg-background px-2 text-sm text-foreground";
-
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <select
-        className={selectClassName}
+      <FilterSelect
         value={searchParams.get("risk") ?? ""}
         onChange={(e) => updateParam("risk", e.target.value)}
       >
@@ -45,10 +57,9 @@ export function CommentFilters({ categories, videoIds }: Props) {
         <option value="high">High</option>
         <option value="medium">Medium</option>
         <option value="low">Low</option>
-      </select>
+      </FilterSelect>
 
-      <select
-        className={selectClassName}
+      <FilterSelect
         value={searchParams.get("category") ?? ""}
         onChange={(e) => updateParam("category", e.target.value)}
       >
@@ -58,10 +69,9 @@ export function CommentFilters({ categories, videoIds }: Props) {
             {category}
           </option>
         ))}
-      </select>
+      </FilterSelect>
 
-      <select
-        className={selectClassName}
+      <FilterSelect
         value={searchParams.get("status") ?? ""}
         onChange={(e) => updateParam("status", e.target.value)}
       >
@@ -71,29 +81,27 @@ export function CommentFilters({ categories, videoIds }: Props) {
             {label}
           </option>
         ))}
-      </select>
+      </FilterSelect>
 
-      <select
-        className={selectClassName}
+      <FilterSelect
         value={searchParams.get("video") ?? ""}
         onChange={(e) => updateParam("video", e.target.value)}
       >
         <option value="">영상 전체</option>
-        {videoIds.map((videoId) => (
+        {videos.map(({ videoId, videoTitle }) => (
           <option key={videoId} value={videoId}>
-            {videoId}
+            {videoTitle ?? videoId}
           </option>
         ))}
-      </select>
+      </FilterSelect>
 
-      <select
-        className={selectClassName}
+      <FilterSelect
         value={searchParams.get("sort") ?? "newest"}
         onChange={(e) => updateParam("sort", e.target.value)}
       >
         <option value="newest">최신순</option>
         <option value="risk">위험도순</option>
-      </select>
+      </FilterSelect>
     </div>
   );
 }

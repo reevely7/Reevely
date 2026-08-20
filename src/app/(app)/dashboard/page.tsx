@@ -69,7 +69,7 @@ export default async function DashboardPage({
 
       <CommentFilters
         categories={filterOptions.categories}
-        videoIds={filterOptions.videoIds}
+        videos={filterOptions.videos}
       />
 
       <CommentsTable rows={rows} />

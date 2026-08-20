@@ -147,6 +147,7 @@ export async function getFlaggedFilterOptions(userId: string) {
     .selectDistinct({
       category: comments.category,
       videoId: comments.videoId,
+      videoTitle: comments.videoTitle,
     })
     .from(comments)
     .where(and(eq(comments.userId, userId), eq(comments.isMalicious, true)));
@@ -154,9 +155,11 @@ export async function getFlaggedFilterOptions(userId: string) {
   const categories = Array.from(
     new Set(rows.map((r) => r.category).filter((c): c is string => c !== null)),
   );
-  const videoIds = Array.from(new Set(rows.map((r) => r.videoId)));
+  const videos = Array.from(
+    new Map(rows.map((r) => [r.videoId, r.videoTitle])).entries(),
+  ).map(([videoId, videoTitle]) => ({ videoId, videoTitle }));
 
-  return { categories, videoIds };
+  return { categories, videos };
 }
 
 export async function getReviewQueue(userId: string) {
