@@ -2,6 +2,7 @@ import { Check, X } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { SiteFooter } from "@/components/landing/site-footer";
 import { getChannelByUserId } from "@/lib/db/queries/channels";
 import { createClient } from "@/lib/supabase/server";
 
@@ -421,6 +422,8 @@ export default async function LandingPage({
           />
         </div>
       </section>
+
+      <SiteFooter />
     </main>
   );
 }
