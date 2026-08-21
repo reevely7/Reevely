@@ -4,6 +4,8 @@ import { formatWeekDiff } from "@/lib/format/week-diff";
 
 type DailyCount = { day: string | Date; count: number };
 
+const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+
 function toDayKey(day: string | Date): string {
   const date = typeof day === "string" ? new Date(day) : day;
   return date.toISOString().slice(0, 10);
@@ -28,12 +30,15 @@ export function DailyTrendCard({
     const date = new Date();
     date.setHours(0, 0, 0, 0);
     date.setDate(date.getDate() - (days - 1 - i));
-    return countsByDay.get(date.toISOString().slice(0, 10)) ?? 0;
+    return {
+      count: countsByDay.get(date.toISOString().slice(0, 10)) ?? 0,
+      weekday: WEEKDAY_LABELS[date.getDay()],
+    };
   });
-  const max = Math.max(1, ...bars);
+  const max = Math.max(1, ...bars.map((bar) => bar.count));
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl bg-card px-5 py-4">
+    <div className="flex h-full min-h-72 flex-col gap-4 rounded-2xl bg-card px-5 py-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-card-foreground">
           최근 {days}일 위험 댓글 추이
@@ -46,14 +51,20 @@ export function DailyTrendCard({
         </Link>
       </div>
 
-      <div className="flex h-16 items-end gap-1">
-        {bars.map((count, i) => (
-          <div
-            key={i}
-            className="flex-1 rounded-sm bg-primary/70"
-            style={{ height: `${Math.max(4, (count / max) * 100)}%` }}
-            title={`${count}건`}
-          />
+      <div className="flex min-h-0 flex-1 gap-3 py-2">
+        {bars.map((bar, i) => (
+          <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
+            <div className="flex w-full flex-1 items-end">
+              <div
+                className="w-full rounded-sm bg-primary/70"
+                style={{ height: `${Math.max(4, (bar.count / max) * 100)}%` }}
+                title={`${bar.count}건`}
+              />
+            </div>
+            <span className="text-[11px] text-muted-foreground">
+              {bar.weekday}
+            </span>
+          </div>
         ))}
       </div>
 

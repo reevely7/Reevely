@@ -66,15 +66,6 @@ export async function getAuthorSubscriptions(userId: string) {
     .orderBy(desc(authorSubscriptions.createdAt));
 }
 
-export async function countAuthorSubscriptions(userId: string) {
-  const [row] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(authorSubscriptions)
-    .where(eq(authorSubscriptions.userId, userId));
-
-  return row?.count ?? 0;
-}
-
 export async function unsubscribeFromAuthor(
   userId: string,
   authorChannelId: string,

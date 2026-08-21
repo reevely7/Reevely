@@ -151,11 +151,19 @@ export async function getDailyMaliciousCounts(
     .orderBy(dayExpr);
 }
 
-// 대시보드 "요주의 작성자" 위젯용 — 누적 악성 댓글 수 기준 상위 작성자
+// 대시보드 "요주의 작성자" 위젯용 — 악성 댓글 수 기준 상위 작성자.
+// from을 안 넘기면 누적 전체 기간, 넘기면 해당 시점 이후로 범위를 좁힌다.
 export async function getTopAuthorsByMaliciousCount(
   userId: string,
   limit: number,
+  from?: Date,
 ) {
+  const conditions = [
+    eq(comments.userId, userId),
+    eq(comments.isMalicious, true),
+  ];
+  if (from) conditions.push(gte(comments.createdAt, from));
+
   return db
     .select({
       authorChannelId: comments.authorChannelId,
@@ -163,7 +171,7 @@ export async function getTopAuthorsByMaliciousCount(
       count: sql<number>`count(*)::int`,
     })
     .from(comments)
-    .where(and(eq(comments.userId, userId), eq(comments.isMalicious, true)))
+    .where(and(...conditions))
     .groupBy(comments.authorChannelId)
     .orderBy(sql`count(*) desc`)
     .limit(limit);

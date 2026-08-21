@@ -6,12 +6,16 @@ type AuthorRow = {
   count: number;
 };
 
-export function TopAuthorsCard({ rows }: { rows: AuthorRow[] }) {
+export function TopAuthorsCard({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: AuthorRow[];
+}) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl bg-card px-5 py-4">
-      <p className="text-sm font-medium text-card-foreground">
-        요주의 작성자
-      </p>
+    <div className="flex h-full flex-col gap-3 rounded-2xl bg-card px-5 py-4">
+      <p className="text-sm font-medium text-card-foreground">{title}</p>
 
       {rows.length === 0 ? (
         <p className="py-4 text-center text-sm text-muted-foreground">

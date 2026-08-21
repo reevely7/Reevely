@@ -1,15 +1,14 @@
 import { redirect } from "next/navigation";
 
 import { DailyTrendCard } from "@/components/dashboard/daily-trend-card";
+import { InstagramTrendPlaceholderCard } from "@/components/dashboard/instagram-trend-placeholder-card";
 import { NotificationBell } from "@/components/dashboard/notification-bell";
 import { RecentCommentsPreview } from "@/components/dashboard/recent-comments-preview";
 import { RepeatAuthorNotificationsCard } from "@/components/dashboard/repeat-author-notifications-card";
 import { ReviewCallout } from "@/components/dashboard/review-callout";
-import { SubscriptionsCard } from "@/components/dashboard/subscriptions-card";
 import { SummaryTiles } from "@/components/dashboard/summary-tiles";
 import { TopAuthorsCard } from "@/components/dashboard/top-authors-card";
 import { TopVideosCard } from "@/components/dashboard/top-videos-card";
-import { getChannelByUserId } from "@/lib/db/queries/channels";
 import {
   countMaliciousCommentsInRange,
   getDailyMaliciousCounts,
@@ -19,7 +18,6 @@ import {
   getTopVideosByMaliciousCount,
 } from "@/lib/db/queries/comments";
 import {
-  countAuthorSubscriptions,
   countUnreadNotifications,
   getNotifications,
 } from "@/lib/db/queries/notifications";
@@ -27,7 +25,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const RECENT_NOTIFICATIONS_LIMIT = 8;
 const RECENT_COMMENTS_LIMIT = 5;
-const TREND_DAYS = 14;
+const TREND_DAYS = 7;
 const TOP_LIST_LIMIT = 5;
 
 export default async function DashboardPage() {
@@ -45,7 +43,6 @@ export default async function DashboardPage() {
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
   const [
-    channel,
     summary,
     recentComments,
     unreadNotificationCount,
@@ -54,22 +51,21 @@ export default async function DashboardPage() {
     dailyCounts,
     thisWeekCount,
     lastWeekCount,
-    topAuthors,
+    topAuthorsAllTime,
+    topAuthorsThisWeek,
     topVideos,
-    subscriptionCount,
   ] = await Promise.all([
-    getChannelByUserId(user.id),
     getDashboardSummary(user.id),
     getFlaggedComments(user.id, { sort: "risk" }, 1, RECENT_COMMENTS_LIMIT),
     countUnreadNotifications(user.id),
     getNotifications(user.id, RECENT_NOTIFICATIONS_LIMIT),
     getNotifications(user.id, 30),
-    getDailyMaliciousCounts(user.id, twoWeeksAgo, now),
+    getDailyMaliciousCounts(user.id, oneWeekAgo, now),
     countMaliciousCommentsInRange(user.id, oneWeekAgo, now),
     countMaliciousCommentsInRange(user.id, twoWeeksAgo, oneWeekAgo),
     getTopAuthorsByMaliciousCount(user.id, TOP_LIST_LIMIT),
-    getTopVideosByMaliciousCount(user.id, twoWeeksAgo, TOP_LIST_LIMIT),
-    countAuthorSubscriptions(user.id),
+    getTopAuthorsByMaliciousCount(user.id, TOP_LIST_LIMIT, oneWeekAgo),
+    getTopVideosByMaliciousCount(user.id, oneWeekAgo, TOP_LIST_LIMIT),
   ]);
 
   const repeatAuthorNotifications = allNotifications
@@ -85,8 +81,6 @@ export default async function DashboardPage() {
           </p>
           <p className="text-xs text-muted-foreground">
             채널 전반의 위험 댓글 현황입니다.
-            {channel?.subscriberCount != null &&
-              ` · 구독자 ${channel.subscriberCount.toLocaleString("ko-KR")}명`}
           </p>
         </div>
         <NotificationBell
@@ -99,22 +93,28 @@ export default async function DashboardPage() {
 
       <ReviewCallout count={summary.needsReview} />
 
-      <DailyTrendCard
-        dailyCounts={dailyCounts}
-        days={TREND_DAYS}
-        thisWeekCount={thisWeekCount}
-        lastWeekCount={lastWeekCount}
-      />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <DailyTrendCard
+          dailyCounts={dailyCounts}
+          days={TREND_DAYS}
+          thisWeekCount={thisWeekCount}
+          lastWeekCount={lastWeekCount}
+        />
+        <InstagramTrendPlaceholderCard />
+      </div>
 
       <RecentCommentsPreview rows={recentComments} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <TopAuthorsCard rows={topAuthors} />
-        <TopVideosCard rows={topVideos} />
+        <TopAuthorsCard title="요주의 작성자 (누적)" rows={topAuthorsAllTime} />
+        <TopAuthorsCard
+          title="요주의 작성자 (최근 7일)"
+          rows={topAuthorsThisWeek}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <SubscriptionsCard count={subscriptionCount} />
+        <TopVideosCard rows={topVideos} />
         <RepeatAuthorNotificationsCard rows={repeatAuthorNotifications} />
       </div>
     </main>
