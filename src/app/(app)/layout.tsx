@@ -30,6 +30,7 @@ export default async function AppLayout({
     countUnreadNotifications(user.id),
   ]);
   const nextSyncAt = getNextSyncAt(channel);
+  const nickname = (user.user_metadata?.nickname as string | undefined) || null;
 
   return (
     // body가 min-h-full(최소 높이)만 갖고 있어 콘텐츠가 길어지면 body 자체가
@@ -40,6 +41,7 @@ export default async function AppLayout({
     <div className="flex h-dvh flex-col overflow-hidden md:flex-row">
       <AppSidebar
         channel={channel}
+        nickname={nickname}
         reviewCount={reviewCount}
         unreadNotificationCount={unreadNotificationCount}
         nextSyncAt={nextSyncAt}

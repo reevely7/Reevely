@@ -54,6 +54,27 @@ export async function subscribeToAuthor(
     });
 }
 
+export async function getAuthorSubscriptions(userId: string) {
+  return db
+    .select({
+      authorChannelId: authorSubscriptions.authorChannelId,
+      authorDisplayName: authorSubscriptions.authorDisplayName,
+      createdAt: authorSubscriptions.createdAt,
+    })
+    .from(authorSubscriptions)
+    .where(eq(authorSubscriptions.userId, userId))
+    .orderBy(desc(authorSubscriptions.createdAt));
+}
+
+export async function countAuthorSubscriptions(userId: string) {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(authorSubscriptions)
+    .where(eq(authorSubscriptions.userId, userId));
+
+  return row?.count ?? 0;
+}
+
 export async function unsubscribeFromAuthor(
   userId: string,
   authorChannelId: string,

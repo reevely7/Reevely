@@ -20,11 +20,13 @@ type Channel = {
 
 export function AppSidebar({
   channel,
+  nickname,
   reviewCount,
   unreadNotificationCount,
   nextSyncAt,
 }: {
   channel: Channel;
+  nickname: string | null;
   reviewCount: number;
   unreadNotificationCount: number;
   nextSyncAt: Date;
@@ -99,7 +101,10 @@ export function AppSidebar({
         </div>
 
         <div className="flex flex-col gap-3 border-t border-sidebar-border pt-4">
-          <div className="flex items-center gap-2">
+          <Link
+            href="/mypage"
+            className="flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-sidebar-accent"
+          >
             {channel.thumbnailUrl && (
               <Image
                 src={channel.thumbnailUrl}
@@ -110,9 +115,9 @@ export function AppSidebar({
               />
             )}
             <p className="truncate text-xs text-muted-foreground">
-              {channel.channelTitle}
+              {nickname || channel.channelTitle}
             </p>
-          </div>
+          </Link>
 
           {channel.lastSyncedAt && (
             <p className="text-[11px] leading-relaxed text-muted-foreground">

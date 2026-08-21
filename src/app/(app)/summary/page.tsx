@@ -6,6 +6,7 @@ import {
   getRiskBreakdownInRange,
 } from "@/lib/db/queries/comments";
 import { getNotifications } from "@/lib/db/queries/notifications";
+import { formatWeekDiff } from "@/lib/format/week-diff";
 import { createClient } from "@/lib/supabase/server";
 
 const RISK_BAR_CLASSES = {
@@ -17,16 +18,6 @@ const RISK_BAR_CLASSES = {
 function formatDate(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
-}
-
-function formatDiff(thisWeek: number, lastWeek: number): string {
-  if (lastWeek === 0) {
-    return thisWeek === 0 ? "지난주와 동일" : `${thisWeek}건 증가`;
-  }
-  const diff = thisWeek - lastWeek;
-  if (diff === 0) return "지난주와 동일";
-  const percent = Math.round((diff / lastWeek) * 100);
-  return `${percent > 0 ? "+" : ""}${percent}%`;
 }
 
 export default async function SummaryPage() {
@@ -74,7 +65,7 @@ export default async function SummaryPage() {
         <div className="rounded-2xl bg-card px-5 py-4">
           <p className="text-xs text-muted-foreground">지난주 대비</p>
           <p className="mt-1 text-3xl font-semibold text-card-foreground">
-            {formatDiff(thisWeekCount, lastWeekCount)}
+            {formatWeekDiff(thisWeekCount, lastWeekCount)}
           </p>
         </div>
         <div className="rounded-2xl bg-card px-5 py-4">

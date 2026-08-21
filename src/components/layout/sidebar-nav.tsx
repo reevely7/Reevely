@@ -9,7 +9,6 @@ const NAV_ITEMS = [
   { href: "/review", label: "검토 필요" },
   { href: "/notifications", label: "알림" },
   { href: "/summary", label: "주간 요약" },
-  { href: "/settings", label: "설정" },
 ];
 
 const BADGE_COUNT_HREF: Record<string, "reviewCount" | "unreadNotificationCount"> = {

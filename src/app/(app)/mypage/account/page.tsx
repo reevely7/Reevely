@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { MypageNav } from "@/components/mypage/mypage-nav";
 import { Button } from "@/components/ui/button";
 import { DangerZoneButton } from "@/components/settings/danger-zone-button";
 import {
@@ -11,7 +12,7 @@ import { deleteNotificationsByUserId } from "@/lib/db/queries/notifications";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function SettingsPage() {
+export default async function MypageAccountPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -48,9 +49,14 @@ export default async function SettingsPage() {
     <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
       <header>
         <p className="text-xl font-semibold tracking-tight text-foreground">
-          설정
+          마이페이지
+        </p>
+        <p className="text-xs text-muted-foreground">
+          계정과 연동된 채널 정보를 관리합니다.
         </p>
       </header>
+
+      <MypageNav />
 
       <section className="space-y-3 rounded-2xl bg-card px-5 py-4">
         <h2 className="text-sm font-medium text-card-foreground">

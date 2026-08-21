@@ -125,6 +125,76 @@ export async function getRiskBreakdownInRange(
   return breakdown;
 }
 
+// 대시보드 추이 스파크라인용 — 기간 내 일별 악성 댓글 건수 (일자 오름차순)
+export async function getDailyMaliciousCounts(
+  userId: string,
+  from: Date,
+  to: Date,
+) {
+  const dayExpr = sql<string>`date_trunc('day', ${comments.createdAt})`;
+
+  return db
+    .select({
+      day: dayExpr,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.userId, userId),
+        eq(comments.isMalicious, true),
+        gte(comments.createdAt, from),
+        lt(comments.createdAt, to),
+      ),
+    )
+    .groupBy(dayExpr)
+    .orderBy(dayExpr);
+}
+
+// 대시보드 "요주의 작성자" 위젯용 — 누적 악성 댓글 수 기준 상위 작성자
+export async function getTopAuthorsByMaliciousCount(
+  userId: string,
+  limit: number,
+) {
+  return db
+    .select({
+      authorChannelId: comments.authorChannelId,
+      authorDisplayName: sql<string | null>`max(${comments.authorDisplayName})`,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(comments)
+    .where(and(eq(comments.userId, userId), eq(comments.isMalicious, true)))
+    .groupBy(comments.authorChannelId)
+    .orderBy(sql`count(*) desc`)
+    .limit(limit);
+}
+
+// 대시보드 "최근 악성 댓글 몰린 영상" 위젯용 — 기간 내 영상별 악성 댓글 수 상위
+export async function getTopVideosByMaliciousCount(
+  userId: string,
+  from: Date,
+  limit: number,
+) {
+  return db
+    .select({
+      videoId: comments.videoId,
+      videoTitle: sql<string | null>`max(${comments.videoTitle})`,
+      videoType: sql<string | null>`max(${comments.videoType})`,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.userId, userId),
+        eq(comments.isMalicious, true),
+        gte(comments.createdAt, from),
+      ),
+    )
+    .groupBy(comments.videoId)
+    .orderBy(sql`count(*) desc`)
+    .limit(limit);
+}
+
 export async function getUnanalyzedComments(userId: string, limit: number) {
   return db
     .select()
