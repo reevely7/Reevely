@@ -16,7 +16,9 @@ type NotificationType =
   | "video_spike"
   | "weekly_digest";
 
-const REPEAT_AUTHOR_THRESHOLD = 3;
+// 낮은 것부터 순서대로 확인 — 한 번의 분석에서 여러 단계를 한꺼번에 넘겨도
+// (예: 갑자기 댓글이 몰려 2건→11건) 안 보낸 단계는 전부 각각 알려준다.
+const REPEAT_AUTHOR_THRESHOLDS = [3, 10, 30] as const;
 const VIDEO_SPIKE_THRESHOLD = 3;
 const REVIEW_BACKLOG_THRESHOLD = 5;
 const WEEKLY_DIGEST_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -87,6 +89,28 @@ async function hasUnreadNotificationOfType(
   return Boolean(row);
 }
 
+// repeat_author처럼 "평생 한 번만" 제안해야 하는 타입용 — 읽음 여부와 무관하게
+// 과거에 한 번이라도 만들어진 적 있으면 다시 만들지 않는다.
+async function hasEverNotifiedOfType(
+  userId: string,
+  type: NotificationType,
+  refId: string,
+) {
+  const [row] = await db
+    .select({ id: notifications.id })
+    .from(notifications)
+    .where(
+      and(
+        eq(notifications.userId, userId),
+        eq(notifications.type, type),
+        eq(notifications.refId, refId),
+      ),
+    )
+    .limit(1);
+
+  return Boolean(row);
+}
+
 // cron 분석 파이프라인 전용 — 구독 중인 작성자의 새 악성 댓글 알림.
 // 호출 전에 isSubscribedToAuthor로 이미 구독 여부를 확인했다고 가정한다.
 export async function createNewCommentNotification(
@@ -102,25 +126,52 @@ export async function createNewCommentNotification(
   });
 }
 
-// 아직 구독 안 한 작성자가 누적 REPEAT_AUTHOR_THRESHOLD번째 악성 댓글을 남긴
-// "바로 그 순간"에만 1회 생성된다 (count === 임계치일 때만 조건이 참이라 별도
-// 중복 방지 없이도 자연스럽게 한 번만 발생한다).
+function repeatAuthorRefId(authorChannelId: string, threshold: number) {
+  return `${authorChannelId}:${threshold}`;
+}
+
+function repeatAuthorMessage(
+  authorDisplayName: string | null,
+  threshold: number,
+): string {
+  const name = authorDisplayName ?? "이 작성자";
+  if (threshold >= 30) {
+    return `${name}님이 누적 ${threshold}번째 악성 댓글을 남겼어요. 매우 심각한 수준으로 반복되고 있습니다.`;
+  }
+  if (threshold >= 10) {
+    return `${name}님이 누적 ${threshold}번째 악성 댓글을 남겼어요. 반복적으로 문제를 일으키고 있습니다.`;
+  }
+  return `${name}님이 벌써 ${threshold}번째 악성 댓글을 남겼어요. 알림을 받아볼까요?`;
+}
+
+// 아직 구독 안 한 작성자가 누적 악성 댓글 수가 REPEAT_AUTHOR_THRESHOLDS의
+// 각 단계(3/10/30건)를 넘길 때마다 한 번씩 알린다. count === 임계치인
+// "바로 그 순간"에만 걸리는 방식이었더니 (1) 그 순간 일시적으로 구독
+// 중이었거나 (2) 이 기능이 생기기 전에 이미 임계치를 넘겨버린 작성자는
+// 평생 못 잡는 문제가 있어서, refId(작성자ID+단계) 기준으로 "이 단계를
+// 한 번이라도 보낸 적 있는지"를 직접 확인하는 방식으로 바꿨다.
 export async function maybeSuggestAuthorSubscription(
   userId: string,
   authorChannelId: string,
   authorDisplayName: string | null,
 ) {
   const count = await countMaliciousCommentsByAuthor(userId, authorChannelId);
-  if (count !== REPEAT_AUTHOR_THRESHOLD) return;
 
-  await db.insert(notifications).values({
-    userId,
-    type: "repeat_author",
-    title: "반복 작성자 발견",
-    message: `${authorDisplayName ?? "이 작성자"}님이 벌써 ${REPEAT_AUTHOR_THRESHOLD}번째 악성 댓글을 남겼어요. 알림을 받아볼까요?`,
-    href: `/authors/${encodeURIComponent(authorChannelId)}`,
-    refId: authorChannelId,
-  });
+  for (const threshold of REPEAT_AUTHOR_THRESHOLDS) {
+    if (count < threshold) break; // 오름차순이라 여기서 못 넘으면 그 위 단계도 못 넘은 것
+
+    const refId = repeatAuthorRefId(authorChannelId, threshold);
+    if (await hasEverNotifiedOfType(userId, "repeat_author", refId)) continue;
+
+    await db.insert(notifications).values({
+      userId,
+      type: "repeat_author",
+      title: "반복 작성자 발견",
+      message: repeatAuthorMessage(authorDisplayName, threshold),
+      href: `/authors/${encodeURIComponent(authorChannelId)}`,
+      refId,
+    });
+  }
 }
 
 // 한 번의 분석 배치 안에서 특정 영상에 VIDEO_SPIKE_THRESHOLD건 이상 악성 댓글이
