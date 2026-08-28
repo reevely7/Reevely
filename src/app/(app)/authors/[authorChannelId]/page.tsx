@@ -84,7 +84,7 @@ export default async function AuthorPage({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] lg:items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
           <aside className="flex flex-col gap-6 border-b border-border pb-7 lg:sticky lg:top-8 lg:border-b-0 lg:border-r lg:pr-8 lg:pb-0">
             <div className="flex items-center gap-4">
               <div className="flex size-16 shrink-0 items-center justify-center rounded-full border border-border bg-gradient-to-br from-secondary to-background text-2xl font-semibold text-primary">

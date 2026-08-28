@@ -277,13 +277,14 @@ export function AuthorCommentFeed({
             </div>
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <div
-                className={`w-fit max-w-[min(34rem,100%)] rounded-2xl rounded-tl-sm border px-4 py-2.5 ${bubbleClass}`}
+                className={`w-fit max-w-[min(45rem,100%)] rounded-2xl rounded-tl-sm border px-4 py-2.5 ${bubbleClass}`}
               >
                 <p className="text-sm leading-relaxed text-card-foreground">
                   {comment.text}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-1.5 pl-1 text-xs text-muted-foreground">
+                <span className="font-mono">{formatDate(comment.createdAt)}</span>
                 {comment.riskLevel && <RiskBadge riskLevel={comment.riskLevel} />}
                 <span className="rounded-full border border-border px-2 py-0.5">
                   {comment.category ?? "미분류"}
@@ -292,18 +293,16 @@ export function AuthorCommentFeed({
                   href={videoHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="truncate text-primary underline underline-offset-2"
+                  className="min-w-0 max-w-[min(30rem,100%)] truncate text-primary underline underline-offset-2"
                   title={comment.videoTitle ?? comment.videoId}
                 >
                   {comment.videoTitle ?? comment.videoId}
                 </a>
-                <span>·</span>
-                <span className="font-mono">{formatDate(comment.createdAt)}</span>
                 <a
                   href={commentHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary underline underline-offset-2"
+                  className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
                 >
                   댓글로 이동
                 </a>
