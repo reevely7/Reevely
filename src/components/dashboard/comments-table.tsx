@@ -142,9 +142,10 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
             <th className="w-8 px-4 py-3 font-medium" />
             <th className="px-2 py-3 font-medium">위험도</th>
             <th className="px-2 py-3 font-medium">댓글</th>
-            <th className="px-2 py-3 font-medium">유형</th>
-            <th className="px-2 py-3 font-medium">날짜</th>
-            <th className="px-2 py-3 font-medium">상태</th>
+            <th className="max-w-[8rem] px-2 py-3 font-medium">작성자</th>
+            <th className="px-2 py-3 font-medium whitespace-nowrap">유형</th>
+            <th className="px-2 py-3 font-medium whitespace-nowrap">날짜</th>
+            <th className="px-2 py-3 font-medium whitespace-nowrap">상태</th>
           </tr>
         </thead>
         <tbody>
@@ -168,25 +169,31 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
                     {row.riskLevel && <RiskBadge riskLevel={row.riskLevel} />}
                   </td>
                   <td
-                    className="max-w-xs truncate px-2 py-3 text-card-foreground"
+                    className="max-w-md truncate px-2 py-3 text-card-foreground"
                     title={row.text}
                   >
                     {row.text}
                   </td>
-                  <td className="px-2 py-3 text-muted-foreground">
+                  <td
+                    className="max-w-[8rem] truncate px-2 py-3 text-muted-foreground"
+                    title={row.authorDisplayName ?? "알 수 없음"}
+                  >
+                    {row.authorDisplayName ?? "알 수 없음"}
+                  </td>
+                  <td className="px-2 py-3 whitespace-nowrap text-muted-foreground">
                     {row.category ?? "미분류"}
                   </td>
-                  <td className="px-2 py-3 text-muted-foreground">
+                  <td className="px-2 py-3 whitespace-nowrap text-muted-foreground">
                     {formatDate(row.createdAt)}
                   </td>
-                  <td className="px-2 py-3 text-muted-foreground">
+                  <td className="px-2 py-3 whitespace-nowrap text-muted-foreground">
                     {STATUS_LABELS[row.status] ?? row.status}
                   </td>
                 </tr>
 
                 {isExpanded && (
                   <tr className="border-b border-border bg-background/40 last:border-0">
-                    <td colSpan={6} className="px-4 py-4">
+                    <td colSpan={7} className="px-4 py-4">
                       <div className="flex flex-col gap-4">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div className="flex flex-wrap items-center gap-2">
