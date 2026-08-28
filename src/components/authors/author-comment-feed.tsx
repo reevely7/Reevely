@@ -3,6 +3,7 @@
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { DateRangeFilter } from "@/components/dashboard/date-range-filter";
 import { RiskBadge } from "@/components/dashboard/risk-badge";
 import { Button } from "@/components/ui/button";
 import { FilterSelect } from "@/components/ui/filter-select";
@@ -20,11 +21,30 @@ type AuthorComment = {
   riskLevel: CommentRiskLevel | null;
   category: string | null;
   confidence: string | null;
+  status: string;
+  platform: string;
   videoId: string;
   videoTitle: string | null;
   videoType: string | null;
   youtubeCommentId: string;
   createdAt: Date;
+};
+
+const PLATFORM_LABELS: Record<string, string> = {
+  youtube: "유튜브",
+  instagram: "인스타그램",
+};
+
+const VIDEO_TYPE_LABELS: Record<string, string> = {
+  video: "동영상",
+  shorts: "쇼츠",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  confirmed: "확정",
+  needs_review: "검토 필요",
+  reported_false: "오탐 신고됨",
+  whitelisted: "화이트리스트",
 };
 
 const RISK_BUBBLE_CLASSES: Record<CommentRiskLevel, string> = {
@@ -36,6 +56,15 @@ const RISK_BUBBLE_CLASSES: Record<CommentRiskLevel, string> = {
 function formatDate(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
+}
+
+function formatDateTime(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function truncateTitle(title: string, max = 30): string {
+  return title.length > max ? `${title.slice(0, max)}...` : title;
 }
 
 function safeFileName(name: string): string {
@@ -91,6 +120,10 @@ export function AuthorCommentFeed({
   const [showBlockGuide, setShowBlockGuide] = useState(false);
   const [riskFilter, setRiskFilter] = useState<CommentRiskLevel | "">("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [videoFilter, setVideoFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [sort, setSort] = useState<"newest" | "risk">("newest");
   const [search, setSearch] = useState("");
   const [subscribed, setSubscribed] = useState(initialSubscribed);
@@ -108,11 +141,25 @@ export function AuthorCommentFeed({
     [comments],
   );
 
+  const videos = useMemo(
+    () =>
+      Array.from(
+        new Map(comments.map((c) => [c.videoId, c.videoTitle])).entries(),
+      ).map(([videoId, videoTitle]) => ({ videoId, videoTitle })),
+    [comments],
+  );
+
   const filteredComments = useMemo(() => {
     const query = search.trim().toLowerCase();
+    const from = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;
+    const to = dateTo ? new Date(`${dateTo}T23:59:59.999`) : null;
     const filtered = comments.filter((c) => {
       if (riskFilter && c.riskLevel !== riskFilter) return false;
       if (categoryFilter && c.category !== categoryFilter) return false;
+      if (statusFilter && c.status !== statusFilter) return false;
+      if (videoFilter && c.videoId !== videoFilter) return false;
+      if (from && c.createdAt < from) return false;
+      if (to && c.createdAt > to) return false;
       if (query && !c.text.toLowerCase().includes(query)) return false;
       return true;
     });
@@ -125,7 +172,17 @@ export function AuthorCommentFeed({
       });
     }
     return filtered;
-  }, [comments, riskFilter, categoryFilter, search, sort]);
+  }, [
+    comments,
+    riskFilter,
+    categoryFilter,
+    statusFilter,
+    videoFilter,
+    dateFrom,
+    dateTo,
+    search,
+    sort,
+  ]);
 
   function toggleSelected(id: string) {
     setSelectedIds((prev) => {
@@ -169,12 +226,23 @@ export function AuthorCommentFeed({
   }
 
   const hasActiveFilters = Boolean(
-    riskFilter || categoryFilter || search || sort !== "newest",
+    riskFilter ||
+      categoryFilter ||
+      statusFilter ||
+      videoFilter ||
+      dateFrom ||
+      dateTo ||
+      search ||
+      sort !== "newest",
   );
 
   function handleReset() {
     setRiskFilter("");
     setCategoryFilter("");
+    setStatusFilter("");
+    setVideoFilter("");
+    setDateFrom("");
+    setDateTo("");
     setSearch("");
     setSort("newest");
   }
@@ -220,6 +288,39 @@ export function AuthorCommentFeed({
                 label: category,
               })),
             ]}
+          />
+
+          <FilterSelect
+            value={statusFilter}
+            onValueChange={setStatusFilter}
+            options={[
+              { value: "", label: "상태 전체" },
+              ...Object.entries(STATUS_LABELS).map(([value, label]) => ({
+                value,
+                label,
+              })),
+            ]}
+          />
+
+          <FilterSelect
+            value={videoFilter}
+            onValueChange={setVideoFilter}
+            options={[
+              { value: "", label: "영상 전체" },
+              ...videos.map(({ videoId, videoTitle }) => ({
+                value: videoId,
+                label: videoTitle ?? videoId,
+              })),
+            ]}
+          />
+
+          <DateRangeFilter
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            onChange={(from, to) => {
+              setDateFrom(from);
+              setDateTo(to);
+            }}
           />
 
           <FilterSelect
@@ -284,19 +385,29 @@ export function AuthorCommentFeed({
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-1.5 pl-1 text-xs text-muted-foreground">
-                <span className="font-mono">{formatDate(comment.createdAt)}</span>
+                <span className="font-mono">
+                  {formatDateTime(comment.createdAt)}
+                </span>
                 {comment.riskLevel && <RiskBadge riskLevel={comment.riskLevel} />}
                 <span className="rounded-full border border-border px-2 py-0.5">
                   {comment.category ?? "미분류"}
                 </span>
+                <span className="rounded-full border border-border px-2 py-0.5">
+                  {PLATFORM_LABELS[comment.platform] ?? comment.platform}
+                </span>
+                {comment.videoType && (
+                  <span className="rounded-full border border-border px-2 py-0.5">
+                    {VIDEO_TYPE_LABELS[comment.videoType] ?? comment.videoType}
+                  </span>
+                )}
                 <a
                   href={videoHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="min-w-0 max-w-[min(30rem,100%)] truncate text-primary underline underline-offset-2"
+                  className="text-primary underline underline-offset-2"
                   title={comment.videoTitle ?? comment.videoId}
                 >
-                  {comment.videoTitle ?? comment.videoId}
+                  {truncateTitle(comment.videoTitle ?? comment.videoId)}
                 </a>
                 <a
                   href={commentHref}
