@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "대시보드" },
   { href: "/comments", label: "댓글 목록" },
   { href: "/review", label: "검토 필요" },
+  { href: "/evidence-archive", label: "증거 보관함" },
   { href: "/notifications", label: "알림" },
   { href: "/summary", label: "주간 요약" },
 ];
