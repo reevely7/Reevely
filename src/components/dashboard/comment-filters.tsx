@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
+import { DateRangeFilter } from "@/components/dashboard/date-range-filter";
 import { FilterSelect } from "@/components/ui/filter-select";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -40,12 +41,25 @@ export function CommentFilters({
     router.push(`${pathname}?${params.toString()}`);
   }
 
+  function updateDateRange(dateFrom: string, dateTo: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (dateFrom) params.set("dateFrom", dateFrom);
+    else params.delete("dateFrom");
+    if (dateTo) params.set("dateTo", dateTo);
+    else params.delete("dateTo");
+    params.delete("page");
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
   const hasActiveFilters = Boolean(
     searchParams.get("risk") ||
       searchParams.get("category") ||
       searchParams.get("status") ||
       searchParams.get("video") ||
       searchParams.get("search") ||
+      searchParams.get("author") ||
+      searchParams.get("dateFrom") ||
+      searchParams.get("dateTo") ||
       (searchParams.get("sort") && searchParams.get("sort") !== "newest"),
   );
 
@@ -101,6 +115,12 @@ export function CommentFilters({
               label: videoTitle ?? videoId,
             })),
           ]}
+        />
+
+        <DateRangeFilter
+          dateFrom={searchParams.get("dateFrom") ?? ""}
+          dateTo={searchParams.get("dateTo") ?? ""}
+          onChange={updateDateRange}
         />
 
         <FilterSelect

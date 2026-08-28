@@ -23,6 +23,9 @@ export default async function CommentsPage({
     status?: string;
     video?: string;
     search?: string;
+    author?: string;
+    dateFrom?: string;
+    dateTo?: string;
     sort?: string;
     page?: string;
   }>;
@@ -43,6 +46,9 @@ export default async function CommentsPage({
     status: params.status as CommentFiltersType["status"],
     videoId: params.video,
     search: params.search,
+    author: params.author,
+    dateFrom: params.dateFrom,
+    dateTo: params.dateTo,
     sort: params.sort as CommentFiltersType["sort"],
   };
   const page = Math.max(1, Number(params.page) || 1);
@@ -66,7 +72,10 @@ export default async function CommentsPage({
             위험도별로 플래그된 댓글입니다.
           </p>
         </div>
-        <CommentSearch />
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <CommentSearch />
+          <CommentSearch paramKey="author" placeholder="작성자 검색" />
+        </div>
       </header>
 
       <CommentFilters

@@ -241,6 +241,9 @@ export type CommentFilters = {
   status?: "confirmed" | "needs_review" | "reported_false" | "whitelisted";
   videoId?: string;
   search?: string;
+  author?: string;
+  dateFrom?: string;
+  dateTo?: string;
   sort?: "newest" | "risk";
 };
 
@@ -255,6 +258,17 @@ function buildFlaggedConditions(userId: string, filters: CommentFilters) {
   if (filters.status) conditions.push(eq(comments.status, filters.status));
   if (filters.videoId) conditions.push(eq(comments.videoId, filters.videoId));
   if (filters.search) conditions.push(ilike(comments.text, `%${filters.search}%`));
+  if (filters.author)
+    conditions.push(ilike(comments.authorDisplayName, `%${filters.author}%`));
+  // dateFrom/dateTo는 "YYYY-MM-DD" 문자열. from은 그 날 00시 이상, to는 다음 날
+  // 00시 미만으로 잡아 선택한 날짜 하루 전체가 포함되게 한다.
+  if (filters.dateFrom)
+    conditions.push(gte(comments.createdAt, new Date(`${filters.dateFrom}T00:00:00`)));
+  if (filters.dateTo) {
+    const to = new Date(`${filters.dateTo}T00:00:00`);
+    to.setDate(to.getDate() + 1);
+    conditions.push(lt(comments.createdAt, to));
+  }
 
   return conditions;
 }

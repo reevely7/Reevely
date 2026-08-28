@@ -4,11 +4,19 @@ import { Search } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export function CommentSearch() {
+type Props = {
+  paramKey?: string;
+  placeholder?: string;
+};
+
+export function CommentSearch({
+  paramKey = "search",
+  placeholder = "댓글 내용 검색",
+}: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const committedSearch = searchParams.get("search") ?? "";
+  const committedSearch = searchParams.get(paramKey) ?? "";
 
   const [value, setValue] = useState(committedSearch);
   const [syncedSearch, setSyncedSearch] = useState(committedSearch);
@@ -23,12 +31,12 @@ export function CommentSearch() {
   // 타이핑마다 바로 push하지 않고 300ms 멈춘 뒤에만 반영한다
   useEffect(() => {
     const handle = setTimeout(() => {
-      if (value !== (searchParams.get("search") ?? "")) {
+      if (value !== (searchParams.get(paramKey) ?? "")) {
         const params = new URLSearchParams(searchParams.toString());
         if (value) {
-          params.set("search", value);
+          params.set(paramKey, value);
         } else {
-          params.delete("search");
+          params.delete(paramKey);
         }
         params.delete("page");
         router.push(`${pathname}?${params.toString()}`);
@@ -39,7 +47,7 @@ export function CommentSearch() {
   }, [value]);
 
   return (
-    <div className="relative w-full sm:w-[70rem]">
+    <div className="relative w-full sm:w-72">
       <Search
         className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
         aria-hidden
@@ -48,7 +56,7 @@ export function CommentSearch() {
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="댓글 내용 검색"
+        placeholder={placeholder}
         className="h-11 w-full rounded-md border border-border bg-background py-2 pr-3 pl-10 text-base text-foreground placeholder:text-muted-foreground"
       />
     </div>
