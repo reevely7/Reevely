@@ -1,10 +1,16 @@
 import { redirect } from "next/navigation";
 
+import { NotificationBell } from "@/components/dashboard/notification-bell";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { getChannelByUserId, getNextSyncAt } from "@/lib/db/queries/channels";
 import { countReviewQueue } from "@/lib/db/queries/comments";
-import { countUnreadNotifications } from "@/lib/db/queries/notifications";
+import {
+  countUnreadNotifications,
+  getNotifications,
+} from "@/lib/db/queries/notifications";
 import { createClient } from "@/lib/supabase/server";
+
+const RECENT_NOTIFICATIONS_LIMIT = 8;
 
 export default async function AppLayout({
   children,
@@ -25,10 +31,12 @@ export default async function AppLayout({
     redirect("/onboarding");
   }
 
-  const [reviewCount, unreadNotificationCount] = await Promise.all([
-    countReviewQueue(user.id),
-    countUnreadNotifications(user.id),
-  ]);
+  const [reviewCount, unreadNotificationCount, recentNotifications] =
+    await Promise.all([
+      countReviewQueue(user.id),
+      countUnreadNotifications(user.id),
+      getNotifications(user.id, RECENT_NOTIFICATIONS_LIMIT),
+    ]);
   const nextSyncAt = getNextSyncAt(channel);
   const nickname = (user.user_metadata?.nickname as string | undefined) || null;
 
@@ -47,6 +55,12 @@ export default async function AppLayout({
         nextSyncAt={nextSyncAt}
       />
       <div className="flex flex-1 flex-col overflow-y-auto bg-background">
+        <header className="flex shrink-0 items-center justify-end border-b border-border px-6 py-2 sm:px-10">
+          <NotificationBell
+            notifications={recentNotifications}
+            unreadCount={unreadNotificationCount}
+          />
+        </header>
         {children}
       </div>
     </div>
