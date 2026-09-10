@@ -17,7 +17,7 @@ async function main() {
   }
 
   for (const channel of channels) {
-    await maybeCreateWeeklyDigest(channel.userId);
+    await maybeCreateWeeklyDigest(channel.userId, channel.id);
     console.log(`체크 완료: ${channel.channelTitle} (${channel.userId})`);
   }
 
