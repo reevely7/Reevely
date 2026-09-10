@@ -8,8 +8,6 @@ import { createClient } from "@/lib/supabase/server";
 
 const ERROR_MESSAGES: Record<string, string> = {
   auth: "로그인 처리 중 문제가 발생했습니다. 다시 시도해 주세요.",
-  no_provider_token: "구글로부터 접근 권한을 받지 못했습니다. 다시 시도해 주세요.",
-  channel_connect: "유튜브 채널 연동에 실패했습니다. 채널이 있는 계정으로 다시 로그인해 주세요.",
 };
 
 const STEPS = [

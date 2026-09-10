@@ -7,7 +7,18 @@ import { Button } from "@/components/ui/button";
 import { getChannelByUserId } from "@/lib/db/queries/channels";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function OnboardingPage() {
+const ERROR_MESSAGES: Record<string, string> = {
+  channel_connect: "유튜브 채널 연동에 실패했습니다. 다시 시도해 주세요.",
+};
+
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+  const errorMessage = error ? ERROR_MESSAGES[error] : undefined;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -29,6 +40,11 @@ export default async function OnboardingPage() {
           채널 연동을 해제했거나, 연동된 구글 계정에 유튜브 채널이 없는
           경우입니다. 채널이 있는 계정으로 다시 연동해 주세요.
         </p>
+        {errorMessage && (
+          <p className="rounded-md bg-risk-high-bg px-3 py-2 text-xs text-risk-high">
+            {errorMessage}
+          </p>
+        )}
         <div className="w-full max-w-xs">
           <Button
             nativeButton={false}
