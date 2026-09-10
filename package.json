@@ -13,7 +13,8 @@
     "eval:prompt": "tsx --conditions=react-server --env-file=.env.local scripts/eval-prompt.ts",
     "golden:candidates": "tsx scripts/export-review-candidates.ts",
     "test:weekly-digest": "tsx --conditions=react-server --env-file=.env.local scripts/test-weekly-digest.ts",
-    "test:subscriptions": "tsx --conditions=react-server --env-file=.env.local scripts/test-subscriptions.ts"
+    "test:subscriptions": "tsx --conditions=react-server --env-file=.env.local scripts/test-subscriptions.ts",
+    "test:billing-cron": "tsx --conditions=react-server --env-file=.env.local scripts/test-billing-cron.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
