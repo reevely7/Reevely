@@ -20,7 +20,8 @@ export const channels = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id").notNull(),
-    // 한 유저당 플랫폼별로 채널 1개 (아래 unique 제약 참조). MVP는 유튜브만 실제 연동.
+    // 한 유저는 채널을 여러 개 연동할 수 있다 — 아래 unique 제약은 동일한 유튜브
+    // 채널을 중복 연동하는 것만 막는다 (개수 제한은 플랜 로직이 담당). MVP는 유튜브만 실제 연동.
     platform: platformEnum("platform").notNull().default("youtube"),
     youtubeChannelId: text("youtube_channel_id").notNull(),
     channelTitle: text("channel_title").notNull(),
