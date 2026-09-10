@@ -38,20 +38,40 @@ type CreateSubscriptionInput = {
   tossCustomerKey: string;
 };
 
+// userId에 unique 제약이 있어, 이미 row가 있으면(예: 해지 유예기간 중 재구독) insert가
+// 제약 위반으로 throw한다. 결제는 이미 성공한 뒤이므로 실패시키지 않고 upsert로
+// 기존 row를 새 결제 주기로 갱신한다.
 export async function createSubscription(input: CreateSubscriptionInput) {
   const now = new Date();
   const nextBillingDate = new Date(now);
   nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
 
-  await db.insert(subscriptions).values({
+  const values = {
     userId: input.userId,
     plan: input.plan,
-    status: "active",
+    status: "active" as const,
     billingKey: encrypt(input.billingKey),
     tossCustomerKey: input.tossCustomerKey,
     currentPeriodStart: now,
     nextBillingDate,
-  });
+  };
+
+  await db
+    .insert(subscriptions)
+    .values(values)
+    .onConflictDoUpdate({
+      target: subscriptions.userId,
+      set: {
+        plan: values.plan,
+        status: values.status,
+        billingKey: values.billingKey,
+        tossCustomerKey: values.tossCustomerKey,
+        currentPeriodStart: values.currentPeriodStart,
+        nextBillingDate: values.nextBillingDate,
+        pendingPlan: null,
+        updatedAt: new Date(),
+      },
+    });
 }
 
 // 유료 유저의 플랜 변경 예약. 구독 row가 없는(무료) 유저에겐 안 먹힌다 —
