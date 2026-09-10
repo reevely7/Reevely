@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { ChevronDown, Lock, Menu, Plus, X } from "lucide-react";
 import { useState } from "react";
 
 import { LogoutButton } from "@/components/auth/logout-button";
@@ -11,44 +11,50 @@ import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { SyncCountdown } from "@/components/layout/sync-countdown";
 import { formatClockTime } from "@/lib/format/clock-time";
 
-type Channel = {
+type SidebarChannel = {
+  id: string;
   channelTitle: string;
   thumbnailUrl: string | null;
+  status: "active" | "locked";
   lastSyncedAt: Date | null;
-  latestVideoPublishedAt: Date | null;
+  nextSyncAt: Date;
 };
 
 export function AppSidebar({
-  channel,
+  channels,
+  activeChannelId,
   nickname,
   reviewCount,
   unreadNotificationCount,
-  nextSyncAt,
 }: {
-  channel: Channel;
+  channels: SidebarChannel[];
+  activeChannelId?: string;
   nickname: string | null;
   reviewCount: number;
   unreadNotificationCount: number;
-  nextSyncAt: Date;
 }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
 
-  // 페이지 이동하면 모바일 드로어는 자동으로 닫는다 (레이아웃이 라우트
-  // 전환 사이에 유지되는 공유 레이아웃이라 상태가 저절로 리셋되지 않음).
-  // 렌더링 중 이전 pathname과 비교해 리셋 — useEffect 안에서 setState하는
-  // 것보다 React가 권장하는 방식.
+  // 페이지 이동하면 모바일 드로어/채널 전환 드롭다운은 자동으로 닫는다 (레이아웃이
+  // 라우트 전환 사이에 유지되는 공유 레이아웃이라 상태가 저절로 리셋되지 않음).
   const [prevPathname, setPrevPathname] = useState(pathname);
   if (pathname !== prevPathname) {
     setPrevPathname(pathname);
     setIsOpen(false);
+    setIsSwitcherOpen(false);
   }
+
+  const activeChannel =
+    channels.find((c) => c.id === activeChannelId) ?? channels[0];
+  const homeHref = activeChannel ? `/c/${activeChannel.id}/dashboard` : "/mypage";
 
   return (
     <>
       <header className="flex items-center justify-between border-b border-sidebar-border bg-sidebar px-4 py-3 md:hidden">
         <Link
-          href="/dashboard"
+          href={homeHref}
           className="text-lg font-semibold tracking-tight text-sidebar-foreground"
         >
           Reevely
@@ -79,7 +85,7 @@ export function AppSidebar({
         <div className="flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <Link
-              href="/dashboard"
+              href={homeHref}
               className="text-xl font-semibold tracking-tight"
             >
               Reevely
@@ -94,7 +100,75 @@ export function AppSidebar({
             </button>
           </div>
 
+          {activeChannel && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsSwitcherOpen((v) => !v)}
+                aria-expanded={isSwitcherOpen}
+                className="flex w-full items-center justify-between gap-2 rounded-lg border border-sidebar-border px-2.5 py-2 text-left hover:bg-sidebar-accent"
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  {activeChannel.thumbnailUrl && (
+                    <Image
+                      src={activeChannel.thumbnailUrl}
+                      alt={activeChannel.channelTitle}
+                      width={22}
+                      height={22}
+                      className="rounded-full"
+                    />
+                  )}
+                  <span className="truncate text-sm">
+                    {activeChannel.channelTitle}
+                  </span>
+                </span>
+                <ChevronDown
+                  className="size-4 shrink-0 text-muted-foreground"
+                  aria-hidden
+                />
+              </button>
+
+              {isSwitcherOpen && (
+                <div className="absolute top-full left-0 z-10 mt-1 w-full rounded-lg border border-sidebar-border bg-sidebar py-1 shadow-lg">
+                  {channels.map((c) => (
+                    <Link
+                      key={c.id}
+                      href={
+                        c.status === "locked"
+                          ? "/mypage/subscription"
+                          : `/c/${c.id}/dashboard`
+                      }
+                      onClick={() => setIsSwitcherOpen(false)}
+                      className={`flex items-center gap-2 px-3 py-2 text-sm hover:bg-sidebar-accent ${
+                        c.id === activeChannel.id
+                          ? "text-primary"
+                          : "text-sidebar-foreground"
+                      }`}
+                    >
+                      {c.status === "locked" && (
+                        <Lock
+                          className="size-3.5 shrink-0 text-muted-foreground"
+                          aria-hidden
+                        />
+                      )}
+                      <span className="truncate">{c.channelTitle}</span>
+                    </Link>
+                  ))}
+                  <Link
+                    href="/channel-connect/start"
+                    onClick={() => setIsSwitcherOpen(false)}
+                    className="flex items-center gap-2 border-t border-sidebar-border px-3 py-2 text-sm text-primary hover:bg-sidebar-accent"
+                  >
+                    <Plus className="size-3.5 shrink-0" aria-hidden />
+                    채널 추가
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+
           <SidebarNav
+            channelId={activeChannel?.id}
             reviewCount={reviewCount}
             unreadNotificationCount={unreadNotificationCount}
           />
@@ -105,25 +179,17 @@ export function AppSidebar({
             href="/mypage"
             className="flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-sidebar-accent"
           >
-            {channel.thumbnailUrl && (
-              <Image
-                src={channel.thumbnailUrl}
-                alt={channel.channelTitle}
-                width={28}
-                height={28}
-                className="rounded-full"
-              />
-            )}
             <p className="truncate text-xs text-muted-foreground">
-              {nickname || channel.channelTitle}
+              {nickname || "마이페이지"}
             </p>
           </Link>
 
-          {channel.lastSyncedAt && (
+          {activeChannel?.lastSyncedAt && (
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              최근 댓글 업데이트 {formatClockTime(channel.lastSyncedAt)}
+              최근 댓글 업데이트 {formatClockTime(activeChannel.lastSyncedAt)}
               <br />
-              다음 댓글 업데이트 <SyncCountdown target={nextSyncAt} />
+              다음 댓글 업데이트{" "}
+              <SyncCountdown target={activeChannel.nextSyncAt} />
             </p>
           )}
 
