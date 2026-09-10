@@ -13,6 +13,8 @@ import {
 // 채널이 연결된 플랫폼. 유튜브 외 인스타그램 등 추가 연동을 대비한 구분자.
 export const platformEnum = pgEnum("platform", ["youtube", "instagram"]);
 
+export const channelStatusEnum = pgEnum("channel_status", ["active", "locked"]);
+
 export const channels = pgTable(
   "channels",
   {
@@ -33,6 +35,8 @@ export const channels = pgTable(
     latestVideoPublishedAt: timestamp("latest_video_published_at", {
       withTimezone: true,
     }),
+    // 잠긴 채널은 cron sync 대상에서 제외됨(다운그레이드로 플랜 한도 초과 시)
+    status: channelStatusEnum("status").notNull().default("active"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -40,7 +44,8 @@ export const channels = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [unique("channels_user_platform_unique").on(table.userId, table.platform)],
+  // 같은 유튜브 채널 중복 연동만 막는다 — 유저당 개수 제한은 플랜 로직이 담당
+  (table) => [unique("channels_user_youtube_unique").on(table.userId, table.youtubeChannelId)],
 );
 
 export const riskLevelEnum = pgEnum("risk_level", ["high", "medium", "low"]);
@@ -63,6 +68,8 @@ export const comments = pgTable(
     // Supabase Auth의 auth.users.id를 가리킨다. auth 스키마는 Drizzle이 관리하지
     // 않으므로 DB 레벨 FK는 걸지 않고 애플리케이션 레벨에서 정합성을 유지한다.
     userId: uuid("user_id").notNull(),
+    // 백필 후 Task 2에서 notNull로 전환한다
+    channelId: uuid("channel_id"),
     // 이 댓글이 어느 플랫폼에서 수집됐는지. MVP는 유튜브만 실제 수집.
     platform: platformEnum("platform").notNull().default("youtube"),
     videoId: text("video_id").notNull(),
@@ -107,6 +114,7 @@ export const authorSubscriptions = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id").notNull(),
+    channelId: uuid("channel_id"),
     authorChannelId: text("author_channel_id").notNull(),
     // 알림 목록에 표시할 스냅샷 (댓글 재조회 없이 바로 보여주기 위함)
     authorDisplayName: text("author_display_name"),
@@ -146,6 +154,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 export const notifications = pgTable("notifications", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull(),
+  channelId: uuid("channel_id"),
   type: notificationTypeEnum("type").notNull().default("new_comment"),
   commentId: uuid("comment_id"),
   title: text("title"),
