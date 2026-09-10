@@ -43,9 +43,11 @@ function formatDateTime(date: Date): string {
 export function NotificationBell({
   notifications,
   unreadCount,
+  channelId,
 }: {
   notifications: Notification[];
   unreadCount: number;
+  channelId: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -55,6 +57,8 @@ export function NotificationBell({
     if (!notification.isRead) {
       fetch(`/api/notifications/${notification.id}/read`, {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channelId }),
       });
     }
     setOpen(false);
@@ -64,6 +68,8 @@ export function NotificationBell({
     setIsMarkingAll(true);
     const res = await fetch("/api/notifications/read-all", {
       method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ channelId }),
     });
     if (res.ok) {
       router.refresh();
@@ -117,7 +123,7 @@ export function NotificationBell({
                 return (
                   <Link
                     key={notification.id}
-                    href={notification.href ?? "/notifications"}
+                    href={notification.href ?? `/c/${channelId}/notifications`}
                     onClick={() => handleNotificationClick(notification)}
                     className={itemClassName}
                   >
@@ -145,7 +151,7 @@ export function NotificationBell({
               return (
                 <Link
                   key={notification.id}
-                  href={notification.href ?? "/dashboard"}
+                  href={notification.href ?? `/c/${channelId}/dashboard`}
                   onClick={() => handleNotificationClick(notification)}
                   className={itemClassName}
                 >
@@ -179,7 +185,7 @@ export function NotificationBell({
 
         <div className="border-t border-border px-4 py-2.5">
           <Link
-            href="/notifications"
+            href={`/c/${channelId}/notifications`}
             onClick={() => setOpen(false)}
             className="block text-center text-xs text-primary hover:underline"
           >

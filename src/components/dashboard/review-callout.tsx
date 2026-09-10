@@ -1,12 +1,18 @@
 import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
 
-export function ReviewCallout({ count }: { count: number }) {
+export function ReviewCallout({
+  count,
+  channelId,
+}: {
+  count: number;
+  channelId: string;
+}) {
   if (count === 0) return null;
 
   return (
     <Link
-      href="/review"
+      href={`/c/${channelId}/review`}
       className="flex items-center justify-between gap-3 rounded-2xl bg-status-needs-review-bg px-5 py-4 transition-colors hover:brightness-95"
     >
       <div className="flex items-center gap-2">

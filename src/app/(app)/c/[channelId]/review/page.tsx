@@ -1,22 +1,16 @@
 import { CheckCircle2 } from "lucide-react";
-import { redirect } from "next/navigation";
 
 import { StatusActionButton } from "@/components/comments/status-action-button";
 import { RiskBadge } from "@/components/dashboard/risk-badge";
 import { getReviewQueue } from "@/lib/db/queries/comments";
-import { createClient } from "@/lib/supabase/server";
 
-export default async function ReviewPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/");
-  }
-
-  const queue = await getReviewQueue(user.id);
+export default async function ReviewPage({
+  params,
+}: {
+  params: Promise<{ channelId: string }>;
+}) {
+  const { channelId } = await params;
+  const queue = await getReviewQueue(channelId);
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
@@ -66,12 +60,14 @@ export default async function ReviewPage() {
               <div className="flex shrink-0 gap-2">
                 <StatusActionButton
                   commentId={comment.id}
+                  channelId={channelId}
                   status="confirmed"
                   label="악성 맞음"
                   variant="default"
                 />
                 <StatusActionButton
                   commentId={comment.id}
+                  channelId={channelId}
                   status="whitelisted"
                   label="아님"
                   variant="outline"

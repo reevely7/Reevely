@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { KakaoSignInButton } from "@/components/auth/kakao-sign-in-button";
 import { SiteFooter } from "@/components/landing/site-footer";
-import { getChannelByUserId } from "@/lib/db/queries/channels";
+import { getChannelsByUserId } from "@/lib/db/queries/channels";
 import { createClient } from "@/lib/supabase/server";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -173,8 +173,8 @@ export default async function LandingPage({
   } = await supabase.auth.getUser();
 
   if (user) {
-    const channel = await getChannelByUserId(user.id);
-    redirect(channel ? "/dashboard" : "/onboarding");
+    const channels = await getChannelsByUserId(user.id);
+    redirect(channels.length > 0 ? `/c/${channels[0].id}/dashboard` : "/onboarding");
   }
 
   return (

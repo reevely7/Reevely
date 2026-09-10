@@ -107,12 +107,14 @@ export function AuthorCommentFeed({
   comments,
   displayName,
   initial,
+  channelId,
   authorChannelId,
   initialSubscribed,
 }: {
   comments: AuthorComment[];
   displayName: string;
   initial: string;
+  channelId: string;
   authorChannelId: string;
   initialSubscribed: boolean;
 }) {
@@ -214,6 +216,7 @@ export function AuthorCommentFeed({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          channelId,
           subscribed: nextSubscribed,
           authorDisplayName: displayName,
         }),

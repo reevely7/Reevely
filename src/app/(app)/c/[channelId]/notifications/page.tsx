@@ -1,22 +1,15 @@
-import { redirect } from "next/navigation";
-
 import { BellIcon } from "@/components/icons/bell-icon";
 import { MarkAllReadButton } from "@/components/notifications/mark-all-read-button";
 import { NotificationRow } from "@/components/notifications/notification-row";
 import { getNotifications } from "@/lib/db/queries/notifications";
-import { createClient } from "@/lib/supabase/server";
 
-export default async function NotificationsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/");
-  }
-
-  const notifications = await getNotifications(user.id);
+export default async function NotificationsPage({
+  params,
+}: {
+  params: Promise<{ channelId: string }>;
+}) {
+  const { channelId } = await params;
+  const notifications = await getNotifications(channelId);
   const hasUnread = notifications.some((n) => !n.isRead);
 
   return (
@@ -30,7 +23,7 @@ export default async function NotificationsPage() {
             알림 받기로 설정한 작성자가 새로 남긴 악성 댓글입니다.
           </p>
         </div>
-        {hasUnread && <MarkAllReadButton />}
+        {hasUnread && <MarkAllReadButton channelId={channelId} />}
       </header>
 
       {notifications.length === 0 ? (
@@ -47,6 +40,7 @@ export default async function NotificationsPage() {
             <NotificationRow
               key={notification.id}
               notification={notification}
+              channelId={channelId}
             />
           ))}
         </div>

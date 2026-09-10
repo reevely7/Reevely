@@ -9,9 +9,11 @@ type AuthorRow = {
 export function TopAuthorsCard({
   title,
   rows,
+  channelId,
 }: {
   title: string;
   rows: AuthorRow[];
+  channelId: string;
 }) {
   return (
     <div className="flex h-full flex-col gap-3 rounded-2xl bg-card px-5 py-4">
@@ -26,7 +28,7 @@ export function TopAuthorsCard({
           {rows.map((row, i) => (
             <Link
               key={row.authorChannelId}
-              href={`/authors/${encodeURIComponent(row.authorChannelId)}`}
+              href={`/c/${channelId}/authors/${encodeURIComponent(row.authorChannelId)}`}
               className="flex items-center gap-3 py-2.5 hover:text-primary"
             >
               <span className="w-4 shrink-0 font-mono text-xs text-muted-foreground">

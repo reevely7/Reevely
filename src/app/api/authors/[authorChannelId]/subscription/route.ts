@@ -8,6 +8,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 const BodySchema = z.object({
+  channelId: z.string(),
   subscribed: z.boolean(),
   authorDisplayName: z.string().nullable().optional(),
 });
@@ -36,11 +37,12 @@ export async function PATCH(
   if (body.data.subscribed) {
     await subscribeToAuthor(
       user.id,
+      body.data.channelId,
       decodedAuthorChannelId,
       body.data.authorDisplayName ?? null,
     );
   } else {
-    await unsubscribeFromAuthor(user.id, decodedAuthorChannelId);
+    await unsubscribeFromAuthor(body.data.channelId, decodedAuthorChannelId);
   }
 
   return NextResponse.json({ ok: true });

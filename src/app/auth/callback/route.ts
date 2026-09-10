@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getChannelByUserId } from "@/lib/db/queries/channels";
+import { getChannelsByUserId } from "@/lib/db/queries/channels";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
@@ -12,9 +12,9 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error && data.session && data.user) {
-      const channel = await getChannelByUserId(data.user.id);
+      const channels = await getChannelsByUserId(data.user.id);
       return NextResponse.redirect(
-        `${origin}${channel ? "/dashboard" : "/onboarding"}`,
+        `${origin}${channels.length > 0 ? `/c/${channels[0].id}/dashboard` : "/onboarding"}`,
       );
     }
   }

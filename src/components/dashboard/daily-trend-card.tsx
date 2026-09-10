@@ -16,11 +16,13 @@ export function DailyTrendCard({
   days,
   thisWeekCount,
   lastWeekCount,
+  channelId,
 }: {
   dailyCounts: DailyCount[];
   days: number;
   thisWeekCount: number;
   lastWeekCount: number;
+  channelId: string;
 }) {
   const countsByDay = new Map(
     dailyCounts.map((row) => [toDayKey(row.day), row.count]),
@@ -44,7 +46,7 @@ export function DailyTrendCard({
           최근 {days}일 위험 댓글 추이
         </p>
         <Link
-          href="/summary"
+          href={`/c/${channelId}/summary`}
           className="text-xs text-primary underline underline-offset-2"
         >
           주간 요약 보기 →

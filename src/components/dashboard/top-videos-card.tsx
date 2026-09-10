@@ -6,7 +6,13 @@ type VideoRow = {
   count: number;
 };
 
-export function TopVideosCard({ rows }: { rows: VideoRow[] }) {
+export function TopVideosCard({
+  rows,
+  channelId,
+}: {
+  rows: VideoRow[];
+  channelId: string;
+}) {
   return (
     <div className="flex flex-col gap-3 rounded-2xl bg-card px-5 py-4">
       <p className="text-sm font-medium text-card-foreground">
@@ -22,7 +28,7 @@ export function TopVideosCard({ rows }: { rows: VideoRow[] }) {
           {rows.map((row, i) => (
             <Link
               key={row.videoId}
-              href={`/comments?video=${encodeURIComponent(row.videoId)}`}
+              href={`/c/${channelId}/comments?video=${encodeURIComponent(row.videoId)}`}
               className="flex items-center gap-3 py-2.5 hover:text-primary"
             >
               <span className="w-4 shrink-0 font-mono text-xs text-muted-foreground">

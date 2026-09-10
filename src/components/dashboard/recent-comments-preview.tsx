@@ -16,7 +16,13 @@ function formatDate(date: Date): string {
   return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
 }
 
-export function RecentCommentsPreview({ rows }: { rows: Row[] }) {
+export function RecentCommentsPreview({
+  rows,
+  channelId,
+}: {
+  rows: Row[];
+  channelId: string;
+}) {
   return (
     <div className="rounded-2xl bg-card px-5 py-4">
       <div className="mb-3 flex items-center justify-between">
@@ -24,7 +30,7 @@ export function RecentCommentsPreview({ rows }: { rows: Row[] }) {
           최근 위험 댓글
         </p>
         <Link
-          href="/comments"
+          href={`/c/${channelId}/comments`}
           className="text-xs text-primary underline underline-offset-2"
         >
           전체 보기 →

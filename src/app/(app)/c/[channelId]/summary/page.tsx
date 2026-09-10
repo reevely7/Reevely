@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-
 import { RiskBadge } from "@/components/dashboard/risk-badge";
 import {
   countMaliciousCommentsInRange,
@@ -7,7 +5,6 @@ import {
 } from "@/lib/db/queries/comments";
 import { getNotifications } from "@/lib/db/queries/notifications";
 import { formatWeekDiff } from "@/lib/format/week-diff";
-import { createClient } from "@/lib/supabase/server";
 
 const RISK_BAR_CLASSES = {
   high: "bg-risk-high",
@@ -20,15 +17,12 @@ function formatDate(date: Date): string {
   return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
 }
 
-export default async function SummaryPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/");
-  }
+export default async function SummaryPage({
+  params,
+}: {
+  params: Promise<{ channelId: string }>;
+}) {
+  const { channelId } = await params;
 
   const now = new Date();
   const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -36,10 +30,10 @@ export default async function SummaryPage() {
 
   const [thisWeekCount, lastWeekCount, breakdown, notifications] =
     await Promise.all([
-      countMaliciousCommentsInRange(user.id, oneWeekAgo, now),
-      countMaliciousCommentsInRange(user.id, twoWeeksAgo, oneWeekAgo),
-      getRiskBreakdownInRange(user.id, oneWeekAgo, now),
-      getNotifications(user.id),
+      countMaliciousCommentsInRange(channelId, oneWeekAgo, now),
+      countMaliciousCommentsInRange(channelId, twoWeeksAgo, oneWeekAgo),
+      getRiskBreakdownInRange(channelId, oneWeekAgo, now),
+      getNotifications(channelId),
     ]);
 
   const history = notifications.filter((n) => n.type === "weekly_digest");

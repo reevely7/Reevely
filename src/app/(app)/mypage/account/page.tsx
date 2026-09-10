@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DangerZoneButton } from "@/components/settings/danger-zone-button";
 import {
   deleteChannelByUserId,
-  getChannelByUserId,
+  getChannelsByUserId,
 } from "@/lib/db/queries/channels";
 import { deleteCommentsByUserId } from "@/lib/db/queries/comments";
 import { deleteNotificationsByUserId } from "@/lib/db/queries/notifications";
@@ -22,7 +22,11 @@ export default async function MypageAccountPage() {
     redirect("/");
   }
 
-  const channel = await getChannelByUserId(user.id);
+  // TODO(Task 9): 여러 채널 각각 개별 연동 해제가 되도록 다시 설계 필요 — 지금은
+  // 첫 채널만 보여주고, 해제 시 이 유저의 모든 채널을 한꺼번에 지운다 (임시 조치,
+  // tsc를 깨끗하게 유지하기 위한 최소 수정일 뿐 Task 9의 본래 재설계는 아님).
+  const channels = await getChannelsByUserId(user.id);
+  const channel = channels[0] ?? null;
   const userId = user.id;
 
   async function disconnectChannel() {

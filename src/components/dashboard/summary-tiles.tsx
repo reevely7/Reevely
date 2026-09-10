@@ -12,42 +12,48 @@ const TILES: Array<{
   key: keyof Summary;
   label: string;
   dotClassName?: string;
-  href: string;
+  hrefSuffix: string;
 }> = [
-  { key: "total", label: "전체 플래그", href: "/comments" },
+  { key: "total", label: "전체 플래그", hrefSuffix: "" },
   {
     key: "high",
     label: "High",
     dotClassName: "bg-risk-high",
-    href: "/comments?risk=high",
+    hrefSuffix: "?risk=high",
   },
   {
     key: "medium",
     label: "Medium",
     dotClassName: "bg-risk-medium",
-    href: "/comments?risk=medium",
+    hrefSuffix: "?risk=medium",
   },
   {
     key: "low",
     label: "Low",
     dotClassName: "bg-risk-low",
-    href: "/comments?risk=low",
+    hrefSuffix: "?risk=low",
   },
   {
     key: "needsReview",
     label: "검토 필요",
     dotClassName: "bg-status-needs-review",
-    href: "/comments?status=needs_review",
+    hrefSuffix: "?status=needs_review",
   },
 ];
 
-export function SummaryTiles({ summary }: { summary: Summary }) {
+export function SummaryTiles({
+  summary,
+  channelId,
+}: {
+  summary: Summary;
+  channelId: string;
+}) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
       {TILES.map((tile) => (
         <Link
           key={tile.key}
-          href={tile.href}
+          href={`/c/${channelId}/comments${tile.hrefSuffix}`}
           className="rounded-2xl bg-card px-4 py-4 transition-colors hover:bg-accent/50"
         >
           <div className="flex items-center gap-1.5">

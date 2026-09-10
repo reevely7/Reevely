@@ -34,13 +34,17 @@ function formatDateTime(date: Date): string {
 
 export function NotificationRow({
   notification,
+  channelId,
 }: {
   notification: Notification;
+  channelId: string;
 }) {
   function handleClick() {
     if (!notification.isRead) {
       fetch(`/api/notifications/${notification.id}/read`, {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channelId }),
       });
     }
   }
@@ -52,7 +56,7 @@ export function NotificationRow({
   if (notification.type !== "new_comment") {
     return (
       <Link
-        href={notification.href ?? "/notifications"}
+        href={notification.href ?? `/c/${channelId}/notifications`}
         onClick={handleClick}
         className={wrapperClassName}
       >
@@ -77,7 +81,7 @@ export function NotificationRow({
 
   return (
     <Link
-      href={notification.href ?? "/dashboard"}
+      href={notification.href ?? `/c/${channelId}/dashboard`}
       onClick={handleClick}
       className={wrapperClassName}
     >

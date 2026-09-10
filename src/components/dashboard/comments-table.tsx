@@ -120,7 +120,13 @@ function InfoTile({
   );
 }
 
-export function CommentsTable({ rows }: { rows: Row[] }) {
+export function CommentsTable({
+  rows,
+  channelId,
+}: {
+  rows: Row[];
+  channelId: string;
+}) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (rows.length === 0) {
@@ -213,6 +219,7 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
                           ) : (
                             <StatusActionButton
                               commentId={row.id}
+                              channelId={channelId}
                               status="reported_false"
                               label="오탐 신고"
                             />
@@ -254,7 +261,7 @@ export function CommentsTable({ rows }: { rows: Row[] }) {
                           <InfoTile
                             label="작성자"
                             value={row.authorDisplayName ?? "알 수 없음"}
-                            internalHref={`/authors/${encodeURIComponent(row.authorChannelId)}`}
+                            internalHref={`/c/${channelId}/authors/${encodeURIComponent(row.authorChannelId)}`}
                           />
                           <InfoTile
                             label="플랫폼"

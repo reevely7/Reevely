@@ -1,15 +1,14 @@
 import { Users } from "lucide-react";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 import { MypageNav } from "@/components/mypage/mypage-nav";
 import { Button } from "@/components/ui/button";
+import { requireChannels } from "@/lib/auth/require-channels";
 import {
   getAuthorSubscriptions,
   unsubscribeFromAuthor,
 } from "@/lib/db/queries/notifications";
-import { createClient } from "@/lib/supabase/server";
 
 function formatDate(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -17,22 +16,14 @@ function formatDate(date: Date): string {
 }
 
 export default async function MyPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/");
-  }
-
-  const userId = user.id;
-  const subscriptions = await getAuthorSubscriptions(userId);
+  const { channels } = await requireChannels();
+  const channelId = channels[0].id;
+  const subscriptions = await getAuthorSubscriptions(channelId);
 
   async function unsubscribeAction(formData: FormData) {
     "use server";
     const authorChannelId = String(formData.get("authorChannelId"));
-    await unsubscribeFromAuthor(userId, authorChannelId);
+    await unsubscribeFromAuthor(channelId, authorChannelId);
     revalidatePath("/mypage");
   }
 
@@ -65,7 +56,7 @@ export default async function MyPage() {
             >
               <div className="min-w-0">
                 <Link
-                  href={`/authors/${encodeURIComponent(sub.authorChannelId)}`}
+                  href={`/c/${channelId}/authors/${encodeURIComponent(sub.authorChannelId)}`}
                   className="truncate text-sm font-medium text-card-foreground underline underline-offset-2"
                 >
                   {sub.authorDisplayName ?? "알 수 없음"}

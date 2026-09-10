@@ -5,6 +5,7 @@ import { updateCommentStatus } from "@/lib/db/queries/comments";
 import { createClient } from "@/lib/supabase/server";
 
 const BodySchema = z.object({
+  channelId: z.string(),
   status: z.enum(["confirmed", "reported_false", "whitelisted"]),
 });
 
@@ -27,7 +28,11 @@ export async function PATCH(
   }
 
   const { id } = await params;
-  const updated = await updateCommentStatus(id, user.id, body.data.status);
+  const updated = await updateCommentStatus(
+    id,
+    body.data.channelId,
+    body.data.status,
+  );
 
   if (!updated) {
     return NextResponse.json({ error: "댓글을 찾을 수 없습니다." }, { status: 404 });

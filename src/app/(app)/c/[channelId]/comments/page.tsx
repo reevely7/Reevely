@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-
 import { CommentFilters } from "@/components/dashboard/comment-filters";
 import { CommentSearch } from "@/components/dashboard/comment-search";
 import { CommentsTable } from "@/components/dashboard/comments-table";
@@ -10,13 +8,14 @@ import {
   getFlaggedFilterOptions,
   type CommentFilters as CommentFiltersType,
 } from "@/lib/db/queries/comments";
-import { createClient } from "@/lib/supabase/server";
 
 const PAGE_SIZE = 15;
 
 export default async function CommentsPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ channelId: string }>;
   searchParams: Promise<{
     risk?: string;
     category?: string;
@@ -30,34 +29,26 @@ export default async function CommentsPage({
     page?: string;
   }>;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/");
-  }
-
-  const params = await searchParams;
+  const { channelId } = await params;
+  const sp = await searchParams;
   const filters: CommentFiltersType = {
-    riskLevel: params.risk as CommentFiltersType["riskLevel"],
-    category: params.category,
-    status: params.status as CommentFiltersType["status"],
-    videoId: params.video,
-    search: params.search,
-    author: params.author,
-    dateFrom: params.dateFrom,
-    dateTo: params.dateTo,
-    sort: params.sort as CommentFiltersType["sort"],
+    riskLevel: sp.risk as CommentFiltersType["riskLevel"],
+    category: sp.category,
+    status: sp.status as CommentFiltersType["status"],
+    videoId: sp.video,
+    search: sp.search,
+    author: sp.author,
+    dateFrom: sp.dateFrom,
+    dateTo: sp.dateTo,
+    sort: sp.sort as CommentFiltersType["sort"],
   };
-  const page = Math.max(1, Number(params.page) || 1);
+  const page = Math.max(1, Number(sp.page) || 1);
 
   const [rows, filterOptions, totalCount, allCount] = await Promise.all([
-    getFlaggedComments(user.id, filters, page, PAGE_SIZE),
-    getFlaggedFilterOptions(user.id),
-    countFlaggedComments(user.id, filters),
-    countFlaggedComments(user.id, {}),
+    getFlaggedComments(channelId, filters, page, PAGE_SIZE),
+    getFlaggedFilterOptions(channelId),
+    countFlaggedComments(channelId, filters),
+    countFlaggedComments(channelId, {}),
   ]);
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
@@ -85,7 +76,7 @@ export default async function CommentsPage({
         filteredCount={totalCount}
       />
 
-      <CommentsTable rows={rows} />
+      <CommentsTable rows={rows} channelId={channelId} />
 
       {totalPages > 1 && (
         <Pagination currentPage={page} totalPages={totalPages} />

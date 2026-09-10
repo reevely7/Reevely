@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 
-export function MarkAllReadButton() {
+export function MarkAllReadButton({ channelId }: { channelId: string }) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -13,6 +13,8 @@ export function MarkAllReadButton() {
     setIsLoading(true);
     const res = await fetch("/api/notifications/read-all", {
       method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ channelId }),
     });
 
     if (res.ok) {

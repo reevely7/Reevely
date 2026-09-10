@@ -1,18 +1,6 @@
 import { Archive } from "lucide-react";
-import { redirect } from "next/navigation";
 
-import { createClient } from "@/lib/supabase/server";
-
-export default async function EvidenceArchivePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/");
-  }
-
+export default function EvidenceArchivePage() {
   return (
     <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
       <header>

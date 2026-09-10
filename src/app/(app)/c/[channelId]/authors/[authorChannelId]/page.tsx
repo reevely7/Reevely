@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowLeft, Inbox } from "lucide-react";
-import { redirect } from "next/navigation";
 
 import { AuthorCommentFeed } from "@/components/authors/author-comment-feed";
 import { RiskBadge } from "@/components/dashboard/risk-badge";
@@ -9,7 +8,6 @@ import {
   type CommentRiskLevel,
 } from "@/lib/db/queries/comments";
 import { isSubscribedToAuthor } from "@/lib/db/queries/notifications";
-import { createClient } from "@/lib/supabase/server";
 
 function formatDate(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -25,22 +23,13 @@ const RISK_BAR_CLASSES: Record<CommentRiskLevel, string> = {
 export default async function AuthorPage({
   params,
 }: {
-  params: Promise<{ authorChannelId: string }>;
+  params: Promise<{ channelId: string; authorChannelId: string }>;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/");
-  }
-
-  const { authorChannelId } = await params;
+  const { channelId, authorChannelId } = await params;
   const decodedAuthorChannelId = decodeURIComponent(authorChannelId);
   const [comments, isSubscribed] = await Promise.all([
-    getCommentsByAuthor(user.id, decodedAuthorChannelId),
-    isSubscribedToAuthor(user.id, decodedAuthorChannelId),
+    getCommentsByAuthor(channelId, decodedAuthorChannelId),
+    isSubscribedToAuthor(channelId, decodedAuthorChannelId),
   ]);
   const displayName = comments[0]?.authorDisplayName ?? "알 수 없음";
   const initial = displayName.replace(/^@/, "").charAt(0).toUpperCase() || "?";
@@ -69,7 +58,7 @@ export default async function AuthorPage({
   return (
     <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
       <Link
-        href="/dashboard"
+        href={`/c/${channelId}/dashboard`}
         className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="size-3.5" aria-hidden />
@@ -152,6 +141,7 @@ export default async function AuthorPage({
               comments={comments}
               displayName={displayName}
               initial={initial}
+              channelId={channelId}
               authorChannelId={decodedAuthorChannelId}
               initialSubscribed={isSubscribed}
             />

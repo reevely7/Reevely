@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { LogoutButton } from "@/components/auth/logout-button";
 import { Button } from "@/components/ui/button";
-import { getChannelByUserId } from "@/lib/db/queries/channels";
+import { getChannelsByUserId } from "@/lib/db/queries/channels";
 import { createClient } from "@/lib/supabase/server";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -28,7 +28,8 @@ export default async function OnboardingPage({
     redirect("/");
   }
 
-  const channel = await getChannelByUserId(user.id);
+  const channels = await getChannelsByUserId(user.id);
+  const channel = channels[0] ?? null;
 
   if (!channel) {
     return (
@@ -83,7 +84,7 @@ export default async function OnboardingPage({
 
       <Button
         nativeButton={false}
-        render={<Link href="/dashboard">대시보드로 이동</Link>}
+        render={<Link href={`/c/${channel.id}/dashboard`}>대시보드로 이동</Link>}
       />
     </main>
   );

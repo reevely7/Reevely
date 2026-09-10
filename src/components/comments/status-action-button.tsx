@@ -9,6 +9,7 @@ type Status = "confirmed" | "reported_false" | "whitelisted";
 
 type Props = {
   commentId: string;
+  channelId: string;
   status: Status;
   label: string;
   variant?: "default" | "outline" | "secondary" | "ghost";
@@ -16,6 +17,7 @@ type Props = {
 
 export function StatusActionButton({
   commentId,
+  channelId,
   status,
   label,
   variant = "outline",
@@ -28,7 +30,7 @@ export function StatusActionButton({
     const res = await fetch(`/api/comments/${commentId}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ channelId, status }),
     });
 
     if (res.ok) {
