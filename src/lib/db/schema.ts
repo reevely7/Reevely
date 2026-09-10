@@ -69,8 +69,7 @@ export const comments = pgTable(
     // Supabase Auth의 auth.users.id를 가리킨다. auth 스키마는 Drizzle이 관리하지
     // 않으므로 DB 레벨 FK는 걸지 않고 애플리케이션 레벨에서 정합성을 유지한다.
     userId: uuid("user_id").notNull(),
-    // 백필 후 Task 2에서 notNull로 전환한다
-    channelId: uuid("channel_id"),
+    channelId: uuid("channel_id").notNull(),
     // 이 댓글이 어느 플랫폼에서 수집됐는지. MVP는 유튜브만 실제 수집.
     platform: platformEnum("platform").notNull().default("youtube"),
     videoId: text("video_id").notNull(),
@@ -115,7 +114,7 @@ export const authorSubscriptions = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id").notNull(),
-    channelId: uuid("channel_id"),
+    channelId: uuid("channel_id").notNull(),
     authorChannelId: text("author_channel_id").notNull(),
     // 알림 목록에 표시할 스냅샷 (댓글 재조회 없이 바로 보여주기 위함)
     authorDisplayName: text("author_display_name"),
@@ -124,8 +123,8 @@ export const authorSubscriptions = pgTable(
       .defaultNow(),
   },
   (table) => [
-    unique("author_subscriptions_user_author_unique").on(
-      table.userId,
+    unique("author_subscriptions_channel_author_unique").on(
+      table.channelId,
       table.authorChannelId,
     ),
   ],
@@ -155,7 +154,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 export const notifications = pgTable("notifications", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull(),
-  channelId: uuid("channel_id"),
+  channelId: uuid("channel_id").notNull(),
   type: notificationTypeEnum("type").notNull().default("new_comment"),
   commentId: uuid("comment_id"),
   title: text("title"),
