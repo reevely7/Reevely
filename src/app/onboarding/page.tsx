@@ -1,24 +1,10 @@
-import Image from "next/image";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { LogoutButton } from "@/components/auth/logout-button";
-import { Button } from "@/components/ui/button";
 import { getChannelsByUserId } from "@/lib/db/queries/channels";
 import { createClient } from "@/lib/supabase/server";
 
-const ERROR_MESSAGES: Record<string, string> = {
-  channel_connect: "유튜브 채널 연동에 실패했습니다. 다시 시도해 주세요.",
-};
-
-export default async function OnboardingPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>;
-}) {
-  const { error } = await searchParams;
-  const errorMessage = error ? ERROR_MESSAGES[error] : undefined;
-
+export default async function OnboardingPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -29,63 +15,25 @@ export default async function OnboardingPage({
   }
 
   const channels = await getChannelsByUserId(user.id);
-  const channel = channels[0] ?? null;
-
-  if (!channel) {
-    return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          연동된 채널이 없습니다.
-        </h1>
-        <p className="max-w-sm text-sm text-muted-foreground">
-          채널 연동을 해제했거나, 연동된 구글 계정에 유튜브 채널이 없는
-          경우입니다. 채널이 있는 계정으로 다시 연동해 주세요.
-        </p>
-        {errorMessage && (
-          <p className="rounded-md bg-risk-high-bg px-3 py-2 text-xs text-risk-high">
-            {errorMessage}
-          </p>
-        )}
-        <div className="w-full max-w-xs">
-          <Button
-            nativeButton={false}
-            render={<Link href="/channel-connect/start">유튜브 채널 연동하기</Link>}
-          />
-        </div>
-        <LogoutButton />
-      </main>
-    );
+  if (channels.length > 0) {
+    redirect(`/c/${channels[0].id}/dashboard`);
   }
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 text-center">
-      <p className="text-sm text-muted-foreground">이 채널이 맞나요?</p>
-
-      <div className="flex flex-col items-center gap-3 rounded-2xl bg-card px-8 py-8">
-        {channel.thumbnailUrl && (
-          <Image
-            src={channel.thumbnailUrl}
-            alt={channel.channelTitle}
-            width={64}
-            height={64}
-            priority
-            className="rounded-full"
-          />
-        )}
-        <h1 className="text-xl font-semibold tracking-tight text-card-foreground">
-          {channel.channelTitle}
-        </h1>
-        {channel.subscriberCount != null && (
-          <p className="font-mono text-xs text-muted-foreground">
-            구독자 {channel.subscriberCount.toLocaleString("ko-KR")}명
-          </p>
-        )}
-      </div>
-
-      <Button
-        nativeButton={false}
-        render={<Link href={`/c/${channel.id}/dashboard`}>대시보드로 이동</Link>}
-      />
+    <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        연동된 채널이 없습니다.
+      </h1>
+      <p className="max-w-sm text-sm text-muted-foreground">
+        유튜브 채널을 연동하면 바로 시작할 수 있어요.
+      </p>
+      <a
+        href="/channel-connect/start"
+        className="inline-flex h-11 w-full max-w-xs items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground hover:opacity-90"
+      >
+        유튜브 채널 연동하기
+      </a>
+      <LogoutButton />
     </main>
   );
 }

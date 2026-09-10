@@ -4,6 +4,7 @@ import { MypageNav } from "@/components/mypage/mypage-nav";
 import { Button } from "@/components/ui/button";
 import { DangerZoneButton } from "@/components/settings/danger-zone-button";
 import {
+  deleteChannelById,
   deleteChannelByUserId,
   getChannelsByUserId,
 } from "@/lib/db/queries/channels";
@@ -12,7 +13,18 @@ import { deleteNotificationsByUserId } from "@/lib/db/queries/notifications";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function MypageAccountPage() {
+const ERROR_MESSAGES: Record<string, string> = {
+  channel_limit: "현재 플랜의 채널 연동 한도에 도달했습니다. 플랜을 업그레이드해 주세요.",
+};
+
+export default async function MypageAccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+  const errorMessage = error ? ERROR_MESSAGES[error] : undefined;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,17 +34,22 @@ export default async function MypageAccountPage() {
     redirect("/");
   }
 
-  // TODO(Task 9): 여러 채널 각각 개별 연동 해제가 되도록 다시 설계 필요 — 지금은
-  // 첫 채널만 보여주고, 해제 시 이 유저의 모든 채널을 한꺼번에 지운다 (임시 조치,
-  // tsc를 깨끗하게 유지하기 위한 최소 수정일 뿐 Task 9의 본래 재설계는 아님).
-  const channels = await getChannelsByUserId(user.id);
-  const channel = channels[0] ?? null;
   const userId = user.id;
+  const channels = await getChannelsByUserId(userId);
 
-  async function disconnectChannel() {
+  async function disconnectChannel(formData: FormData) {
     "use server";
-    await deleteChannelByUserId(userId);
-    redirect("/onboarding");
+    const channelId = String(formData.get("channelId"));
+
+    // IDOR 방지: Server Action은 렌더된 폼 없이도 직접 호출될 수 있으므로,
+    // channelId가 실제로 현재 유저 소유인지 확인한 뒤에만 삭제한다.
+    const ownsChannel = channels.some((c) => c.id === channelId);
+    if (!ownsChannel) {
+      redirect("/mypage/account");
+    }
+
+    await deleteChannelById(channelId);
+    redirect("/mypage/account");
   }
 
   async function deleteAccount() {
@@ -62,22 +79,50 @@ export default async function MypageAccountPage() {
 
       <MypageNav />
 
+      {errorMessage && (
+        <p className="rounded-md bg-risk-high-bg px-3 py-2 text-xs text-risk-high">
+          {errorMessage}
+        </p>
+      )}
+
       <section className="space-y-3 rounded-2xl bg-card px-5 py-4">
         <h2 className="text-sm font-medium text-card-foreground">
-          연동된 채널
+          연동된 채널 ({channels.length}개)
         </h2>
-        {channel && (
-          <>
-            <p className="text-sm text-muted-foreground">
-              {channel.channelTitle}
-            </p>
-            <form action={disconnectChannel}>
-              <Button type="submit" variant="outline">
-                채널 연동 해제
-              </Button>
-            </form>
-          </>
+        {channels.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            연동된 채널이 없습니다.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {channels.map((channel) => (
+              <li
+                key={channel.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
+              >
+                <span className="text-sm text-muted-foreground">
+                  {channel.channelTitle}
+                  {channel.status === "locked" && (
+                    <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                      잠김
+                    </span>
+                  )}
+                </span>
+                <form action={disconnectChannel}>
+                  <input type="hidden" name="channelId" value={channel.id} />
+                  <Button type="submit" variant="outline" size="sm">
+                    연동 해제
+                  </Button>
+                </form>
+              </li>
+            ))}
+          </ul>
         )}
+        <Button
+          nativeButton={false}
+          variant="outline"
+          render={<a href="/channel-connect/start">채널 추가</a>}
+        />
       </section>
 
       <section className="space-y-3 rounded-2xl bg-risk-high-bg px-5 py-4">
