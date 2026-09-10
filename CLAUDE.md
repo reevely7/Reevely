@@ -29,7 +29,9 @@ AI 기반 악성 댓글 탐지 및 증거관리 SaaS.
 
 - TypeScript / Next.js (App Router) + React + Tailwind CSS, 패키지 매니저 npm
 - UI: shadcn/ui
-- Supabase: PostgreSQL + Auth(구글 OAuth) + Storage(증거 캡처용, 향후 단계)
+- Supabase: PostgreSQL + Auth(카카오 로그인) + Storage(증거 캡처용, 향후 단계).
+  구글 OAuth는 로그인이 아니라 별도의 유튜브 채널 연동 플로우
+  (`/channel-connect/start` → `/channel-connect/callback`)에서만 쓴다.
 - **ORM: Drizzle** — 실제 쿼리는 전부 Drizzle로 작성한다. Supabase 기본 클라이언트는
   Auth 용도로만 쓰고 DB 쿼리에는 쓰지 않는다. (타입 안전성 + DB lock-in 방지)
 - 배포: Vercel
@@ -127,7 +129,9 @@ src/
     api/authors/[authorChannelId]/subscription/route.ts  알림 구독 on/off (PATCH)
     api/notifications/[id]/read/route.ts   알림 읽음 처리 (PATCH)
     api/notifications/read-all/route.ts    알림 전체 읽음 처리 (PATCH)
-    auth/callback/route.ts                 OAuth 콜백 (채널 연동 포함)
+    auth/callback/route.ts                 카카오 로그인 콜백 (세션 교환만, 채널 연동은 별도 플로우)
+    channel-connect/start/route.ts         유튜브 채널 연동 시작 (구글 OAuth, CSRF state 쿠키 발급)
+    channel-connect/callback/route.ts      유튜브 채널 연동 콜백 (구글 OAuth 코드 교환 후 연동)
     onboarding/                            채널 연동 확인 화면
     dashboard/                             메인 대시보드
     review/                                검토 필요 큐
@@ -150,6 +154,7 @@ src/
       queries/        DB 쿼리 함수 (comments, channels, notifications)
     supabase/        client.ts(브라우저)/server.ts(서버)/middleware.ts — Auth
     youtube/         채널 연동, 댓글 sync, 토큰 갱신
+      exchange-auth-code.ts  구글 인가 코드(code) → access/refresh 토큰 교환
     ai/              OpenAI 판정 로직
     crypto/          refresh token 암호화
   proxy.ts           세션 갱신 (Next.js 16, 구 middleware.ts)

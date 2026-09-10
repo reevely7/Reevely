@@ -12,8 +12,8 @@ type Props = {
   size?: "default" | "sm" | "lg";
 };
 
-export function GoogleSignInButton({
-  label = "Google 계정으로 계속하기",
+export function KakaoSignInButton({
+  label = "카카오로 계속하기",
   className,
   variant = "default",
   size = "lg",
@@ -24,17 +24,9 @@ export function GoogleSignInButton({
     setIsLoading(true);
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
-      provider: "google",
+      provider: "kakao",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        // 유튜브 댓글을 서버에서 대신 가져오려면 refresh_token이 필요함.
-        // commentThreads.list는 youtube.readonly로는 403(insufficientPermissions)이
-        // 나고 youtube.force-ssl scope가 있어야 동작한다.
-        scopes: "https://www.googleapis.com/auth/youtube.force-ssl",
-        queryParams: {
-          access_type: "offline",
-          prompt: "consent",
-        },
       },
     });
   }
