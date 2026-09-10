@@ -3,7 +3,7 @@ import "server-only";
 import { and, asc, eq, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { channels } from "@/lib/db/schema";
+import { authorSubscriptions, channels, comments, notifications } from "@/lib/db/schema";
 
 export async function getChannelsByUserId(userId: string) {
   return db
@@ -37,7 +37,16 @@ export async function getAllChannels() {
   return db.select().from(channels);
 }
 
+// 채널 연동 해제 시 그 채널에 종속된 데이터를 전부 함께 지운다 — FK 제약이
+// 없어서 안 지우면 comments/notifications/author_subscriptions가 영구히
+// 고아 상태로 남는다 (재연동해도 upsertChannel이 새 UUID를 발급해 다시
+// 연결되지 않음). 개인정보 최소 보관 원칙상으로도 자식 먼저 지운다.
 export async function deleteChannelById(channelId: string) {
+  await db.delete(comments).where(eq(comments.channelId, channelId));
+  await db.delete(notifications).where(eq(notifications.channelId, channelId));
+  await db
+    .delete(authorSubscriptions)
+    .where(eq(authorSubscriptions.channelId, channelId));
   await db.delete(channels).where(eq(channels.id, channelId));
 }
 

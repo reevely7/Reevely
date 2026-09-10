@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 
 import {
   countMaliciousCommentsByAuthor,
@@ -363,6 +363,22 @@ export async function notifyPaymentDowngraded(userId: string) {
     message: "재시도 결제도 실패해 무료 플랜으로 전환됐어요. 다시 구독하려면 결제 정보를 등록해 주세요.",
     href: "/mypage/subscription",
   });
+}
+
+// 결제 알림(channelId가 NULL인 계정 단위 알림)만 조회 — /mypage/subscription 전용
+export async function getAccountNotifications(userId: string) {
+  return db
+    .select({
+      id: notifications.id,
+      type: notifications.type,
+      isRead: notifications.isRead,
+      createdAt: notifications.createdAt,
+      title: notifications.title,
+      message: notifications.message,
+    })
+    .from(notifications)
+    .where(and(eq(notifications.userId, userId), isNull(notifications.channelId)))
+    .orderBy(desc(notifications.createdAt));
 }
 
 // 계정 삭제 시 함께 정리한다

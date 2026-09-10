@@ -4,6 +4,7 @@ import { CancelSubscriptionButton } from "@/components/mypage/cancel-subscriptio
 import { MypageNav } from "@/components/mypage/mypage-nav";
 import { PlanChangeButton } from "@/components/mypage/plan-change-button";
 import { PlanCheckoutButton } from "@/components/mypage/plan-checkout-button";
+import { getAccountNotifications } from "@/lib/db/queries/notifications";
 import {
   getSubscriptionByUserId,
   PLAN_LABELS,
@@ -13,6 +14,10 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 const ALL_PLANS: SubscriptionPlan[] = ["basic", "plus", "pro"];
+
+function formatDate(date: Date): string {
+  return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+}
 
 export default async function MypageSubscriptionPage() {
   const supabase = await createClient();
@@ -25,6 +30,7 @@ export default async function MypageSubscriptionPage() {
   }
 
   const subscription = await getSubscriptionByUserId(user.id);
+  const accountNotifications = await getAccountNotifications(user.id);
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
@@ -82,6 +88,27 @@ export default async function MypageSubscriptionPage() {
           )}
         </div>
       </section>
+
+      {accountNotifications.length > 0 && (
+        <section className="space-y-3 rounded-2xl bg-card px-5 py-4">
+          <h2 className="text-sm font-medium text-card-foreground">결제 알림</h2>
+          <div className="flex flex-col gap-2">
+            {accountNotifications.map((notification) => (
+              <div
+                key={notification.id}
+                className="rounded-lg border border-border px-3 py-2"
+              >
+                <p className="text-sm text-card-foreground">
+                  {notification.message}
+                </p>
+                <p className="mt-1 font-mono text-xs text-muted-foreground">
+                  {formatDate(notification.createdAt)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </main>
   );
 }
