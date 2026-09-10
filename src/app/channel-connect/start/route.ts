@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 import { createClient } from "@/lib/supabase/server";
+import { getChannelsByUserId } from "@/lib/db/queries/channels";
+import {
+  FREE_CHANNEL_LIMIT,
+  getSubscriptionByUserId,
+  PLAN_CHANNEL_LIMITS,
+} from "@/lib/db/queries/subscriptions";
 
 const STATE_COOKIE = "channel_connect_state";
 
@@ -13,6 +19,19 @@ export async function GET(request: Request) {
 
   if (!user) {
     return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  const existingChannels = await getChannelsByUserId(user.id);
+  const subscription = await getSubscriptionByUserId(user.id);
+  const limit = subscription
+    ? PLAN_CHANNEL_LIMITS[subscription.plan]
+    : FREE_CHANNEL_LIMIT;
+  const activeCount = existingChannels.filter((c) => c.status === "active").length;
+
+  if (activeCount >= limit) {
+    return NextResponse.redirect(
+      new URL("/mypage/account?error=channel_limit", request.url),
+    );
   }
 
   const state = crypto.randomUUID();

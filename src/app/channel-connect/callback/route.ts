@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 import { createClient } from "@/lib/supabase/server";
-import { connectChannel } from "@/lib/youtube/connect-channel";
+import { ChannelLimitError, connectChannel } from "@/lib/youtube/connect-channel";
 import { exchangeAuthCodeForTokens } from "@/lib/youtube/exchange-auth-code";
 
 const STATE_COOKIE = "channel_connect_state";
@@ -34,9 +34,18 @@ export async function GET(request: Request) {
       code,
       `${origin}/channel-connect/callback`,
     );
-    await connectChannel({ userId: user.id, accessToken, refreshToken });
-    return NextResponse.redirect(`${origin}/dashboard`);
+    const channelId = await connectChannel({
+      userId: user.id,
+      accessToken,
+      refreshToken,
+    });
+    return NextResponse.redirect(`${origin}/c/${channelId}/dashboard`);
   } catch (e) {
+    if (e instanceof ChannelLimitError) {
+      return NextResponse.redirect(
+        `${origin}/mypage/account?error=channel_limit`,
+      );
+    }
     console.error("채널 연동 실패:", e);
     return NextResponse.redirect(`${origin}/onboarding?error=channel_connect`);
   }

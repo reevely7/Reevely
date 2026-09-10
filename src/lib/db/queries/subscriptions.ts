@@ -20,6 +20,14 @@ export const PLAN_LABELS: Record<SubscriptionPlan, string> = {
   pro: "프로",
 };
 
+export const PLAN_CHANNEL_LIMITS: Record<SubscriptionPlan, number> = {
+  basic: 1,
+  plus: 2,
+  pro: 3,
+};
+
+export const FREE_CHANNEL_LIMIT = 1;
+
 export async function getSubscriptionByUserId(userId: string) {
   const [row] = await db
     .select()
