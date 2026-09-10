@@ -65,7 +65,7 @@ export default async function MypageSubscriptionPage() {
         <h2 className="text-sm font-medium text-card-foreground">플랜 선택</h2>
         <div className="flex flex-wrap gap-3">
           {ALL_PLANS.map((plan) =>
-            subscription ? (
+            subscription && subscription.status === "active" ? (
               <PlanChangeButton
                 key={plan}
                 plan={plan}

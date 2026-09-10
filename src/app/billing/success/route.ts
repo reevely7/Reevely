@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { chargeBilling, issueBillingKey } from "@/lib/billing/toss-client";
 import {
   createSubscription,
+  getSubscriptionByUserId,
   PLAN_LABELS,
   PLAN_PRICES,
   recordPaymentHistory,
@@ -33,6 +34,13 @@ export async function GET(request: Request) {
   } = await supabase.auth.getUser();
 
   if (!user || user.id !== customerKey) {
+    return NextResponse.redirect(`${origin}/billing/fail`);
+  }
+
+  // 이미 활성 구독 중인 유저가 체크아웃 플로우를 다시 타면 이중 청구가 될 수
+  // 있다 — Fix 2 이후 UI에서는 도달하지 않지만 라우트 레벨에서도 방어한다.
+  const existingSubscription = await getSubscriptionByUserId(user.id);
+  if (existingSubscription?.status === "active") {
     return NextResponse.redirect(`${origin}/billing/fail`);
   }
 
