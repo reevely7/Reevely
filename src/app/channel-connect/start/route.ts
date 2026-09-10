@@ -1,0 +1,45 @@
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+
+import { createClient } from "@/lib/supabase/server";
+
+const STATE_COOKIE = "channel_connect_state";
+
+export async function GET(request: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  const state = crypto.randomUUID();
+  const cookieStore = await cookies();
+  cookieStore.set(STATE_COOKIE, state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 600,
+    path: "/",
+  });
+
+  const { origin } = new URL(request.url);
+  const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  authUrl.searchParams.set("client_id", process.env.GOOGLE_CLIENT_ID!);
+  authUrl.searchParams.set(
+    "redirect_uri",
+    `${origin}/channel-connect/callback`,
+  );
+  authUrl.searchParams.set("response_type", "code");
+  authUrl.searchParams.set(
+    "scope",
+    "https://www.googleapis.com/auth/youtube.force-ssl",
+  );
+  authUrl.searchParams.set("access_type", "offline");
+  authUrl.searchParams.set("prompt", "consent");
+  authUrl.searchParams.set("state", state);
+
+  return NextResponse.redirect(authUrl);
+}

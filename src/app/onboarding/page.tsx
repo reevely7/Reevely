@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { Button } from "@/components/ui/button";
 import { getChannelByUserId } from "@/lib/db/queries/channels";
@@ -31,7 +30,10 @@ export default async function OnboardingPage() {
           경우입니다. 채널이 있는 계정으로 다시 연동해 주세요.
         </p>
         <div className="w-full max-w-xs">
-          <GoogleSignInButton />
+          <Button
+            nativeButton={false}
+            render={<Link href="/channel-connect/start">유튜브 채널 연동하기</Link>}
+          />
         </div>
         <LogoutButton />
       </main>
