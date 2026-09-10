@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getChannelById } from "@/lib/db/queries/channels";
 import { updateCommentStatus } from "@/lib/db/queries/comments";
 import { createClient } from "@/lib/supabase/server";
 
@@ -25,6 +26,11 @@ export async function PATCH(
   const body = BodySchema.safeParse(await request.json());
   if (!body.success) {
     return NextResponse.json({ error: "잘못된 요청입니다." }, { status: 400 });
+  }
+
+  const channel = await getChannelById(body.data.channelId);
+  if (!channel || channel.userId !== user.id) {
+    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
   }
 
   const { id } = await params;
