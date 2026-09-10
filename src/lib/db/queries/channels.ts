@@ -1,25 +1,35 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { channels } from "@/lib/db/schema";
 
-// 신선도 기반 폴링: 최근 업로드된 영상이 있는 채널은 자주, 그 외는 느슨하게 확인한다.
-// (유튜브는 댓글 웹훅이 없어 폴링만 가능 — 새 영상 직후 24~48시간에 댓글이 몰리는
-// 경향을 이용해 쿼터를 소수의 "활성" 채널에 집중시킨다)
-const FRESH_WINDOW_MS = 48 * 60 * 60 * 1000;
-const FRESH_INTERVAL_MS = 60 * 60 * 1000;
-const STALE_INTERVAL_MS = 6 * 60 * 60 * 1000;
-
-export async function getChannelByUserId(userId: string) {
-  const [channel] = await db
+export async function getChannelsByUserId(userId: string) {
+  return db
     .select()
     .from(channels)
     .where(eq(channels.userId, userId))
+    .orderBy(asc(channels.createdAt));
+}
+
+export async function getChannelById(channelId: string) {
+  const [channel] = await db
+    .select()
+    .from(channels)
+    .where(eq(channels.id, channelId))
     .limit(1);
 
   return channel ?? null;
+}
+
+export async function countActiveChannelsByUserId(userId: string) {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(channels)
+    .where(and(eq(channels.userId, userId), eq(channels.status, "active")));
+
+  return row?.count ?? 0;
 }
 
 // cron이 전체 연동 채널을 순회하며 자동 sync+분석을 돌릴 때 사용
@@ -27,6 +37,11 @@ export async function getAllChannels() {
   return db.select().from(channels);
 }
 
+export async function deleteChannelById(channelId: string) {
+  await db.delete(channels).where(eq(channels.id, channelId));
+}
+
+// 계정 삭제 시 그 유저의 채널을 전부 지운다 (몇 개든 상관없음)
 export async function deleteChannelByUserId(userId: string) {
   await db.delete(channels).where(eq(channels.userId, userId));
 }
@@ -35,6 +50,10 @@ type Channel = {
   lastSyncedAt: Date | null;
   latestVideoPublishedAt: Date | null;
 };
+
+const FRESH_WINDOW_MS = 48 * 60 * 60 * 1000;
+const FRESH_INTERVAL_MS = 60 * 60 * 1000;
+const STALE_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
 export function isSyncDue(channel: Channel, now: Date = new Date()) {
   const isFresh =
@@ -86,14 +105,25 @@ type UpsertChannelInput = {
   encryptedRefreshToken?: string;
 };
 
-export async function upsertChannel(input: UpsertChannelInput) {
-  const existing = await getChannelByUserId(input.userId);
+// (userId, youtubeChannelId) 조합으로 기존 채널인지 판단한다 — 같은 채널을 다시
+// 연동(토큰 갱신)하면 update, 새 채널이면 insert. 채널 id를 리턴해서 호출부가
+// 방금 연동/갱신된 채널로 바로 이동할 수 있게 한다.
+export async function upsertChannel(input: UpsertChannelInput): Promise<string> {
+  const [existing] = await db
+    .select()
+    .from(channels)
+    .where(
+      and(
+        eq(channels.userId, input.userId),
+        eq(channels.youtubeChannelId, input.youtubeChannelId),
+      ),
+    )
+    .limit(1);
 
   if (existing) {
     await db
       .update(channels)
       .set({
-        youtubeChannelId: input.youtubeChannelId,
         channelTitle: input.channelTitle,
         thumbnailUrl: input.thumbnailUrl,
         subscriberCount: input.subscriberCount,
@@ -104,20 +134,25 @@ export async function upsertChannel(input: UpsertChannelInput) {
           : {}),
       })
       .where(eq(channels.id, existing.id));
-    return;
+    return existing.id;
   }
 
   if (!input.encryptedRefreshToken) {
     throw new Error("최초 채널 연동 시 refresh token이 반드시 필요합니다.");
   }
 
-  await db.insert(channels).values({
-    userId: input.userId,
-    youtubeChannelId: input.youtubeChannelId,
-    channelTitle: input.channelTitle,
-    thumbnailUrl: input.thumbnailUrl,
-    subscriberCount: input.subscriberCount,
-    uploadsPlaylistId: input.uploadsPlaylistId,
-    refreshToken: input.encryptedRefreshToken,
-  });
+  const [inserted] = await db
+    .insert(channels)
+    .values({
+      userId: input.userId,
+      youtubeChannelId: input.youtubeChannelId,
+      channelTitle: input.channelTitle,
+      thumbnailUrl: input.thumbnailUrl,
+      subscriberCount: input.subscriberCount,
+      uploadsPlaylistId: input.uploadsPlaylistId,
+      refreshToken: input.encryptedRefreshToken,
+    })
+    .returning({ id: channels.id });
+
+  return inserted.id;
 }
