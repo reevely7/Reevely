@@ -1,7 +1,7 @@
 import { Check, X } from "lucide-react";
 import { redirect } from "next/navigation";
 
-import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { KakaoSignInButton } from "@/components/auth/kakao-sign-in-button";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { getChannelByUserId } from "@/lib/db/queries/channels";
 import { createClient } from "@/lib/supabase/server";
@@ -187,13 +187,13 @@ export default async function LandingPage({
           Reevely
         </p>
         <div className="flex items-center gap-2">
-          <GoogleSignInButton
+          <KakaoSignInButton
             label="로그인"
             variant="ghost"
             size="sm"
             className="w-auto"
           />
-          <GoogleSignInButton
+          <KakaoSignInButton
             label="회원가입"
             variant="outline"
             size="sm"
@@ -225,12 +225,12 @@ export default async function LandingPage({
               {errorMessage}
             </p>
           )}
-          <GoogleSignInButton
+          <KakaoSignInButton
             label="시작하기"
             className="h-12 w-auto px-10 text-base"
           />
           <p className="text-xs text-muted-foreground">
-            유튜브 채널 읽기 권한만 요청합니다.
+            카카오 로그인 후 유튜브 채널을 연동합니다.
           </p>
         </div>
       </section>
@@ -419,7 +419,7 @@ export default async function LandingPage({
           </div>
 
           <div className="mt-8 flex flex-col items-center gap-3 text-center">
-            <GoogleSignInButton
+            <KakaoSignInButton
               label="시작하기"
               className="h-12 w-auto px-10 text-base"
             />
@@ -438,9 +438,9 @@ export default async function LandingPage({
             지금 채널을 연동해 보세요
           </h2>
           <p className="text-sm text-muted-foreground">
-            유튜브 채널 읽기 권한만 요청합니다.
+            카카오 로그인 후 유튜브 채널을 연동합니다.
           </p>
-          <GoogleSignInButton
+          <KakaoSignInButton
             label="시작하기"
             className="h-12 w-auto px-10 text-base"
           />
