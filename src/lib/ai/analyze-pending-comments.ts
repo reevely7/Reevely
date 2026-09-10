@@ -18,8 +18,8 @@ import {
 // 최대 하루 24회 × 20개 = 480개가 자연스러운 상한이라 별도 일일 카운터는 안 둔다.
 const MAX_BATCH = 20;
 
-export async function analyzePendingComments(userId: string) {
-  const pending = await getUnanalyzedComments(userId, MAX_BATCH);
+export async function analyzePendingComments(userId: string, channelId: string) {
+  const pending = await getUnanalyzedComments(channelId, MAX_BATCH);
 
   let analyzed = 0;
   let failed = 0;
@@ -37,18 +37,20 @@ export async function analyzePendingComments(userId: string) {
 
       if (result.is_malicious) {
         const subscribed = await isSubscribedToAuthor(
-          userId,
+          channelId,
           comment.authorChannelId,
         );
         if (subscribed) {
           await createNewCommentNotification(
             userId,
+            channelId,
             comment.id,
             comment.authorChannelId,
           );
         } else {
           await maybeSuggestAuthorSubscription(
             userId,
+            channelId,
             comment.authorChannelId,
             comment.authorDisplayName,
           );
@@ -69,11 +71,11 @@ export async function analyzePendingComments(userId: string) {
   }
 
   for (const [videoId, { count, videoTitle }] of videoMaliciousCounts) {
-    await maybeNotifyVideoSpike(userId, videoId, videoTitle, count);
+    await maybeNotifyVideoSpike(userId, channelId, videoId, videoTitle, count);
   }
 
-  const backlogCount = await countReviewQueue(userId);
-  await maybeNotifyReviewBacklog(userId, backlogCount);
+  const backlogCount = await countReviewQueue(channelId);
+  await maybeNotifyReviewBacklog(userId, channelId, backlogCount);
 
   return { totalPending: pending.length, analyzed, failed };
 }

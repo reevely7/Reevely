@@ -154,7 +154,9 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 export const notifications = pgTable("notifications", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull(),
-  channelId: uuid("channel_id").notNull(),
+  // payment_failed/payment_downgraded만 예외적으로 null (계정 단위 알림이라 특정
+  // 채널에 안 묶임). 그 외 타입은 전부 채널 종속이라 애플리케이션 레벨에서 항상 채운다.
+  channelId: uuid("channel_id"),
   type: notificationTypeEnum("type").notNull().default("new_comment"),
   commentId: uuid("comment_id"),
   title: text("title"),

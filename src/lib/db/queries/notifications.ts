@@ -26,7 +26,7 @@ const REVIEW_BACKLOG_THRESHOLD = 5;
 const WEEKLY_DIGEST_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export async function isSubscribedToAuthor(
-  userId: string,
+  channelId: string,
   authorChannelId: string,
 ) {
   const [row] = await db
@@ -34,7 +34,7 @@ export async function isSubscribedToAuthor(
     .from(authorSubscriptions)
     .where(
       and(
-        eq(authorSubscriptions.userId, userId),
+        eq(authorSubscriptions.channelId, channelId),
         eq(authorSubscriptions.authorChannelId, authorChannelId),
       ),
     )
@@ -45,18 +45,19 @@ export async function isSubscribedToAuthor(
 
 export async function subscribeToAuthor(
   userId: string,
+  channelId: string,
   authorChannelId: string,
   authorDisplayName: string | null,
 ) {
   await db
     .insert(authorSubscriptions)
-    .values({ userId, authorChannelId, authorDisplayName })
+    .values({ userId, channelId, authorChannelId, authorDisplayName })
     .onConflictDoNothing({
-      target: [authorSubscriptions.userId, authorSubscriptions.authorChannelId],
+      target: [authorSubscriptions.channelId, authorSubscriptions.authorChannelId],
     });
 }
 
-export async function getAuthorSubscriptions(userId: string) {
+export async function getAuthorSubscriptions(channelId: string) {
   return db
     .select({
       authorChannelId: authorSubscriptions.authorChannelId,
@@ -64,31 +65,31 @@ export async function getAuthorSubscriptions(userId: string) {
       createdAt: authorSubscriptions.createdAt,
     })
     .from(authorSubscriptions)
-    .where(eq(authorSubscriptions.userId, userId))
+    .where(eq(authorSubscriptions.channelId, channelId))
     .orderBy(desc(authorSubscriptions.createdAt));
 }
 
 export async function unsubscribeFromAuthor(
-  userId: string,
+  channelId: string,
   authorChannelId: string,
 ) {
   await db
     .delete(authorSubscriptions)
     .where(
       and(
-        eq(authorSubscriptions.userId, userId),
+        eq(authorSubscriptions.channelId, channelId),
         eq(authorSubscriptions.authorChannelId, authorChannelId),
       ),
     );
 }
 
 async function hasUnreadNotificationOfType(
-  userId: string,
+  channelId: string,
   type: NotificationType,
   refId?: string,
 ) {
   const conditions = [
-    eq(notifications.userId, userId),
+    eq(notifications.channelId, channelId),
     eq(notifications.type, type),
     eq(notifications.isRead, false),
   ];
@@ -106,7 +107,7 @@ async function hasUnreadNotificationOfType(
 // repeat_author처럼 "평생 한 번만" 제안해야 하는 타입용 — 읽음 여부와 무관하게
 // 과거에 한 번이라도 만들어진 적 있으면 다시 만들지 않는다.
 async function hasEverNotifiedOfType(
-  userId: string,
+  channelId: string,
   type: NotificationType,
   refId: string,
 ) {
@@ -115,7 +116,7 @@ async function hasEverNotifiedOfType(
     .from(notifications)
     .where(
       and(
-        eq(notifications.userId, userId),
+        eq(notifications.channelId, channelId),
         eq(notifications.type, type),
         eq(notifications.refId, refId),
       ),
@@ -129,14 +130,16 @@ async function hasEverNotifiedOfType(
 // 호출 전에 isSubscribedToAuthor로 이미 구독 여부를 확인했다고 가정한다.
 export async function createNewCommentNotification(
   userId: string,
+  channelId: string,
   commentId: string,
   authorChannelId: string,
 ) {
   await db.insert(notifications).values({
     userId,
+    channelId,
     type: "new_comment",
     commentId,
-    href: `/authors/${encodeURIComponent(authorChannelId)}`,
+    href: `/c/${channelId}/authors/${encodeURIComponent(authorChannelId)}`,
   });
 }
 
@@ -166,23 +169,25 @@ function repeatAuthorMessage(
 // 한 번이라도 보낸 적 있는지"를 직접 확인하는 방식으로 바꿨다.
 export async function maybeSuggestAuthorSubscription(
   userId: string,
+  channelId: string,
   authorChannelId: string,
   authorDisplayName: string | null,
 ) {
-  const count = await countMaliciousCommentsByAuthor(userId, authorChannelId);
+  const count = await countMaliciousCommentsByAuthor(channelId, authorChannelId);
 
   for (const threshold of REPEAT_AUTHOR_THRESHOLDS) {
     if (count < threshold) break; // 오름차순이라 여기서 못 넘으면 그 위 단계도 못 넘은 것
 
     const refId = repeatAuthorRefId(authorChannelId, threshold);
-    if (await hasEverNotifiedOfType(userId, "repeat_author", refId)) continue;
+    if (await hasEverNotifiedOfType(channelId, "repeat_author", refId)) continue;
 
     await db.insert(notifications).values({
       userId,
+      channelId,
       type: "repeat_author",
       title: "반복 작성자 발견",
       message: repeatAuthorMessage(authorDisplayName, threshold),
-      href: `/authors/${encodeURIComponent(authorChannelId)}`,
+      href: `/c/${channelId}/authors/${encodeURIComponent(authorChannelId)}`,
       refId,
     });
   }
@@ -192,19 +197,21 @@ export async function maybeSuggestAuthorSubscription(
 // 몰렸을 때. 같은 영상에 대해 안읽은 알림이 이미 있으면 또 만들지 않는다.
 export async function maybeNotifyVideoSpike(
   userId: string,
+  channelId: string,
   videoId: string,
   videoTitle: string | null,
   count: number,
 ) {
   if (count < VIDEO_SPIKE_THRESHOLD) return;
-  if (await hasUnreadNotificationOfType(userId, "video_spike", videoId)) return;
+  if (await hasUnreadNotificationOfType(channelId, "video_spike", videoId)) return;
 
   await db.insert(notifications).values({
     userId,
+    channelId,
     type: "video_spike",
     title: "영상에 악성 댓글이 몰리고 있어요",
     message: `"${videoTitle ?? videoId}" 영상에 최근 ${count}건의 악성 댓글이 발생했습니다.`,
-    href: `/dashboard?video=${encodeURIComponent(videoId)}`,
+    href: `/c/${channelId}/dashboard?video=${encodeURIComponent(videoId)}`,
     refId: videoId,
   });
 }
@@ -213,17 +220,19 @@ export async function maybeNotifyVideoSpike(
 // 이미 있으면 다시 만들지 않고, 읽고 나서 다시 임계치를 넘으면 또 알린다.
 export async function maybeNotifyReviewBacklog(
   userId: string,
+  channelId: string,
   backlogCount: number,
 ) {
   if (backlogCount < REVIEW_BACKLOG_THRESHOLD) return;
-  if (await hasUnreadNotificationOfType(userId, "review_backlog")) return;
+  if (await hasUnreadNotificationOfType(channelId, "review_backlog")) return;
 
   await db.insert(notifications).values({
     userId,
+    channelId,
     type: "review_backlog",
     title: "검토 필요 댓글이 쌓이고 있어요",
     message: `확신도가 낮아 검토가 필요한 댓글이 ${backlogCount}건입니다.`,
-    href: "/review",
+    href: `/c/${channelId}/review`,
   });
 }
 
@@ -240,12 +249,15 @@ function formatWeeklyDiff(thisWeek: number, lastWeek: number): string {
 // cron이 매시간 돌 때마다 호출되지만, 최근 생성된 weekly_digest 알림이
 // 7일 이내면 그냥 넘어간다 — 별도 주간 전용 cron 없이 기존 시간별 cron
 // 안에서 "때가 됐을 때만" 실행되는 방식.
-export async function maybeCreateWeeklyDigest(userId: string) {
+export async function maybeCreateWeeklyDigest(userId: string, channelId: string) {
   const [latest] = await db
     .select({ createdAt: notifications.createdAt })
     .from(notifications)
     .where(
-      and(eq(notifications.userId, userId), eq(notifications.type, "weekly_digest")),
+      and(
+        eq(notifications.channelId, channelId),
+        eq(notifications.type, "weekly_digest"),
+      ),
     )
     .orderBy(desc(notifications.createdAt))
     .limit(1);
@@ -258,8 +270,8 @@ export async function maybeCreateWeeklyDigest(userId: string) {
   const oneWeekAgo = new Date(now.getTime() - WEEKLY_DIGEST_INTERVAL_MS);
   const twoWeeksAgo = new Date(now.getTime() - WEEKLY_DIGEST_INTERVAL_MS * 2);
   const [thisWeek, lastWeek] = await Promise.all([
-    countMaliciousCommentsInRange(userId, oneWeekAgo, now),
-    countMaliciousCommentsInRange(userId, twoWeeksAgo, oneWeekAgo),
+    countMaliciousCommentsInRange(channelId, oneWeekAgo, now),
+    countMaliciousCommentsInRange(channelId, twoWeeksAgo, oneWeekAgo),
   ]);
 
   // 첫 주(비교 대상 없음)인데 이번 주도 0건이면 보낼 내용이 없으니 생략
@@ -267,23 +279,24 @@ export async function maybeCreateWeeklyDigest(userId: string) {
 
   await db.insert(notifications).values({
     userId,
+    channelId,
     type: "weekly_digest",
     title: "이번 주 요약",
     message: `이번 주 위험 댓글 ${thisWeek}건 (지난주 대비 ${formatWeeklyDiff(thisWeek, lastWeek)})`,
-    href: "/summary",
+    href: `/c/${channelId}/summary`,
   });
 }
 
-export async function countUnreadNotifications(userId: string) {
+export async function countUnreadNotifications(channelId: string) {
   const [row] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(notifications)
-    .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+    .where(and(eq(notifications.channelId, channelId), eq(notifications.isRead, false)));
 
   return row?.count ?? 0;
 }
 
-export async function getNotifications(userId: string, limit?: number) {
+export async function getNotifications(channelId: string, limit?: number) {
   const query = db
     .select({
       id: notifications.id,
@@ -302,33 +315,36 @@ export async function getNotifications(userId: string, limit?: number) {
     })
     .from(notifications)
     .leftJoin(comments, eq(notifications.commentId, comments.id))
-    .where(eq(notifications.userId, userId))
+    .where(eq(notifications.channelId, channelId))
     .orderBy(desc(notifications.createdAt));
 
   return limit ? query.limit(limit) : query;
 }
 
-export async function markNotificationRead(id: string, userId: string) {
+export async function markNotificationRead(id: string, channelId: string) {
   const updated = await db
     .update(notifications)
     .set({ isRead: true })
-    .where(and(eq(notifications.id, id), eq(notifications.userId, userId)))
+    .where(and(eq(notifications.id, id), eq(notifications.channelId, channelId)))
     .returning({ id: notifications.id });
 
   return updated.length > 0;
 }
 
-export async function markAllNotificationsRead(userId: string) {
+export async function markAllNotificationsRead(channelId: string) {
   await db
     .update(notifications)
     .set({ isRead: true })
-    .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+    .where(and(eq(notifications.channelId, channelId), eq(notifications.isRead, false)));
 }
 
 function formatDate(date: Date): string {
   return `${date.getMonth() + 1}월 ${date.getDate()}일`;
 }
 
+// 결제 알림은 채널이 아니라 계정(userId) 단위 — subscriptions가 userId 기준이라
+// channelId 개념이 없다. 프론트에서 channelId 없이도 /mypage/subscription으로
+// 보여줄 수 있게 href를 절대경로로 고정한다.
 export async function notifyPaymentFailed(userId: string, retryAt: Date) {
   await db.insert(notifications).values({
     userId,

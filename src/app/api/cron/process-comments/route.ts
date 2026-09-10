@@ -44,7 +44,7 @@ export async function GET(request: Request) {
     }
 
     try {
-      entry.analyze = await analyzePendingComments(channel.userId);
+      entry.analyze = await analyzePendingComments(channel.userId, channel.id);
     } catch (e) {
       entry.analyze = "failed";
       console.error(`[cron] 분석 실패 (${channel.channelTitle}):`, e);
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
     // 별도 주간 cron 없이, 매시간 도는 이 cron 안에서 "때가 됐을 때만"
     // 생성된다 (maybeCreateWeeklyDigest 내부에서 최근 7일 이내 생성 여부 확인)
     try {
-      await maybeCreateWeeklyDigest(channel.userId);
+      await maybeCreateWeeklyDigest(channel.userId, channel.id);
     } catch (e) {
       console.error(`[cron] 주간 다이제스트 실패 (${channel.channelTitle}):`, e);
     }
