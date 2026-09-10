@@ -12,6 +12,7 @@ import { comments } from "@/lib/db/schema";
 
 type NewCommentInput = {
   userId: string;
+  channelId: string;
   videoId: string;
   videoTitle: string | null;
   videoType: "video" | "shorts" | null;
@@ -56,7 +57,7 @@ export async function countUnanalyzedCommentsByUserId(userId: string) {
 
 // 반복 작성자 구독 제안 알림에 쓰는 누적 악성 댓글 수
 export async function countMaliciousCommentsByAuthor(
-  userId: string,
+  channelId: string,
   authorChannelId: string,
 ) {
   const [row] = await db
@@ -64,7 +65,7 @@ export async function countMaliciousCommentsByAuthor(
     .from(comments)
     .where(
       and(
-        eq(comments.userId, userId),
+        eq(comments.channelId, channelId),
         eq(comments.authorChannelId, authorChannelId),
         eq(comments.isMalicious, true),
       ),
@@ -75,7 +76,7 @@ export async function countMaliciousCommentsByAuthor(
 
 // 주간 다이제스트 알림에 쓰는 기간별 악성 댓글 수 (from 이상, to 미만)
 export async function countMaliciousCommentsInRange(
-  userId: string,
+  channelId: string,
   from: Date,
   to: Date,
 ) {
@@ -84,7 +85,7 @@ export async function countMaliciousCommentsInRange(
     .from(comments)
     .where(
       and(
-        eq(comments.userId, userId),
+        eq(comments.channelId, channelId),
         eq(comments.isMalicious, true),
         gte(comments.createdAt, from),
         lt(comments.createdAt, to),
@@ -96,7 +97,7 @@ export async function countMaliciousCommentsInRange(
 
 // 주간 요약 페이지에 쓰는 기간별 위험도 분해 (from 이상, to 미만)
 export async function getRiskBreakdownInRange(
-  userId: string,
+  channelId: string,
   from: Date,
   to: Date,
 ) {
@@ -108,7 +109,7 @@ export async function getRiskBreakdownInRange(
     .from(comments)
     .where(
       and(
-        eq(comments.userId, userId),
+        eq(comments.channelId, channelId),
         eq(comments.isMalicious, true),
         gte(comments.createdAt, from),
         lt(comments.createdAt, to),
@@ -127,7 +128,7 @@ export async function getRiskBreakdownInRange(
 
 // 대시보드 추이 스파크라인용 — 기간 내 일별 악성 댓글 건수 (일자 오름차순)
 export async function getDailyMaliciousCounts(
-  userId: string,
+  channelId: string,
   from: Date,
   to: Date,
 ) {
@@ -141,7 +142,7 @@ export async function getDailyMaliciousCounts(
     .from(comments)
     .where(
       and(
-        eq(comments.userId, userId),
+        eq(comments.channelId, channelId),
         eq(comments.isMalicious, true),
         gte(comments.createdAt, from),
         lt(comments.createdAt, to),
@@ -154,12 +155,12 @@ export async function getDailyMaliciousCounts(
 // 대시보드 "요주의 작성자" 위젯용 — 악성 댓글 수 기준 상위 작성자.
 // from을 안 넘기면 누적 전체 기간, 넘기면 해당 시점 이후로 범위를 좁힌다.
 export async function getTopAuthorsByMaliciousCount(
-  userId: string,
+  channelId: string,
   limit: number,
   from?: Date,
 ) {
   const conditions = [
-    eq(comments.userId, userId),
+    eq(comments.channelId, channelId),
     eq(comments.isMalicious, true),
   ];
   if (from) conditions.push(gte(comments.createdAt, from));
@@ -179,7 +180,7 @@ export async function getTopAuthorsByMaliciousCount(
 
 // 대시보드 "최근 악성 댓글 몰린 영상" 위젯용 — 기간 내 영상별 악성 댓글 수 상위
 export async function getTopVideosByMaliciousCount(
-  userId: string,
+  channelId: string,
   from: Date,
   limit: number,
 ) {
@@ -193,7 +194,7 @@ export async function getTopVideosByMaliciousCount(
     .from(comments)
     .where(
       and(
-        eq(comments.userId, userId),
+        eq(comments.channelId, channelId),
         eq(comments.isMalicious, true),
         gte(comments.createdAt, from),
       ),
@@ -203,15 +204,15 @@ export async function getTopVideosByMaliciousCount(
     .limit(limit);
 }
 
-export async function getUnanalyzedComments(userId: string, limit: number) {
+export async function getUnanalyzedComments(channelId: string, limit: number) {
   return db
     .select()
     .from(comments)
-    .where(and(eq(comments.userId, userId), isNull(comments.analyzedAt)))
+    .where(and(eq(comments.channelId, channelId), isNull(comments.analyzedAt)))
     .limit(limit);
 }
 
-export async function getDashboardSummary(userId: string) {
+export async function getDashboardSummary(channelId: string) {
   const rows = await db
     .select({
       riskLevel: comments.riskLevel,
@@ -219,7 +220,7 @@ export async function getDashboardSummary(userId: string) {
       count: sql<number>`count(*)::int`,
     })
     .from(comments)
-    .where(and(eq(comments.userId, userId), eq(comments.isMalicious, true)))
+    .where(and(eq(comments.channelId, channelId), eq(comments.isMalicious, true)))
     .groupBy(comments.riskLevel, comments.status);
 
   const summary = { total: 0, high: 0, medium: 0, low: 0, needsReview: 0 };
@@ -247,9 +248,9 @@ export type CommentFilters = {
   sort?: "newest" | "risk";
 };
 
-function buildFlaggedConditions(userId: string, filters: CommentFilters) {
+function buildFlaggedConditions(channelId: string, filters: CommentFilters) {
   const conditions = [
-    eq(comments.userId, userId),
+    eq(comments.channelId, channelId),
     eq(comments.isMalicious, true),
   ];
 
@@ -274,12 +275,12 @@ function buildFlaggedConditions(userId: string, filters: CommentFilters) {
 }
 
 export async function getFlaggedComments(
-  userId: string,
+  channelId: string,
   filters: CommentFilters,
   page: number,
   pageSize: number,
 ) {
-  const conditions = buildFlaggedConditions(userId, filters);
+  const conditions = buildFlaggedConditions(channelId, filters);
 
   const orderBy: SQL =
     filters.sort === "risk"
@@ -296,10 +297,10 @@ export async function getFlaggedComments(
 }
 
 export async function countFlaggedComments(
-  userId: string,
+  channelId: string,
   filters: CommentFilters,
 ) {
-  const conditions = buildFlaggedConditions(userId, filters);
+  const conditions = buildFlaggedConditions(channelId, filters);
 
   const [row] = await db
     .select({ count: sql<number>`count(*)::int` })
@@ -309,7 +310,7 @@ export async function countFlaggedComments(
   return row?.count ?? 0;
 }
 
-export async function getFlaggedFilterOptions(userId: string) {
+export async function getFlaggedFilterOptions(channelId: string) {
   const rows = await db
     .selectDistinct({
       category: comments.category,
@@ -317,7 +318,7 @@ export async function getFlaggedFilterOptions(userId: string) {
       videoTitle: comments.videoTitle,
     })
     .from(comments)
-    .where(and(eq(comments.userId, userId), eq(comments.isMalicious, true)));
+    .where(and(eq(comments.channelId, channelId), eq(comments.isMalicious, true)));
 
   const categories = Array.from(
     new Set(rows.map((r) => r.category).filter((c): c is string => c !== null)),
@@ -330,7 +331,7 @@ export async function getFlaggedFilterOptions(userId: string) {
 }
 
 export async function getCommentsByAuthor(
-  userId: string,
+  channelId: string,
   authorChannelId: string,
 ) {
   return db
@@ -338,7 +339,7 @@ export async function getCommentsByAuthor(
     .from(comments)
     .where(
       and(
-        eq(comments.userId, userId),
+        eq(comments.channelId, channelId),
         eq(comments.authorChannelId, authorChannelId),
         eq(comments.isMalicious, true),
       ),
@@ -346,22 +347,22 @@ export async function getCommentsByAuthor(
     .orderBy(sql`${comments.createdAt} desc`);
 }
 
-export async function getReviewQueue(userId: string) {
+export async function getReviewQueue(channelId: string) {
   return db
     .select()
     .from(comments)
     .where(
-      and(eq(comments.userId, userId), eq(comments.status, "needs_review")),
+      and(eq(comments.channelId, channelId), eq(comments.status, "needs_review")),
     )
     .orderBy(sql`${comments.confidence} asc nulls last`);
 }
 
-export async function countReviewQueue(userId: string) {
+export async function countReviewQueue(channelId: string) {
   const [row] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(comments)
     .where(
-      and(eq(comments.userId, userId), eq(comments.status, "needs_review")),
+      and(eq(comments.channelId, channelId), eq(comments.status, "needs_review")),
     );
 
   return row?.count ?? 0;
@@ -369,16 +370,16 @@ export async function countReviewQueue(userId: string) {
 
 type CommentStatus = "confirmed" | "needs_review" | "reported_false" | "whitelisted";
 
-// 본인 댓글만 수정 가능하도록 userId까지 조건에 걸어 확인한다
+// 해당 채널 소유 댓글만 수정 가능하도록 channelId까지 조건에 걸어 확인한다
 export async function updateCommentStatus(
   commentId: string,
-  userId: string,
+  channelId: string,
   status: CommentStatus,
 ) {
   const updated = await db
     .update(comments)
     .set({ status, isHumanReviewed: true })
-    .where(and(eq(comments.id, commentId), eq(comments.userId, userId)))
+    .where(and(eq(comments.id, commentId), eq(comments.channelId, channelId)))
     .returning({ id: comments.id });
 
   return updated.length > 0;

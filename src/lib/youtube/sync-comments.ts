@@ -150,6 +150,7 @@ export async function syncComments(channel: SyncableChannel) {
 
     const toRow = (id: string, snippet: YouTubeCommentSnippet) => ({
       userId: channel.userId,
+      channelId: channel.id,
       videoId,
       videoTitle: videoMeta?.title ?? null,
       videoType: videoMeta?.type ?? null,
