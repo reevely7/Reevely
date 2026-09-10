@@ -218,6 +218,7 @@ async function main() {
     const createdAt = new Date(now - sample.daysAgo * 24 * 60 * 60 * 1000);
     return {
       userId: channel.userId,
+      channelId: channel.id,
       videoId: VIDEO_IDS[index % VIDEO_IDS.length],
       youtubeCommentId: `mock-seed-${String(index + 1).padStart(2, "0")}`,
       authorChannelId: `UC_mock_${String(index + 1).padStart(3, "0")}`,
