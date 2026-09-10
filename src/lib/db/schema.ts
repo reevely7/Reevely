@@ -133,6 +133,10 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "video_spike",
   // 주간 요약 리포트
   "weekly_digest",
+  // 정기 결제 실패, 유예기간 시작
+  "payment_failed",
+  // 재시도까지 실패해 무료로 전환됨
+  "payment_downgraded",
 ]);
 
 // notifications 1행 = 알림 1건. new_comment 타입은 comments를 조인해서 위험도·
@@ -152,4 +156,49 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+});
+
+export const subscriptionPlanEnum = pgEnum("subscription_plan", [
+  "basic",
+  "plus",
+  "pro",
+]);
+// 무료는 별도 값이 없다 — subscriptions에 row가 없으면 무료로 취급한다.
+
+export const subscriptionStatusEnum = pgEnum("subscription_status", [
+  "active", // 정상 구독 중, nextBillingDate에 정기 청구
+  "canceled_pending", // 해지 신청함. 이미 낸 기간은 유지, nextBillingDate에 row 삭제(무료 전환)
+  "payment_failed", // 정기 청구 실패, 유예기간 중. nextBillingDate는 재시도 예정일로 재사용됨
+]);
+
+export const subscriptions = pgTable("subscriptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().unique(),
+  plan: subscriptionPlanEnum("plan").notNull(),
+  // 다음 결제일부터 적용될 플랜 변경 예약. 변경 없으면 null.
+  pendingPlan: subscriptionPlanEnum("pending_plan"),
+  status: subscriptionStatusEnum("status").notNull().default("active"),
+  // 토스 빌링키 — refresh token과 동일하게 암호화 저장 (src/lib/crypto/token-cipher.ts)
+  billingKey: text("billing_key").notNull(),
+  // 토스 빌링 API가 요구하는 상점 측 고객 식별자. userId를 그대로 사용한다.
+  tossCustomerKey: text("toss_customer_key").notNull(),
+  currentPeriodStart: timestamp("current_period_start", { withTimezone: true }).notNull(),
+  // 정상 상태에선 "다음 정기결제일", payment_failed 상태에선 "재시도 예정일"로 재사용
+  nextBillingDate: timestamp("next_billing_date", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const paymentStatusEnum = pgEnum("payment_status", ["succeeded", "failed"]);
+
+// 결제 시도 감사 로그 — 결제 문의 대응, 영수증 표시용
+export const paymentHistory = pgTable("payment_history", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  plan: subscriptionPlanEnum("plan").notNull(),
+  amount: integer("amount").notNull(),
+  status: paymentStatusEnum("status").notNull(),
+  tossPaymentKey: text("toss_payment_key"),
+  failReason: text("fail_reason"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

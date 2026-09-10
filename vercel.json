@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/process-comments",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/process-billing",
+      "schedule": "0 3 * * *"
     }
   ]
 }

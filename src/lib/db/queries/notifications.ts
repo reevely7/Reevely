@@ -14,7 +14,9 @@ type NotificationType =
   | "repeat_author"
   | "review_backlog"
   | "video_spike"
-  | "weekly_digest";
+  | "weekly_digest"
+  | "payment_failed"
+  | "payment_downgraded";
 
 // 낮은 것부터 순서대로 확인 — 한 번의 분석에서 여러 단계를 한꺼번에 넘겨도
 // (예: 갑자기 댓글이 몰려 2건→11건) 안 보낸 단계는 전부 각각 알려준다.
@@ -321,6 +323,30 @@ export async function markAllNotificationsRead(userId: string) {
     .update(notifications)
     .set({ isRead: true })
     .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+}
+
+function formatDate(date: Date): string {
+  return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+}
+
+export async function notifyPaymentFailed(userId: string, retryAt: Date) {
+  await db.insert(notifications).values({
+    userId,
+    type: "payment_failed",
+    title: "결제에 실패했어요",
+    message: `카드 결제가 실패했습니다. ${formatDate(retryAt)}에 다시 시도됩니다. 카드 정보를 확인해 주세요.`,
+    href: "/mypage/subscription",
+  });
+}
+
+export async function notifyPaymentDowngraded(userId: string) {
+  await db.insert(notifications).values({
+    userId,
+    type: "payment_downgraded",
+    title: "무료 플랜으로 전환되었습니다",
+    message: "재시도 결제도 실패해 무료 플랜으로 전환됐어요. 다시 구독하려면 결제 정보를 등록해 주세요.",
+    href: "/mypage/subscription",
+  });
 }
 
 // 계정 삭제 시 함께 정리한다

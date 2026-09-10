@@ -19,7 +19,9 @@ type Notification = {
     | "repeat_author"
     | "review_backlog"
     | "video_spike"
-    | "weekly_digest";
+    | "weekly_digest"
+    | "payment_failed"
+    | "payment_downgraded";
   isRead: boolean;
   createdAt: Date;
   title: string | null;

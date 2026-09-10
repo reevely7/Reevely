@@ -12,12 +12,15 @@
     "db:studio": "drizzle-kit studio",
     "eval:prompt": "tsx --conditions=react-server --env-file=.env.local scripts/eval-prompt.ts",
     "golden:candidates": "tsx scripts/export-review-candidates.ts",
-    "test:weekly-digest": "tsx --conditions=react-server --env-file=.env.local scripts/test-weekly-digest.ts"
+    "test:weekly-digest": "tsx --conditions=react-server --env-file=.env.local scripts/test-weekly-digest.ts",
+    "test:subscriptions": "tsx --conditions=react-server --env-file=.env.local scripts/test-subscriptions.ts",
+    "test:billing-cron": "tsx --conditions=react-server --env-file=.env.local scripts/test-billing-cron.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.2",
+    "@tosspayments/payment-sdk": "^1.9.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
