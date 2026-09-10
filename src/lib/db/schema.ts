@@ -133,6 +133,10 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "video_spike",
   // 주간 요약 리포트
   "weekly_digest",
+  // 정기 결제 실패, 유예기간 시작
+  "payment_failed",
+  // 재시도까지 실패해 무료로 전환됨
+  "payment_downgraded",
 ]);
 
 // notifications 1행 = 알림 1건. new_comment 타입은 comments를 조인해서 위험도·
