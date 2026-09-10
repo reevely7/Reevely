@@ -1,0 +1,139 @@
+import "server-only";
+
+import { and, eq, lte } from "drizzle-orm";
+
+import { decrypt, encrypt } from "@/lib/crypto/token-cipher";
+import { db } from "@/lib/db";
+import { paymentHistory, paymentStatusEnum, subscriptions } from "@/lib/db/schema";
+
+export type SubscriptionPlan = "basic" | "plus" | "pro";
+
+export const PLAN_PRICES: Record<SubscriptionPlan, number> = {
+  basic: 19900,
+  plus: 39900,
+  pro: 69900,
+};
+
+export const PLAN_LABELS: Record<SubscriptionPlan, string> = {
+  basic: "베이직",
+  plus: "플러스",
+  pro: "프로",
+};
+
+export async function getSubscriptionByUserId(userId: string) {
+  const [row] = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.userId, userId))
+    .limit(1);
+
+  if (!row) return null;
+  return { ...row, billingKey: decrypt(row.billingKey) };
+}
+
+type CreateSubscriptionInput = {
+  userId: string;
+  plan: SubscriptionPlan;
+  billingKey: string; // 평문 — 이 함수 안에서 암호화한다
+  tossCustomerKey: string;
+};
+
+export async function createSubscription(input: CreateSubscriptionInput) {
+  const now = new Date();
+  const nextBillingDate = new Date(now);
+  nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+
+  await db.insert(subscriptions).values({
+    userId: input.userId,
+    plan: input.plan,
+    status: "active",
+    billingKey: encrypt(input.billingKey),
+    tossCustomerKey: input.tossCustomerKey,
+    currentPeriodStart: now,
+    nextBillingDate,
+  });
+}
+
+// 유료 유저의 플랜 변경 예약. 구독 row가 없는(무료) 유저에겐 안 먹힌다 —
+// 무료→유료는 체크아웃 플로우(Task 5)를 타야 하므로 false 리턴.
+export async function setPendingPlan(userId: string, plan: SubscriptionPlan) {
+  const updated = await db
+    .update(subscriptions)
+    .set({ pendingPlan: plan, updatedAt: new Date() })
+    .where(eq(subscriptions.userId, userId))
+    .returning({ id: subscriptions.id });
+
+  return updated.length > 0;
+}
+
+export async function cancelSubscription(userId: string) {
+  const updated = await db
+    .update(subscriptions)
+    .set({ status: "canceled_pending", updatedAt: new Date() })
+    .where(eq(subscriptions.userId, userId))
+    .returning({ id: subscriptions.id });
+
+  return updated.length > 0;
+}
+
+// 청구 cron 전용 — nextBillingDate가 도래한 구독 전체
+export async function getDueSubscriptions(now: Date) {
+  const rows = await db
+    .select()
+    .from(subscriptions)
+    .where(lte(subscriptions.nextBillingDate, now));
+
+  return rows.map((row) => ({ ...row, billingKey: decrypt(row.billingKey) }));
+}
+
+// 결제 실패(재시도까지 실패) 또는 해지 유예기간 종료 — row 삭제로 무료 전환
+export async function deleteSubscription(userId: string) {
+  await db.delete(subscriptions).where(eq(subscriptions.userId, userId));
+}
+
+// 정기 청구 성공 시 — pendingPlan이 있었으면 그걸로 갈아끼우고 다음 주기로 넘어간다
+export async function applySuccessfulRenewal(
+  userId: string,
+  plan: SubscriptionPlan,
+  nextBillingDate: Date,
+) {
+  await db
+    .update(subscriptions)
+    .set({
+      plan,
+      pendingPlan: null,
+      status: "active",
+      currentPeriodStart: new Date(),
+      nextBillingDate,
+      updatedAt: new Date(),
+    })
+    .where(eq(subscriptions.userId, userId));
+}
+
+// 정기 청구 첫 실패 — nextBillingDate를 재시도 예정일로 재사용
+export async function markPaymentFailed(userId: string, retryAt: Date) {
+  await db
+    .update(subscriptions)
+    .set({ status: "payment_failed", nextBillingDate: retryAt, updatedAt: new Date() })
+    .where(and(eq(subscriptions.userId, userId), eq(subscriptions.status, "active")));
+}
+
+type RecordPaymentHistoryInput = {
+  userId: string;
+  plan: SubscriptionPlan;
+  amount: number;
+  status: (typeof paymentStatusEnum.enumValues)[number];
+  tossPaymentKey?: string;
+  failReason?: string;
+};
+
+export async function recordPaymentHistory(input: RecordPaymentHistoryInput) {
+  await db.insert(paymentHistory).values({
+    userId: input.userId,
+    plan: input.plan,
+    amount: input.amount,
+    status: input.status,
+    tossPaymentKey: input.tossPaymentKey,
+    failReason: input.failReason,
+  });
+}
