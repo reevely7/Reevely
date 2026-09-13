@@ -39,6 +39,12 @@ export async function getSubscriptionByUserId(userId: string) {
   return { ...row, billingKey: decrypt(row.billingKey) };
 }
 
+// 유저의 현재 플랜 기준 채널 연동 한도 — 구독 row가 없으면(무료) FREE_CHANNEL_LIMIT
+export async function getChannelLimitForUser(userId: string): Promise<number> {
+  const subscription = await getSubscriptionByUserId(userId);
+  return subscription ? PLAN_CHANNEL_LIMITS[subscription.plan] : FREE_CHANNEL_LIMIT;
+}
+
 type CreateSubscriptionInput = {
   userId: string;
   plan: SubscriptionPlan;

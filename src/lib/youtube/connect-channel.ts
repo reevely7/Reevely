@@ -2,11 +2,7 @@ import "server-only";
 
 import { encrypt } from "@/lib/crypto/token-cipher";
 import { getChannelsByUserId, upsertChannel } from "@/lib/db/queries/channels";
-import {
-  FREE_CHANNEL_LIMIT,
-  getSubscriptionByUserId,
-  PLAN_CHANNEL_LIMITS,
-} from "@/lib/db/queries/subscriptions";
+import { getChannelLimitForUser } from "@/lib/db/queries/subscriptions";
 
 export class ChannelLimitError extends Error {}
 
@@ -58,10 +54,7 @@ export async function connectChannel({
   // 이미 연동된 채널의 재인증(토큰 갱신)은 한도와 무관하게 항상 허용한다.
   // 진짜 새 채널을 추가하는 경우에만 플랜 한도를 체크한다.
   if (isNewChannel) {
-    const subscription = await getSubscriptionByUserId(userId);
-    const limit = subscription
-      ? PLAN_CHANNEL_LIMITS[subscription.plan]
-      : FREE_CHANNEL_LIMIT;
+    const limit = await getChannelLimitForUser(userId);
     const activeCount = existingChannels.filter(
       (c) => c.status === "active",
     ).length;

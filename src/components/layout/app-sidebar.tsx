@@ -26,12 +26,14 @@ export function AppSidebar({
   nickname,
   reviewCount,
   unreadNotificationCount,
+  atChannelLimit,
 }: {
   channels: SidebarChannel[];
   activeChannelId?: string;
   nickname: string | null;
   reviewCount: number;
   unreadNotificationCount: number;
+  atChannelLimit: boolean;
 }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
@@ -155,7 +157,11 @@ export function AppSidebar({
                     </Link>
                   ))}
                   <Link
-                    href="/channel-connect/start"
+                    href={
+                      atChannelLimit
+                        ? "/mypage/account?error=channel_limit"
+                        : "/channel-connect/start"
+                    }
                     onClick={() => setIsSwitcherOpen(false)}
                     className="flex items-center gap-2 border-t border-sidebar-border px-3 py-2 text-sm text-primary hover:bg-sidebar-accent"
                   >

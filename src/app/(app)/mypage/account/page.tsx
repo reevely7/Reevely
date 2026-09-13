@@ -10,6 +10,7 @@ import {
 } from "@/lib/db/queries/channels";
 import { deleteCommentsByUserId } from "@/lib/db/queries/comments";
 import { deleteNotificationsByUserId } from "@/lib/db/queries/notifications";
+import { getChannelLimitForUser } from "@/lib/db/queries/subscriptions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,6 +37,9 @@ export default async function MypageAccountPage({
 
   const userId = user.id;
   const channels = await getChannelsByUserId(userId);
+  const channelLimit = await getChannelLimitForUser(userId);
+  const atChannelLimit =
+    channels.filter((c) => c.status === "active").length >= channelLimit;
 
   async function disconnectChannel(formData: FormData) {
     "use server";
@@ -121,7 +125,17 @@ export default async function MypageAccountPage({
         <Button
           nativeButton={false}
           variant="outline"
-          render={<a href="/channel-connect/start">채널 추가</a>}
+          render={
+            <a
+              href={
+                atChannelLimit
+                  ? "/mypage/account?error=channel_limit"
+                  : "/channel-connect/start"
+              }
+            >
+              채널 추가
+            </a>
+          }
         />
       </section>
 

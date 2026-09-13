@@ -4,6 +4,7 @@ import { CancelSubscriptionButton } from "@/components/mypage/cancel-subscriptio
 import { MypageNav } from "@/components/mypage/mypage-nav";
 import { PlanChangeButton } from "@/components/mypage/plan-change-button";
 import { PlanCheckoutButton } from "@/components/mypage/plan-checkout-button";
+import { PricingTable } from "@/components/landing/pricing-table";
 import { getAccountNotifications } from "@/lib/db/queries/notifications";
 import {
   getSubscriptionByUserId,
@@ -87,6 +88,10 @@ export default async function MypageSubscriptionPage() {
             ),
           )}
         </div>
+      </section>
+
+      <section>
+        <PricingTable />
       </section>
 
       {accountNotifications.length > 0 && (

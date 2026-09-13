@@ -9,6 +9,7 @@ import {
   countUnreadNotifications,
   getNotifications,
 } from "@/lib/db/queries/notifications";
+import { getChannelLimitForUser } from "@/lib/db/queries/subscriptions";
 
 const RECENT_NOTIFICATIONS_LIMIT = 8;
 
@@ -20,24 +21,28 @@ export default async function ChannelLayout({
   params: Promise<{ channelId: string }>;
 }) {
   const { channelId } = await params;
-  const { channels, nickname } = await requireChannels();
+  const { user, channels, nickname } = await requireChannels();
 
   const channel = channels.find((c) => c.id === channelId);
   if (!channel) {
     notFound();
   }
 
-  const [reviewCount, unreadNotificationCount, recentNotifications] =
+  const [reviewCount, unreadNotificationCount, recentNotifications, channelLimit] =
     await Promise.all([
       countReviewQueue(channelId),
       countUnreadNotifications(channelId),
       getNotifications(channelId, RECENT_NOTIFICATIONS_LIMIT),
+      getChannelLimitForUser(user.id),
     ]);
 
   const channelsWithSync = channels.map((c) => ({
     ...c,
     nextSyncAt: getNextSyncAt(c),
   }));
+
+  const atChannelLimit =
+    channels.filter((c) => c.status === "active").length >= channelLimit;
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden md:flex-row">
@@ -47,6 +52,7 @@ export default async function ChannelLayout({
         nickname={nickname}
         reviewCount={reviewCount}
         unreadNotificationCount={unreadNotificationCount}
+        atChannelLimit={atChannelLimit}
       />
       <div className="flex flex-1 flex-col overflow-y-auto bg-background">
         <header className="flex shrink-0 items-center justify-end border-b border-border px-6 py-2 sm:px-10">
