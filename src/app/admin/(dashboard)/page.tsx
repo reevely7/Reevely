@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -16,8 +17,8 @@ export default function AdminDashboardPage() {
         <div>
           <p className="text-xl font-semibold tracking-tight">관리자 페이지</p>
           <p className="text-xs text-muted-foreground">
-            로그인 동작 확인용 placeholder 화면입니다. 실제 관리 기능은 아직
-            없습니다.
+            아직 유저 관리 기능만 있습니다. 나머지 항목은 순차적으로 추가될
+            예정입니다.
           </p>
         </div>
         <form action={logout}>
@@ -26,6 +27,15 @@ export default function AdminDashboardPage() {
           </Button>
         </form>
       </header>
+
+      <nav className="flex flex-col gap-2 rounded-2xl bg-card px-5 py-4">
+        <Link
+          href="/admin/users"
+          className="text-sm font-medium text-primary hover:underline"
+        >
+          유저 관리
+        </Link>
+      </nav>
     </main>
   );
 }

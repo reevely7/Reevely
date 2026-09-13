@@ -226,6 +226,16 @@ export const adminUsers = pgTable("admin_users", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// 관리자가 크리에이터 계정을 정지시킨 기록. 존재하면 정지 상태 — Supabase
+// Auth 쪽 ban(로그인 차단)과 별개로, 이 테이블이 cron의 sync/분석 스킵 여부를
+// 판단하는 기준이다. 플랜 한도 초과로 인한 channels.status="locked"와는 의미가
+// 달라 일부러 분리했다 — 정지 해제 시 플랜 한도 잠금까지 잘못 풀리지 않는다.
+export const suspendedUsers = pgTable("suspended_users", {
+  userId: uuid("user_id").primaryKey(),
+  suspendedAt: timestamp("suspended_at", { withTimezone: true }).notNull().defaultNow(),
+  reason: text("reason"),
+});
+
 export const paymentStatusEnum = pgEnum("payment_status", ["succeeded", "failed"]);
 
 // 결제 시도 감사 로그 — 결제 문의 대응, 영수증 표시용

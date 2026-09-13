@@ -346,6 +346,24 @@ export async function getNotifications(channelId: string, limit?: number) {
   return limit ? query.limit(limit) : query;
 }
 
+// 관리자 유저 상세 화면 전용 — 채널 구분 없이 그 유저의 최근 알림 전체
+export async function getNotificationsByUserId(userId: string, limit: number) {
+  return db
+    .select({
+      id: notifications.id,
+      type: notifications.type,
+      isRead: notifications.isRead,
+      createdAt: notifications.createdAt,
+      title: notifications.title,
+      message: notifications.message,
+      href: notifications.href,
+    })
+    .from(notifications)
+    .where(eq(notifications.userId, userId))
+    .orderBy(desc(notifications.createdAt))
+    .limit(limit);
+}
+
 export async function markNotificationRead(id: string, channelId: string) {
   const updated = await db
     .update(notifications)

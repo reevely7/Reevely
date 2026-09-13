@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, lte } from "drizzle-orm";
+import { and, desc, eq, lte } from "drizzle-orm";
 
 import { decrypt, encrypt } from "@/lib/crypto/token-cipher";
 import { db } from "@/lib/db";
@@ -250,6 +250,15 @@ type RecordPaymentHistoryInput = {
   tossPaymentKey?: string;
   failReason?: string;
 };
+
+// 관리자 유저 상세 화면 전용 — CS/환불 대응 시 결제 이력 열람
+export async function getPaymentHistoryByUserId(userId: string) {
+  return db
+    .select()
+    .from(paymentHistory)
+    .where(eq(paymentHistory.userId, userId))
+    .orderBy(desc(paymentHistory.createdAt));
+}
 
 export async function recordPaymentHistory(input: RecordPaymentHistoryInput) {
   await db.insert(paymentHistory).values({

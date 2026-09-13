@@ -162,6 +162,13 @@
       "when": 1789287606658,
       "tag": "0022_flawless_amphibian",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1789288869076,
+      "tag": "0023_dashing_leader",
+      "breakpoints": true
     }
   ]
 }

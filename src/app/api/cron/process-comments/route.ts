@@ -4,6 +4,7 @@ import { analyzePendingComments } from "@/lib/ai/analyze-pending-comments";
 import { getAllChannels, isSyncDue, markReauthRequired } from "@/lib/db/queries/channels";
 import { maybeCreateWeeklyDigest, notifyReauthRequired } from "@/lib/db/queries/notifications";
 import { getSyncIntervalForUser } from "@/lib/db/queries/subscriptions";
+import { getSuspendedUserIds } from "@/lib/db/queries/suspended-users";
 import { mapWithConcurrency } from "@/lib/utils/concurrency";
 import { ReauthRequiredError } from "@/lib/youtube/refresh-access-token";
 import { syncComments } from "@/lib/youtube/sync-comments";
@@ -104,7 +105,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const channels = await getAllChannels();
+  const [channels, suspendedUserIds] = await Promise.all([
+    getAllChannels(),
+    getSuspendedUserIds(),
+  ]);
 
   const channelsByUser = new Map<string, typeof channels>();
   for (const channel of channels) {
@@ -120,6 +124,15 @@ export async function GET(request: Request) {
     [...channelsByUser.values()],
     USER_GROUP_CONCURRENCY,
     async (userChannels) => {
+      // 관리자가 정지시킨 유저는 채널별로 다시 확인할 것 없이 그룹째 건너뛴다
+      if (suspendedUserIds.has(userChannels[0].userId)) {
+        return userChannels.map((channel) => ({
+          userId: channel.userId,
+          channelTitle: channel.channelTitle,
+          sync: "suspended" as const,
+        }));
+      }
+
       const entries: ChannelResultEntry[] = [];
       for (const channel of userChannels) {
         entries.push(await processChannel(channel));
