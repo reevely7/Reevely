@@ -6,10 +6,12 @@ AI 기반 악성 댓글 탐지 및 증거관리 SaaS.
 ## 핵심 동작 원리
 
 1. 크리에이터가 유튜브 채널을 OAuth로 직접 연동 (스크래핑 아님, YouTube Data API v3 공식 API)
-2. 서버가 API로 댓글을 가져옴 — Vercel Cron이 1시간마다 전체 연동 채널을 순회하되,
-   **신선도 기반 폴링**으로 채널별 실제 sync 여부를 정한다: 최근 48시간 내 새 영상이
-   있으면 1시간마다, 없으면 6시간마다 (`isSyncDue()`, `src/lib/db/queries/channels.ts`).
-   수동 트리거 버튼 없음, 유튜브에 댓글 웹훅이 없어 진짜 실시간은 불가능.
+2. 서버가 API로 댓글을 가져옴 — Vercel Cron이 30분마다 전체 연동 채널을 순회하되,
+   **플랜별 고정 주기**로 채널별 실제 sync 여부를 정한다: 무료 24시간, 베이직
+   6시간, 플러스 1시간, 프로 30분마다 (`isSyncDue()`/`getSyncIntervalForUser()`,
+   `src/lib/db/queries/channels.ts`/`subscriptions.ts`). 수동 트리거 버튼 없음,
+   유튜브에 댓글 웹훅이 없어 진짜 실시간은 불가능. 대댓글 수집도 플랜별로 다름 —
+   무료는 최상위 댓글만, 베이직 이상은 대댓글도 수집(`getCollectRepliesForUser()`).
 3. OpenAI API가 각 댓글을 아래 JSON 구조로 판정:
 
 ```json
@@ -105,10 +107,13 @@ AI 기반 악성 댓글 탐지 및 증거관리 SaaS.
 
 - `CRON_SECRET`을 Vercel 프로젝트 환경변수에 `.env.local`과 동일한 값으로 등록
   (안 하면 `/api/cron/process-comments`가 계속 401)
-- **Hobby 플랜은 cron 주기 제한이 있을 수 있음** — `vercel.json`의 1시간 주기(`0 * * * *`)가
-  실제로 지원되는지 확인, 안 되면 Pro 업그레이드 또는 주기 조정
+- **Hobby 플랜은 cron 주기 제한이 있을 수 있음** — `vercel.json`의 30분 주기(`*/30 * * * *`)가
+  실제로 지원되는지 확인, 안 되면 Pro 업그레이드 또는 주기 조정 (프로 플랜 유저의
+  "30분마다" 동기화는 이 cron 주기가 상한이라, 여기서 밀리면 그만큼 늦어짐)
 - YouTube API 쿼터는 프로젝트 전체 공유(기본 하루 10,000유닛, 채널당 sync ~11유닛) —
-  "신선한"(최근 48시간 내 새 영상) 채널이 몇 개나 동시에 있을 수 있는지로 재계산할 것
+  프로 플랜은 영상 모니터링 수 제한이 없어(재생목록 전체 페이지네이션) 영상이 많은
+  채널 하나가 쿼터를 크게 잡아먹을 수 있음. cron 주기가 30분으로 짧아진 것까지
+  포함해 재계산할 것
 - `.env.local`의 다른 키(Supabase, Google, OpenAI)도 전부 Vercel 환경변수에 등록
 
 ## 마이그레이션

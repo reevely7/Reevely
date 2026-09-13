@@ -3,7 +3,10 @@ import { requireChannels } from "@/lib/auth/require-channels";
 import { getNextSyncAt } from "@/lib/db/queries/channels";
 import { countReviewQueue } from "@/lib/db/queries/comments";
 import { countUnreadNotifications } from "@/lib/db/queries/notifications";
-import { getChannelLimitForUser } from "@/lib/db/queries/subscriptions";
+import {
+  getChannelLimitForUser,
+  getSyncIntervalForUser,
+} from "@/lib/db/queries/subscriptions";
 
 export default async function MypageLayout({
   children,
@@ -13,15 +16,17 @@ export default async function MypageLayout({
   const { user, channels, nickname } = await requireChannels();
   const defaultChannel = channels[0];
 
-  const [reviewCount, unreadNotificationCount, channelLimit] = await Promise.all([
-    countReviewQueue(defaultChannel.id),
-    countUnreadNotifications(defaultChannel.id),
-    getChannelLimitForUser(user.id),
-  ]);
+  const [reviewCount, unreadNotificationCount, channelLimit, syncIntervalMs] =
+    await Promise.all([
+      countReviewQueue(defaultChannel.id),
+      countUnreadNotifications(defaultChannel.id),
+      getChannelLimitForUser(user.id),
+      getSyncIntervalForUser(user.id),
+    ]);
 
   const channelsWithSync = channels.map((c) => ({
     ...c,
-    nextSyncAt: getNextSyncAt(c),
+    nextSyncAt: getNextSyncAt(c, syncIntervalMs),
   }));
 
   const atChannelLimit =

@@ -60,6 +60,30 @@ export async function getMonthlyAnalysisLimitForUser(userId: string): Promise<nu
     : FREE_MONTHLY_ANALYSIS_LIMIT;
 }
 
+// 댓글 업데이트(sync) 주기 — 신선도와 무관하게 플랜별 고정 간격. cron 자체는
+// 30분마다 돌지만(vercel.json), 실제 sync 여부는 채널마다 이 간격이 지났는지로
+// 정해진다(isSyncDue). 무료만 대댓글을 수집하지 않는다.
+export const PLAN_SYNC_INTERVAL_MS: Record<SubscriptionPlan, number> = {
+  basic: 6 * 60 * 60 * 1000,
+  plus: 1 * 60 * 60 * 1000,
+  pro: 30 * 60 * 1000,
+};
+
+export const FREE_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
+export async function getSyncIntervalForUser(userId: string): Promise<number> {
+  const subscription = await getSubscriptionByUserId(userId);
+  return subscription ? PLAN_SYNC_INTERVAL_MS[subscription.plan] : FREE_SYNC_INTERVAL_MS;
+}
+
+export const FREE_COLLECT_REPLIES = false;
+
+// 구독 중(베이직 이상)이면 대댓글도 수집, 무료는 최상위 댓글만
+export async function getCollectRepliesForUser(userId: string): Promise<boolean> {
+  const subscription = await getSubscriptionByUserId(userId);
+  return subscription ? true : FREE_COLLECT_REPLIES;
+}
+
 export async function getSubscriptionByUserId(userId: string) {
   const [row] = await db
     .select()

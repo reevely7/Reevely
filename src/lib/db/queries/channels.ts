@@ -57,38 +57,25 @@ export async function deleteChannelByUserId(userId: string) {
 
 type Channel = {
   lastSyncedAt: Date | null;
-  latestVideoPublishedAt: Date | null;
 };
 
-const FRESH_WINDOW_MS = 48 * 60 * 60 * 1000;
-const FRESH_INTERVAL_MS = 60 * 60 * 1000;
-const STALE_INTERVAL_MS = 6 * 60 * 60 * 1000;
-
-export function isSyncDue(channel: Channel, now: Date = new Date()) {
-  const isFresh =
-    channel.latestVideoPublishedAt != null &&
-    now.getTime() - channel.latestVideoPublishedAt.getTime() <
-      FRESH_WINDOW_MS;
-
-  const interval = isFresh ? FRESH_INTERVAL_MS : STALE_INTERVAL_MS;
-
+// 댓글 업데이트 주기는 신선도가 아니라 플랜별 고정 간격(getSyncIntervalForUser)이다
+// — 호출부가 그 값을 intervalMs로 넘긴다.
+export function isSyncDue(channel: Channel, intervalMs: number, now: Date = new Date()) {
   return (
     !channel.lastSyncedAt ||
-    now.getTime() - channel.lastSyncedAt.getTime() >= interval
+    now.getTime() - channel.lastSyncedAt.getTime() >= intervalMs
   );
 }
 
 // 사이드바 상태 표시용 — 다음 자동 확인이 대략 언제일지 계산
-export function getNextSyncAt(channel: Channel, now: Date = new Date()): Date {
+export function getNextSyncAt(
+  channel: Channel,
+  intervalMs: number,
+  now: Date = new Date(),
+): Date {
   if (!channel.lastSyncedAt) return now;
-
-  const isFresh =
-    channel.latestVideoPublishedAt != null &&
-    now.getTime() - channel.latestVideoPublishedAt.getTime() <
-      FRESH_WINDOW_MS;
-
-  const interval = isFresh ? FRESH_INTERVAL_MS : STALE_INTERVAL_MS;
-  return new Date(channel.lastSyncedAt.getTime() + interval);
+  return new Date(channel.lastSyncedAt.getTime() + intervalMs);
 }
 
 export async function markSynced(

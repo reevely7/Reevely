@@ -3,7 +3,10 @@ import "server-only";
 import { decrypt } from "@/lib/crypto/token-cipher";
 import { markSynced } from "@/lib/db/queries/channels";
 import { insertNewComments } from "@/lib/db/queries/comments";
-import { getVideoLimitForUser } from "@/lib/db/queries/subscriptions";
+import {
+  getCollectRepliesForUser,
+  getVideoLimitForUser,
+} from "@/lib/db/queries/subscriptions";
 import { refreshAccessToken } from "@/lib/youtube/refresh-access-token";
 
 // 한 sync가 모니터링하는 영상 수는 플랜별로 다르다(getVideoLimitForUser) — 여기
@@ -164,7 +167,10 @@ export async function syncComments(channel: SyncableChannel) {
   }
 
   const accessToken = await refreshAccessToken(decrypt(channel.refreshToken));
-  const videoLimit = await getVideoLimitForUser(channel.userId);
+  const [videoLimit, collectReplies] = await Promise.all([
+    getVideoLimitForUser(channel.userId),
+    getCollectRepliesForUser(channel.userId),
+  ]);
 
   const { videoIds, latestVideoPublishedAt } = await fetchVideoIds(
     channel.uploadsPlaylistId,
@@ -177,9 +183,11 @@ export async function syncComments(channel: SyncableChannel) {
   let totalFetched = 0;
   let totalNew = 0;
 
+  const commentThreadsPart = collectReplies ? "snippet,replies" : "snippet";
+
   for (const videoId of videoIds) {
     const commentsRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet,replies&videoId=${videoId}&maxResults=${MAX_COMMENTS_PER_VIDEO}&order=time&textFormat=plainText`,
+      `https://www.googleapis.com/youtube/v3/commentThreads?part=${commentThreadsPart}&videoId=${videoId}&maxResults=${MAX_COMMENTS_PER_VIDEO}&order=time&textFormat=plainText`,
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
 
@@ -206,12 +214,15 @@ export async function syncComments(channel: SyncableChannel) {
       createdAt: new Date(snippet.publishedAt),
     });
 
-    // 최상위 댓글 + 대댓글 합산 개수를 MAX_COMMENTS_PER_VIDEO로 제한한다.
-    // (대댓글이 스레드당 최대 5개씩 딸려오므로, 스레드 수만 제한하면 영상 하나당
-    // 최대 수백 개까지 늘어날 수 있어 원래의 비용 방어 취지가 깨진다)
+    // 최상위 댓글 + 대댓글(무료 플랜은 대댓글 미수집) 합산 개수를
+    // MAX_COMMENTS_PER_VIDEO로 제한한다. (대댓글이 스레드당 최대 5개씩
+    // 딸려오므로, 스레드 수만 제한하면 영상 하나당 최대 수백 개까지 늘어날 수
+    // 있어 원래의 비용 방어 취지가 깨진다)
     const rows = commentItems
       .flatMap((item) => {
         const top = item.snippet.topLevelComment;
+        if (!collectReplies) return [toRow(top.id, top.snippet)];
+
         const replies = item.replies?.comments ?? [];
         return [
           toRow(top.id, top.snippet),

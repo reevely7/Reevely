@@ -9,7 +9,10 @@ import {
   countUnreadNotifications,
   getNotifications,
 } from "@/lib/db/queries/notifications";
-import { getChannelLimitForUser } from "@/lib/db/queries/subscriptions";
+import {
+  getChannelLimitForUser,
+  getSyncIntervalForUser,
+} from "@/lib/db/queries/subscriptions";
 
 const RECENT_NOTIFICATIONS_LIMIT = 8;
 
@@ -28,17 +31,23 @@ export default async function ChannelLayout({
     notFound();
   }
 
-  const [reviewCount, unreadNotificationCount, recentNotifications, channelLimit] =
-    await Promise.all([
-      countReviewQueue(channelId),
-      countUnreadNotifications(channelId),
-      getNotifications(channelId, RECENT_NOTIFICATIONS_LIMIT),
-      getChannelLimitForUser(user.id),
-    ]);
+  const [
+    reviewCount,
+    unreadNotificationCount,
+    recentNotifications,
+    channelLimit,
+    syncIntervalMs,
+  ] = await Promise.all([
+    countReviewQueue(channelId),
+    countUnreadNotifications(channelId),
+    getNotifications(channelId, RECENT_NOTIFICATIONS_LIMIT),
+    getChannelLimitForUser(user.id),
+    getSyncIntervalForUser(user.id),
+  ]);
 
   const channelsWithSync = channels.map((c) => ({
     ...c,
-    nextSyncAt: getNextSyncAt(c),
+    nextSyncAt: getNextSyncAt(c, syncIntervalMs),
   }));
 
   const atChannelLimit =
