@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { KakaoSignInButton } from "@/components/auth/kakao-sign-in-button";
 import { SiteFooter } from "@/components/landing/site-footer";
+import { Button } from "@/components/ui/button";
 import { PricingTable } from "@/components/landing/pricing-table";
 import { getChannelsByUserId } from "@/lib/db/queries/channels";
 import { createClient } from "@/lib/supabase/server";
@@ -55,6 +56,13 @@ export default async function LandingPage({
           Reevely
         </p>
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-auto"
+            nativeButton={false}
+            render={<a href="/admin/login">관리자 페이지</a>}
+          />
           <KakaoSignInButton
             label="로그인"
             variant="ghost"

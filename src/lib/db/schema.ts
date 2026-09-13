@@ -215,6 +215,17 @@ export const subscriptions = pgTable("subscriptions", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// 크리에이터 계정(카카오 로그인, auth.users)과는 완전히 분리된 내부 운영진
+// 전용 계정. Supabase Auth를 쓰지 않고 이 테이블 하나로 아이디/비밀번호를
+// 직접 관리한다 — 별도 로그인 화면(/admin/login)에서만 검증한다.
+export const adminUsers = pgTable("admin_users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  username: text("username").notNull().unique(),
+  // scrypt 해시 (src/lib/crypto/password.ts) — 평문 저장 금지
+  passwordHash: text("password_hash").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const paymentStatusEnum = pgEnum("payment_status", ["succeeded", "failed"]);
 
 // 결제 시도 감사 로그 — 결제 문의 대응, 영수증 표시용
