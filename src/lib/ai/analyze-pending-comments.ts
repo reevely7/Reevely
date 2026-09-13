@@ -16,11 +16,16 @@ import {
   maybeSuggestAuthorSubscription,
 } from "@/lib/db/queries/notifications";
 import { getMonthlyAnalysisLimitForUser } from "@/lib/db/queries/subscriptions";
+import { mapWithConcurrency } from "@/lib/utils/concurrency";
 
 // 한 번의 배치가 쓰는 OpenAI 호출 수 상한 (비용 방어). cron이 시간마다 도니까
 // 최대 하루 24회 × 20개 = 480개가 자연스러운 상한이라 별도 일일 카운터는 안 둔다.
 // (플랜별 월 분석량 한도와는 별개 — 그건 아래에서 계정 단위로 따로 체크한다)
 const MAX_BATCH = 20;
+// 배치 크기가 이미 fetch 시점에 고정돼 있어 동시 처리해도 한도 계산과는
+// 무관하다. 같은 작성자가 한 배치에서 동시에 여러 건 악성 판정을 받으면
+// repeat_author 임계치 알림이 드물게 중복 생성될 수 있는 정도의 트레이드오프.
+const ANALYZE_CONCURRENCY = 5;
 
 export async function analyzePendingComments(userId: string, channelId: string) {
   const [monthlyLimit, analyzedThisMonth] = await Promise.all([
@@ -48,7 +53,7 @@ export async function analyzePendingComments(userId: string, channelId: string) 
     { count: number; videoTitle: string | null }
   >();
 
-  for (const comment of pending) {
+  await mapWithConcurrency(pending, ANALYZE_CONCURRENCY, async (comment) => {
     try {
       const result = await analyzeComment(comment.text);
       await saveAnalysisResult(comment.id, result);
@@ -86,7 +91,7 @@ export async function analyzePendingComments(userId: string, channelId: string) 
       console.error(`댓글 분석 실패 (id=${comment.id}):`, e);
       failed++;
     }
-  }
+  });
 
   for (const [videoId, { count, videoTitle }] of videoMaliciousCounts) {
     await maybeNotifyVideoSpike(userId, channelId, videoId, videoTitle, count);

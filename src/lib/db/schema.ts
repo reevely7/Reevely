@@ -38,6 +38,9 @@ export const channels = pgTable(
     }),
     // 잠긴 채널은 cron sync 대상에서 제외됨(다운그레이드로 플랜 한도 초과 시)
     status: channelStatusEnum("status").notNull().default("active"),
+    // non-null이면 refresh token이 만료/취소되어 재연동이 필요하다는 뜻
+    // (값은 최초 감지된 시각). 재연동 성공 시 upsertChannel이 null로 되돌린다.
+    reauthRequiredAt: timestamp("reauth_required_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -76,8 +79,11 @@ export const comments = pgTable(
     // 영상 제목·종류(동영상/쇼츠)는 유튜브 전용. 인스타그램 연동 시에는 null.
     videoTitle: text("video_title"),
     videoType: videoTypeEnum("video_type"),
-    // 재-sync 시 중복 저장을 막기 위한 원본 댓글 ID (플랫폼별로 유일하면 되므로
-    // 아래 unique 제약은 platform과 묶어서 건다)
+    // 재-sync 시 중복 저장을 막기 위한 원본 댓글 ID. 유튜브 댓글 ID는 전역
+    // 유일하지만, 같은 실제 채널을 서로 다른 Reevely 계정(channelId)이 각자
+    // 연동할 수 있어 아래 unique 제약은 channelId와 묶어서 건다 — 그래야 두
+    // 계정이 독립적으로 같은 댓글을 각자 보관한다 (한쪽이 먼저 저장했다고
+    // 다른 계정 쪽 insert가 조용히 무시되지 않음)
     youtubeCommentId: text("youtube_comment_id").notNull(),
     authorChannelId: text("author_channel_id").notNull(),
     // 작성자가 유튜브에 공개 설정한 표시 이름 (실명 아님)
@@ -104,8 +110,8 @@ export const comments = pgTable(
     analyzedAt: timestamp("analyzed_at", { withTimezone: true }),
   },
   (table) => [
-    unique("comments_platform_comment_unique").on(
-      table.platform,
+    unique("comments_channel_comment_unique").on(
+      table.channelId,
       table.youtubeCommentId,
     ),
   ],
@@ -151,6 +157,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "payment_downgraded",
   // 이번 달 플랜별 댓글 분석 한도를 다 썼음 (계정 전체 채널 합산 기준)
   "analysis_quota_reached",
+  // 유튜브 refresh token이 만료/취소되어 재연동이 필요함
+  "reauth_required",
 ]);
 
 // notifications 1행 = 알림 1건. new_comment 타입은 comments를 조인해서 위험도·

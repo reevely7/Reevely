@@ -2,11 +2,14 @@ import { addDays, addMonths } from "date-fns";
 import { NextResponse } from "next/server";
 
 import { chargeBilling } from "@/lib/billing/toss-client";
+import { reconcileChannelLocks } from "@/lib/db/queries/channels";
 import {
   applySuccessfulRenewal,
   deleteSubscription,
+  FREE_CHANNEL_LIMIT,
   getDueSubscriptions,
   markPaymentFailed,
+  PLAN_CHANNEL_LIMITS,
   PLAN_LABELS,
   PLAN_PRICES,
   recordPaymentHistory,
@@ -15,6 +18,9 @@ import {
   notifyPaymentDowngraded,
   notifyPaymentFailed,
 } from "@/lib/db/queries/notifications";
+
+// Vercel Fluid Compute 기본 300초 한도까지 명시적으로 확보
+export const maxDuration = 300;
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -30,6 +36,7 @@ export async function GET(request: Request) {
     try {
       if (sub.status === "canceled_pending") {
         await deleteSubscription(sub.userId);
+        await reconcileChannelLocks(sub.userId, FREE_CHANNEL_LIMIT);
         results.push({ userId: sub.userId, result: "canceled" });
         continue;
       }
@@ -67,6 +74,7 @@ export async function GET(request: Request) {
 
       if (chargeResult.success) {
         await applySuccessfulRenewal(sub.userId, targetPlan, addMonths(now, 1));
+        await reconcileChannelLocks(sub.userId, PLAN_CHANNEL_LIMITS[targetPlan]);
         results.push({ userId: sub.userId, result: "renewed", plan: targetPlan });
         continue;
       }
@@ -80,6 +88,7 @@ export async function GET(request: Request) {
       } else {
         // payment_failed 상태에서의 재시도도 실패 — 무료 전환
         await deleteSubscription(sub.userId);
+        await reconcileChannelLocks(sub.userId, FREE_CHANNEL_LIMIT);
         await notifyPaymentDowngraded(sub.userId);
         results.push({ userId: sub.userId, result: "downgraded" });
       }

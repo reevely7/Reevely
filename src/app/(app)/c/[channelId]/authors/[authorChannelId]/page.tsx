@@ -3,6 +3,7 @@ import { ArrowLeft, Inbox } from "lucide-react";
 
 import { AuthorCommentFeed } from "@/components/authors/author-comment-feed";
 import { RiskBadge } from "@/components/dashboard/risk-badge";
+import { requireChannelOwnership } from "@/lib/auth/require-channel-ownership";
 import {
   getCommentsByAuthor,
   type CommentRiskLevel,
@@ -26,6 +27,7 @@ export default async function AuthorPage({
   params: Promise<{ channelId: string; authorChannelId: string }>;
 }) {
   const { channelId, authorChannelId } = await params;
+  await requireChannelOwnership(channelId);
   const decodedAuthorChannelId = decodeURIComponent(authorChannelId);
   const [comments, isSubscribed] = await Promise.all([
     getCommentsByAuthor(channelId, decodedAuthorChannelId),

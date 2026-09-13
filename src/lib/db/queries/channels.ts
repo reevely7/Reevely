@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { authorSubscriptions, channels, comments, notifications } from "@/lib/db/schema";
@@ -32,9 +32,46 @@ export async function countActiveChannelsByUserId(userId: string) {
   return row?.count ?? 0;
 }
 
-// cron이 전체 연동 채널을 순회하며 자동 sync+분석을 돌릴 때 사용
+// cleanup-expired-comments cron이 보관기간 정리 대상 유저를 찾을 때도 쓰므로
+// 잠긴 채널도 포함해 전부 반환한다 — 잠금 여부와 무관하게 데이터 보관기간
+// 정책은 지켜져야 한다. sync/분석 파이프라인에서의 잠금 필터링은 호출부
+// (process-comments cron)가 channel.status를 직접 보고 처리한다.
 export async function getAllChannels() {
   return db.select().from(channels);
+}
+
+// 플랜 변경(최초 가입/정기 갱신/해지/다운그레이드) 직후 호출해 채널 잠금 상태를
+// 새 한도에 맞게 재조정한다. 먼저 연동한 채널부터 우선권을 준다 — 한도 안에
+// 드는 채널은 active로, 넘치는 채널은 locked로. 이미 맞는 상태인 채널은
+// 건드리지 않는다.
+export async function reconcileChannelLocks(userId: string, limit: number) {
+  const userChannels = await db
+    .select({ id: channels.id, status: channels.status })
+    .from(channels)
+    .where(eq(channels.userId, userId))
+    .orderBy(asc(channels.createdAt));
+
+  const toActivate = userChannels
+    .slice(0, limit)
+    .filter((c) => c.status !== "active")
+    .map((c) => c.id);
+  const toLock = userChannels
+    .slice(limit)
+    .filter((c) => c.status !== "locked")
+    .map((c) => c.id);
+
+  if (toActivate.length > 0) {
+    await db
+      .update(channels)
+      .set({ status: "active" })
+      .where(inArray(channels.id, toActivate));
+  }
+  if (toLock.length > 0) {
+    await db
+      .update(channels)
+      .set({ status: "locked" })
+      .where(inArray(channels.id, toLock));
+  }
 }
 
 // 채널 연동 해제 시 그 채널에 종속된 데이터를 전부 함께 지운다 — FK 제약이
@@ -91,6 +128,18 @@ export async function markSynced(
     .where(eq(channels.id, channelId));
 }
 
+// refresh token이 만료/취소된 순간 딱 한 번만 기록한다 — 이후 cron은 이 값이
+// 찍혀 있으면 재연동 전까지 sync 시도 자체를 건너뛴다 (무한 재시도 방지).
+// 반환값은 알림 dedup용 refId로 쓰인다.
+export async function markReauthRequired(channelId: string): Promise<Date> {
+  const reauthRequiredAt = new Date();
+  await db
+    .update(channels)
+    .set({ reauthRequiredAt })
+    .where(eq(channels.id, channelId));
+  return reauthRequiredAt;
+}
+
 type UpsertChannelInput = {
   userId: string;
   youtubeChannelId: string;
@@ -125,6 +174,9 @@ export async function upsertChannel(input: UpsertChannelInput): Promise<string> 
         subscriberCount: input.subscriberCount,
         uploadsPlaylistId: input.uploadsPlaylistId,
         updatedAt: new Date(),
+        // 여기 도달했다는 건 방금 유효한 access token으로 YouTube API 조회에
+        // 성공했다는 뜻이라, 이전에 재연동이 필요한 상태였어도 항상 해제한다.
+        reauthRequiredAt: null,
         ...(input.encryptedRefreshToken
           ? { refreshToken: input.encryptedRefreshToken }
           : {}),

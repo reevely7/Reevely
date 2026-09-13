@@ -1,6 +1,17 @@
 import "server-only";
 
-import { and, eq, gte, ilike, isNull, lt, sql, type SQL } from "drizzle-orm";
+import {
+  and,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 
 import {
   MODEL,
@@ -30,11 +41,40 @@ export async function insertNewComments(rows: NewCommentInput[]) {
     .insert(comments)
     .values(rows)
     .onConflictDoNothing({
-      target: [comments.platform, comments.youtubeCommentId],
+      target: [comments.channelId, comments.youtubeCommentId],
     })
     .returning({ id: comments.id });
 
   return inserted.length;
+}
+
+// 이미 저장된 댓글에서 영상별 videoType을 재사용하기 위한 캐시 조회 — 한 번
+// 쇼츠/영상으로 확정된 영상은 나중에 바뀌지 않으므로, sync마다 다시
+// youtube.com을 스크래핑(detectVideoType)하지 않고 여기서 먼저 찾는다.
+export async function getKnownVideoTypes(
+  channelId: string,
+  videoIds: string[],
+): Promise<Map<string, "video" | "shorts">> {
+  if (videoIds.length === 0) return new Map();
+
+  const rows = await db
+    .select({ videoId: comments.videoId, videoType: comments.videoType })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.channelId, channelId),
+        inArray(comments.videoId, videoIds),
+        isNotNull(comments.videoType),
+      ),
+    );
+
+  return new Map(
+    rows
+      .filter((row): row is { videoId: string; videoType: "video" | "shorts" } =>
+        row.videoType !== null,
+      )
+      .map((row) => [row.videoId, row.videoType]),
+  );
 }
 
 export async function countCommentsByUserId(userId: string) {

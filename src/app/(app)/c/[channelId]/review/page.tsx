@@ -2,6 +2,7 @@ import { CheckCircle2 } from "lucide-react";
 
 import { StatusActionButton } from "@/components/comments/status-action-button";
 import { RiskBadge } from "@/components/dashboard/risk-badge";
+import { requireChannelOwnership } from "@/lib/auth/require-channel-ownership";
 import { getReviewQueue } from "@/lib/db/queries/comments";
 
 export default async function ReviewPage({
@@ -10,6 +11,7 @@ export default async function ReviewPage({
   params: Promise<{ channelId: string }>;
 }) {
   const { channelId } = await params;
+  await requireChannelOwnership(channelId);
   const queue = await getReviewQueue(channelId);
 
   return (

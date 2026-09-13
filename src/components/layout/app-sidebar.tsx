@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Lock, Menu, Plus, X } from "lucide-react";
+import { AlertTriangle, ChevronDown, Lock, Menu, Plus, X } from "lucide-react";
 import { useState } from "react";
 
 import { LogoutButton } from "@/components/auth/logout-button";
@@ -16,6 +16,7 @@ type SidebarChannel = {
   channelTitle: string;
   thumbnailUrl: string | null;
   status: "active" | "locked";
+  reauthRequiredAt: Date | null;
   lastSyncedAt: Date | null;
   nextSyncAt: Date;
 };
@@ -153,6 +154,12 @@ export function AppSidebar({
                           aria-hidden
                         />
                       )}
+                      {c.reauthRequiredAt && (
+                        <AlertTriangle
+                          className="size-3.5 shrink-0 text-risk-high"
+                          aria-hidden
+                        />
+                      )}
                       <span className="truncate">{c.channelTitle}</span>
                     </Link>
                   ))}
@@ -190,13 +197,23 @@ export function AppSidebar({
             </p>
           </Link>
 
-          {activeChannel?.lastSyncedAt && (
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              최근 댓글 업데이트 {formatClockTime(activeChannel.lastSyncedAt)}
+          {activeChannel?.reauthRequiredAt ? (
+            <p className="text-[11px] leading-relaxed text-risk-high">
+              유튜브 연동이 끊어져 새 댓글을 가져오지 못하고 있어요.
               <br />
-              다음 댓글 업데이트{" "}
-              <SyncCountdown target={activeChannel.nextSyncAt} />
+              <Link href="/channel-connect/start" className="font-medium underline">
+                다시 연동하기
+              </Link>
             </p>
+          ) : (
+            activeChannel?.lastSyncedAt && (
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                최근 댓글 업데이트 {formatClockTime(activeChannel.lastSyncedAt)}
+                <br />
+                다음 댓글 업데이트{" "}
+                <SyncCountdown target={activeChannel.nextSyncAt} />
+              </p>
+            )
           )}
 
           <LogoutButton className="border-sidebar-border bg-transparent text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground" />

@@ -2,9 +2,11 @@ import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 
 import { chargeBilling, issueBillingKey } from "@/lib/billing/toss-client";
+import { reconcileChannelLocks } from "@/lib/db/queries/channels";
 import {
   createSubscription,
   getSubscriptionByUserId,
+  PLAN_CHANNEL_LIMITS,
   PLAN_LABELS,
   PLAN_PRICES,
   recordPaymentHistory,
@@ -75,6 +77,7 @@ export async function GET(request: Request) {
       billingKey,
       tossCustomerKey: customerKey,
     });
+    await reconcileChannelLocks(user.id, PLAN_CHANNEL_LIMITS[plan]);
   } catch (e) {
     console.error("구독 최초 가입 실패:", e);
     return NextResponse.redirect(`${origin}/billing/fail`);

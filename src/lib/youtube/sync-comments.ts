@@ -2,11 +2,12 @@ import "server-only";
 
 import { decrypt } from "@/lib/crypto/token-cipher";
 import { markSynced } from "@/lib/db/queries/channels";
-import { insertNewComments } from "@/lib/db/queries/comments";
+import { getKnownVideoTypes, insertNewComments } from "@/lib/db/queries/comments";
 import {
   getCollectRepliesForUser,
   getVideoLimitForUser,
 } from "@/lib/db/queries/subscriptions";
+import { mapWithConcurrency } from "@/lib/utils/concurrency";
 import { refreshAccessToken } from "@/lib/youtube/refresh-access-token";
 
 // 한 sync가 모니터링하는 영상 수는 플랜별로 다르다(getVideoLimitForUser) — 여기
@@ -15,6 +16,9 @@ import { refreshAccessToken } from "@/lib/youtube/refresh-access-token";
 // 쿼터를 많이 쓰게 됨(playlistItems.list 호출 수가 그만큼 늘어남).
 const MAX_COMMENTS_PER_VIDEO = 100;
 const PLAYLIST_PAGE_SIZE = 50; // YouTube playlistItems.list maxResults 상한
+// detectVideoType은 Data API가 아닌 youtube.com 스크래핑이라, 영상 수만큼
+// 무제한 병렬로 보내면 봇 탐지에 걸리기 쉽다 — 동시 요청 수를 제한한다.
+const VIDEO_TYPE_DETECT_CONCURRENCY = 5;
 
 type SyncableChannel = {
   id: string;
@@ -74,7 +78,8 @@ async function detectVideoType(videoId: string): Promise<"video" | "shorts"> {
       redirect: "manual",
     });
     return res.status === 200 ? "shorts" : "video";
-  } catch {
+  } catch (e) {
+    console.error(`[sync] 영상 타입 판별 실패 (videoId=${videoId}):`, e);
     return "video";
   }
 }
@@ -131,16 +136,20 @@ async function fetchVideoIds(
 }
 
 async function fetchVideoMeta(
+  channelId: string,
   videoIds: string[],
   accessToken: string,
 ): Promise<Map<string, VideoMeta>> {
   const metaById = new Map<string, VideoMeta>();
   if (videoIds.length === 0) return metaById;
 
-  const res = await fetch(
-    `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoIds.join(",")}`,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
-  );
+  const [res, knownTypes] = await Promise.all([
+    fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoIds.join(",")}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    ),
+    getKnownVideoTypes(channelId, videoIds),
+  ]);
   if (!res.ok) return metaById;
 
   const data: YouTubeVideosListResponse = await res.json();
@@ -148,13 +157,23 @@ async function fetchVideoMeta(
     (data.items ?? []).map((item) => [item.id, item.snippet.title]),
   );
 
-  await Promise.all(
-    videoIds.map(async (id) => {
-      const title = titleById.get(id);
-      if (!title) return;
-      metaById.set(id, { title, type: await detectVideoType(id) });
-    }),
+  // 이미 이전 sync에서 쇼츠/영상이 확정된 영상은 다시 스크래핑하지 않는다
+  const unknownIds = videoIds.filter(
+    (id) => titleById.has(id) && !knownTypes.has(id),
   );
+  const detected = await mapWithConcurrency(
+    unknownIds,
+    VIDEO_TYPE_DETECT_CONCURRENCY,
+    async (id) => [id, await detectVideoType(id)] as const,
+  );
+  const detectedById = new Map(detected);
+
+  for (const id of videoIds) {
+    const title = titleById.get(id);
+    if (!title) continue;
+    const type = knownTypes.get(id) ?? detectedById.get(id) ?? "video";
+    metaById.set(id, { title, type });
+  }
 
   return metaById;
 }
@@ -178,7 +197,7 @@ export async function syncComments(channel: SyncableChannel) {
     videoLimit,
   );
 
-  const videoMetaById = await fetchVideoMeta(videoIds, accessToken);
+  const videoMetaById = await fetchVideoMeta(channel.id, videoIds, accessToken);
 
   let totalFetched = 0;
   let totalNew = 0;

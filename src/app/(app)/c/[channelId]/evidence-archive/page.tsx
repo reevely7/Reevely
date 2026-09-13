@@ -2,6 +2,7 @@ import { Archive } from "lucide-react";
 
 import { ArchiveActionButton } from "@/components/comments/archive-action-button";
 import { RiskBadge } from "@/components/dashboard/risk-badge";
+import { requireChannelOwnership } from "@/lib/auth/require-channel-ownership";
 import { getArchivedComments } from "@/lib/db/queries/comments";
 
 function formatDate(date: Date): string {
@@ -15,6 +16,7 @@ export default async function EvidenceArchivePage({
   params: Promise<{ channelId: string }>;
 }) {
   const { channelId } = await params;
+  await requireChannelOwnership(channelId);
   const archived = await getArchivedComments(channelId);
 
   return (

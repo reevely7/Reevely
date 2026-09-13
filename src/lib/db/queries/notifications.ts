@@ -17,7 +17,8 @@ type NotificationType =
   | "weekly_digest"
   | "payment_failed"
   | "payment_downgraded"
-  | "analysis_quota_reached";
+  | "analysis_quota_reached"
+  | "reauth_required";
 
 // 낮은 것부터 순서대로 확인 — 한 번의 분석에서 여러 단계를 한꺼번에 넘겨도
 // (예: 갑자기 댓글이 몰려 2건→11건) 안 보낸 단계는 전부 각각 알려준다.
@@ -234,6 +235,29 @@ export async function maybeNotifyReviewBacklog(
     title: "검토 필요 댓글이 쌓이고 있어요",
     message: `확신도가 낮아 검토가 필요한 댓글이 ${backlogCount}건입니다.`,
     href: `/c/${channelId}/review`,
+  });
+}
+
+// 유튜브 연동이 끊긴 "이번 장애"당 딱 1건만 보낸다 — refId로 감지 시각을 쓰므로
+// 읽고 나서 또 오지 않고(같은 장애 재알림 없음), 재연동 후 다시 끊기면 새
+// reauthRequiredAt이 생겨 새 알림이 나간다.
+export async function notifyReauthRequired(
+  userId: string,
+  channelId: string,
+  channelTitle: string,
+  reauthRequiredAt: Date,
+) {
+  const refId = reauthRequiredAt.toISOString();
+  if (await hasEverNotifiedOfType(channelId, "reauth_required", refId)) return;
+
+  await db.insert(notifications).values({
+    userId,
+    channelId,
+    type: "reauth_required",
+    title: "유튜브 연동을 다시 확인해 주세요",
+    message: `"${channelTitle}" 채널의 연동이 끊어져 새 댓글을 가져오지 못하고 있어요. 다시 연동해 주세요.`,
+    href: "/channel-connect/start",
+    refId,
   });
 }
 

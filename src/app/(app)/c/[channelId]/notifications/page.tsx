@@ -1,6 +1,7 @@
 import { BellIcon } from "@/components/icons/bell-icon";
 import { MarkAllReadButton } from "@/components/notifications/mark-all-read-button";
 import { NotificationRow } from "@/components/notifications/notification-row";
+import { requireChannelOwnership } from "@/lib/auth/require-channel-ownership";
 import { getNotifications } from "@/lib/db/queries/notifications";
 
 export default async function NotificationsPage({
@@ -9,6 +10,7 @@ export default async function NotificationsPage({
   params: Promise<{ channelId: string }>;
 }) {
   const { channelId } = await params;
+  await requireChannelOwnership(channelId);
   const notifications = await getNotifications(channelId);
   const hasUnread = notifications.some((n) => !n.isRead);
 

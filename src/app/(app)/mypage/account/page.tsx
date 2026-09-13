@@ -111,6 +111,11 @@ export default async function MypageAccountPage({
                       잠김
                     </span>
                   )}
+                  {channel.reauthRequiredAt && (
+                    <span className="ml-2 rounded-full bg-risk-high-bg px-2 py-0.5 text-[11px] text-risk-high">
+                      연동 끊김
+                    </span>
+                  )}
                 </span>
                 <form action={disconnectChannel}>
                   <input type="hidden" name="channelId" value={channel.id} />

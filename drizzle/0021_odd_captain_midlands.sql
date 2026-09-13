@@ -1,0 +1,2 @@
+ALTER TABLE "comments" DROP CONSTRAINT "comments_platform_comment_unique";--> statement-breakpoint
+ALTER TABLE "comments" ADD CONSTRAINT "comments_channel_comment_unique" UNIQUE("channel_id","youtube_comment_id");

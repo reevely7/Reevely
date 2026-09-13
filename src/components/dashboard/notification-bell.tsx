@@ -22,7 +22,8 @@ type Notification = {
     | "weekly_digest"
     | "payment_failed"
     | "payment_downgraded"
-    | "analysis_quota_reached";
+    | "analysis_quota_reached"
+    | "reauth_required";
   isRead: boolean;
   createdAt: Date;
   title: string | null;

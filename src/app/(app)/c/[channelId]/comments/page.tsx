@@ -2,6 +2,7 @@ import { CommentFilters } from "@/components/dashboard/comment-filters";
 import { CommentSearch } from "@/components/dashboard/comment-search";
 import { CommentsTable } from "@/components/dashboard/comments-table";
 import { Pagination } from "@/components/dashboard/pagination";
+import { requireChannelOwnership } from "@/lib/auth/require-channel-ownership";
 import {
   countFlaggedComments,
   getFlaggedComments,
@@ -30,6 +31,7 @@ export default async function CommentsPage({
   }>;
 }) {
   const { channelId } = await params;
+  await requireChannelOwnership(channelId);
   const sp = await searchParams;
   const filters: CommentFiltersType = {
     riskLevel: sp.risk as CommentFiltersType["riskLevel"],
