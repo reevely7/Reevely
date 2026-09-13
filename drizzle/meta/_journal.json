@@ -134,6 +134,13 @@
       "when": 1789279785309,
       "tag": "0018_fuzzy_james_howlett",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789281304579,
+      "tag": "0019_fast_boomer",
+      "breakpoints": true
     }
   ]
 }

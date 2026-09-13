@@ -96,6 +96,10 @@ export const comments = pgTable(
     // status가 시스템 자동확정(confidence>=0.7)인지 사람이 검토 큐에서 직접
     // 확정/신고한 것인지 구분 (파인튜닝 학습 데이터의 신뢰도 판단용)
     isHumanReviewed: boolean("is_human_reviewed").notNull().default(false),
+    // 증거 보관함(evidence archive)에 저장했는지 — 플랜별 저장 건수 한도가 있어
+    // (계정 전체 채널 합산) archivedAt으로 보관함 페이지 정렬에 쓴다
+    isArchived: boolean("is_archived").notNull().default(false),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     analyzedAt: timestamp("analyzed_at", { withTimezone: true }),
   },

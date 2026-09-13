@@ -399,6 +399,47 @@ export async function updateCommentStatus(
   return updated.length > 0;
 }
 
+// 계정 전체(연동 채널 합산) 증거 보관함 저장 건수 — 플랜별 한도 체크에 쓴다
+export async function countArchivedCommentsByUserId(userId: string) {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(comments)
+    .where(and(eq(comments.userId, userId), eq(comments.isArchived, true)));
+
+  return row?.count ?? 0;
+}
+
+export async function getArchivedComments(channelId: string) {
+  return db
+    .select()
+    .from(comments)
+    .where(and(eq(comments.channelId, channelId), eq(comments.isArchived, true)))
+    .orderBy(sql`${comments.archivedAt} desc`);
+}
+
+// 해당 채널 소유 댓글만 보관 가능하도록 channelId까지 조건에 걸어 확인한다.
+// 한도 체크(계정 전체 합산)는 호출부(API 라우트)에서 미리 하고 이 함수는
+// 실제 저장만 한다.
+export async function archiveComment(commentId: string, channelId: string) {
+  const updated = await db
+    .update(comments)
+    .set({ isArchived: true, archivedAt: new Date() })
+    .where(and(eq(comments.id, commentId), eq(comments.channelId, channelId)))
+    .returning({ id: comments.id });
+
+  return updated.length > 0;
+}
+
+export async function unarchiveComment(commentId: string, channelId: string) {
+  const updated = await db
+    .update(comments)
+    .set({ isArchived: false, archivedAt: null })
+    .where(and(eq(comments.id, commentId), eq(comments.channelId, channelId)))
+    .returning({ id: comments.id });
+
+  return updated.length > 0;
+}
+
 export async function deleteCommentsByUserId(userId: string) {
   await db.delete(comments).where(eq(comments.userId, userId));
 }

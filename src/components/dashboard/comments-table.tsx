@@ -4,6 +4,7 @@ import { Fragment, useState } from "react";
 import { ChevronDown, ChevronRight, Inbox } from "lucide-react";
 import Link from "next/link";
 
+import { ArchiveActionButton } from "@/components/comments/archive-action-button";
 import { StatusActionButton } from "@/components/comments/status-action-button";
 import { RiskBadge } from "@/components/dashboard/risk-badge";
 
@@ -23,6 +24,7 @@ type Row = {
   videoId: string;
   youtubeCommentId: string;
   createdAt: Date;
+  isArchived: boolean;
 };
 
 const PLATFORM_LABELS: Record<string, string> = {
@@ -212,18 +214,25 @@ export function CommentsTable({
                             </span>
                           </div>
 
-                          {row.status === "reported_false" ? (
-                            <span className="text-[11px] text-muted-foreground">
-                              오탐 신고됨
-                            </span>
-                          ) : (
-                            <StatusActionButton
+                          <div className="flex flex-wrap items-center gap-2">
+                            {row.status === "reported_false" ? (
+                              <span className="text-[11px] text-muted-foreground">
+                                오탐 신고됨
+                              </span>
+                            ) : (
+                              <StatusActionButton
+                                commentId={row.id}
+                                channelId={channelId}
+                                status="reported_false"
+                                label="오탐 신고"
+                              />
+                            )}
+                            <ArchiveActionButton
                               commentId={row.id}
                               channelId={channelId}
-                              status="reported_false"
-                              label="오탐 신고"
+                              isArchived={row.isArchived}
                             />
-                          )}
+                          </div>
                         </div>
 
                         <div className="rounded-lg border border-border bg-background/50 px-5 py-4">

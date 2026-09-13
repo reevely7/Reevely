@@ -84,6 +84,25 @@ export async function getCollectRepliesForUser(userId: string): Promise<boolean>
   return subscription ? true : FREE_COLLECT_REPLIES;
 }
 
+// 증거 보관함 저장 건수 한도 — 유저가 연동한 채널 전체를 합산한 계정 단위 한도
+// (월 분석량과 동일한 방식). 무료는 0(기능 자체 미제공), pro는 null(무제한).
+export const PLAN_EVIDENCE_ARCHIVE_LIMITS: Record<SubscriptionPlan, number | null> = {
+  basic: 50,
+  plus: 500,
+  pro: null,
+};
+
+export const FREE_EVIDENCE_ARCHIVE_LIMIT = 0;
+
+export async function getEvidenceArchiveLimitForUser(
+  userId: string,
+): Promise<number | null> {
+  const subscription = await getSubscriptionByUserId(userId);
+  return subscription
+    ? PLAN_EVIDENCE_ARCHIVE_LIMITS[subscription.plan]
+    : FREE_EVIDENCE_ARCHIVE_LIMIT;
+}
+
 export async function getSubscriptionByUserId(userId: string) {
   const [row] = await db
     .select()
