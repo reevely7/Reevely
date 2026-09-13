@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/process-billing",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-expired-comments",
+      "schedule": "0 4 * * *"
     }
   ]
 }

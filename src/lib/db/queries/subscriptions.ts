@@ -103,6 +103,21 @@ export async function getEvidenceArchiveLimitForUser(
     : FREE_EVIDENCE_ARCHIVE_LIMIT;
 }
 
+// 데이터 보관 기간(일). pro는 null(무제한 — 정리 대상에서 제외). 증거 보관함에
+// 저장된 댓글은 이 기간과 무관하게 보존된다(정리 cron이 isArchived=false만 지움).
+export const PLAN_RETENTION_DAYS: Record<SubscriptionPlan, number | null> = {
+  basic: 30,
+  plus: 180,
+  pro: null,
+};
+
+export const FREE_RETENTION_DAYS = 7;
+
+export async function getRetentionDaysForUser(userId: string): Promise<number | null> {
+  const subscription = await getSubscriptionByUserId(userId);
+  return subscription ? PLAN_RETENTION_DAYS[subscription.plan] : FREE_RETENTION_DAYS;
+}
+
 export async function getSubscriptionByUserId(userId: string) {
   const [row] = await db
     .select()

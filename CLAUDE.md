@@ -106,7 +106,8 @@ AI 기반 악성 댓글 탐지 및 증거관리 SaaS.
 실제로 Vercel에 배포하는 이야기가 나오면 아래를 먼저 확인할 것:
 
 - `CRON_SECRET`을 Vercel 프로젝트 환경변수에 `.env.local`과 동일한 값으로 등록
-  (안 하면 `/api/cron/process-comments`가 계속 401)
+  (안 하면 `/api/cron/process-comments`·`process-billing`·`cleanup-expired-comments`
+  전부 계속 401)
 - **Hobby 플랜은 cron 주기 제한이 있을 수 있음** — `vercel.json`의 30분 주기(`*/30 * * * *`)가
   실제로 지원되는지 확인, 안 되면 Pro 업그레이드 또는 주기 조정 (프로 플랜 유저의
   "30분마다" 동기화는 이 cron 주기가 상한이라, 여기서 밀리면 그만큼 늦어짐)
@@ -137,8 +138,11 @@ AI 기반 악성 댓글 탐지 및 증거관리 SaaS.
 ```
 src/
   app/
-    api/cron/process-comments/route.ts     Vercel Cron 진입점 (1시간마다, 신선도 기반 폴링)
+    api/cron/process-comments/route.ts     Vercel Cron 진입점 (30분마다, 플랜별 고정 sync 주기)
+    api/cron/cleanup-expired-comments/route.ts  Vercel Cron (하루 1회) — 플랜별 데이터
+                                            보관 기간 지난 댓글 삭제, 증거 보관함 저장분은 제외
     api/comments/[id]/status/route.ts      오탐 신고·검토 확정 (PATCH)
+    api/comments/[id]/archive/route.ts     증거 보관함 추가/해제 (PATCH)
     api/authors/[authorChannelId]/subscription/route.ts  알림 구독 on/off (PATCH)
     api/notifications/[id]/read/route.ts   알림 읽음 처리 (PATCH)
     api/notifications/read-all/route.ts    알림 전체 읽음 처리 (PATCH)
@@ -154,7 +158,8 @@ src/
     components/ui/                         shadcn/ui 컴포넌트
   components/
     auth/          로그인·로그아웃 버튼
-    comments/       오탐 신고/검토 확정 버튼 (status-action-button)
+    comments/       오탐 신고/검토 확정 버튼(status-action-button), 증거 보관함
+                    추가/해제 버튼(archive-action-button)
     dashboard/      요약 카드, 필터, 테이블, 알림 벨(드롭다운)
     authors/        작성자별 댓글 피드(필터·내보내기·알림 구독)
     notifications/  알림 목록 행, 전체 읽음 버튼

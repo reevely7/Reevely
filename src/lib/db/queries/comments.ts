@@ -444,6 +444,24 @@ export async function deleteCommentsByUserId(userId: string) {
   await db.delete(comments).where(eq(comments.userId, userId));
 }
 
+// 데이터 보관 기간 정리 cron 전용 — cutoff보다 오래된 댓글을 계정 전체(연동
+// 채널 합산)에서 지운다. 증거 보관함에 저장된 것(isArchived=true)은 보관
+// 기간과 무관하게 제외한다.
+export async function deleteExpiredComments(userId: string, cutoff: Date) {
+  const deleted = await db
+    .delete(comments)
+    .where(
+      and(
+        eq(comments.userId, userId),
+        eq(comments.isArchived, false),
+        lt(comments.createdAt, cutoff),
+      ),
+    )
+    .returning({ id: comments.id });
+
+  return deleted.length;
+}
+
 export async function saveAnalysisResult(
   commentId: string,
   analysis: CommentAnalysis,
