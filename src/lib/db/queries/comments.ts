@@ -55,6 +55,20 @@ export async function countUnanalyzedCommentsByUserId(userId: string) {
   return row?.count ?? 0;
 }
 
+// 이번 달(UTC 기준 1일 0시~) 계정 전체(연동 채널 합산)에서 AI가 분석 처리한
+// 댓글 수 — 플랜별 월 분석량 한도 체크에 쓴다
+export async function countAnalyzedCommentsThisMonthByUserId(userId: string) {
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(comments)
+    .where(and(eq(comments.userId, userId), gte(comments.analyzedAt, monthStart)));
+
+  return row?.count ?? 0;
+}
+
 // 반복 작성자 구독 제안 알림에 쓰는 누적 악성 댓글 수
 export async function countMaliciousCommentsByAuthor(
   channelId: string,

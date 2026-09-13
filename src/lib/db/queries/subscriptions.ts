@@ -28,6 +28,38 @@ export const PLAN_CHANNEL_LIMITS: Record<SubscriptionPlan, number> = {
 
 export const FREE_CHANNEL_LIMIT = 1;
 
+// sync 1회당 모니터링하는 영상 수 상한. pro는 null(진짜 무제한 — 재생목록을 끝까지
+// 페이지네이션한다. 영상이 아주 많은 채널은 sync당 API 쿼터를 많이 쓰게 됨).
+export const PLAN_VIDEO_LIMITS: Record<SubscriptionPlan, number | null> = {
+  basic: 50,
+  plus: 200,
+  pro: null,
+};
+
+export const FREE_VIDEO_LIMIT = 10;
+
+// 유저의 현재 플랜 기준 sync당 영상 모니터링 상한 — null이면 무제한
+export async function getVideoLimitForUser(userId: string): Promise<number | null> {
+  const subscription = await getSubscriptionByUserId(userId);
+  return subscription ? PLAN_VIDEO_LIMITS[subscription.plan] : FREE_VIDEO_LIMIT;
+}
+
+// 월 댓글 분석량 한도 — 유저가 연동한 채널 전체를 합산한 계정 단위 한도
+export const PLAN_MONTHLY_ANALYSIS_LIMITS: Record<SubscriptionPlan, number> = {
+  basic: 10000,
+  plus: 30000,
+  pro: 50000,
+};
+
+export const FREE_MONTHLY_ANALYSIS_LIMIT = 1000;
+
+export async function getMonthlyAnalysisLimitForUser(userId: string): Promise<number> {
+  const subscription = await getSubscriptionByUserId(userId);
+  return subscription
+    ? PLAN_MONTHLY_ANALYSIS_LIMITS[subscription.plan]
+    : FREE_MONTHLY_ANALYSIS_LIMIT;
+}
+
 export async function getSubscriptionByUserId(userId: string) {
   const [row] = await db
     .select()

@@ -13,7 +13,8 @@ type Notification = {
     | "video_spike"
     | "weekly_digest"
     | "payment_failed"
-    | "payment_downgraded";
+    | "payment_downgraded"
+    | "analysis_quota_reached";
   isRead: boolean;
   createdAt: Date;
   title: string | null;

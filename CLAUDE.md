@@ -77,9 +77,17 @@ AI 기반 악성 댓글 탐지 및 증거관리 SaaS.
 ## 보안 원칙
 
 - API 키는 전부 `.env.local`에만, 절대 커밋 금지 (`.gitignore`에 `.env*` 포함됨)
-- YouTube/OpenAI 호출 비용은 신선도 기반 폴링(위 참조) + sync당 최대 영상 10개·댓글
-  100개, 분석 배치당 최대 20개로 방어 (별도 유저별 일일 카운터는 안 둠, cron 주기
-  자체가 자연스러운 상한이라 불필요해짐)
+- YouTube/OpenAI 호출 비용은 신선도 기반 폴링(위 참조) + 댓글 100개/영상, 분석
+  배치당 최대 20개로 방어
+- **영상 모니터링 수·월 댓글 분석량은 플랜별로 차등 적용**한다 (`src/lib/db/queries/subscriptions.ts`의
+  `PLAN_VIDEO_LIMITS`/`PLAN_MONTHLY_ANALYSIS_LIMITS`, 무료는 `FREE_VIDEO_LIMIT`/`FREE_MONTHLY_ANALYSIS_LIMIT`):
+  무료 10개 영상·월 1,000건, 베이직 50개·10,000건, 플러스 200개·30,000건, 프로는
+  영상 수 무제한(재생목록 끝까지 페이지네이션, `src/lib/youtube/sync-comments.ts`)·월
+  50,000건. 월 분석량은 유저가 연동한 채널 전체를 합산한 계정 단위 한도이며
+  (`countAnalyzedCommentsThisMonthByUserId`), 도달하면 그 달은 분석을 멈추고
+  `analysis_quota_reached` 알림을 1회 생성한다(`analyzePendingComments`,
+  `maybeNotifyAnalysisQuotaReached`) — 안 된 댓글은 삭제되지 않고 다음 달에 이어서
+  분석됨
 - OpenAI 호출 시 `max_tokens: 300` 명시함 (`src/lib/ai/analyze-comment.ts`)
 - 유튜브 refresh token은 반드시 암호화해서 저장, 평문 저장 금지 (`src/lib/crypto/token-cipher.ts`)
 

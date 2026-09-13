@@ -16,7 +16,8 @@ type NotificationType =
   | "video_spike"
   | "weekly_digest"
   | "payment_failed"
-  | "payment_downgraded";
+  | "payment_downgraded"
+  | "analysis_quota_reached";
 
 // 낮은 것부터 순서대로 확인 — 한 번의 분석에서 여러 단계를 한꺼번에 넘겨도
 // (예: 갑자기 댓글이 몰려 2건→11건) 안 보낸 단계는 전부 각각 알려준다.
@@ -362,6 +363,51 @@ export async function notifyPaymentDowngraded(userId: string) {
     title: "무료 플랜으로 전환되었습니다",
     message: "재시도 결제도 실패해 무료 플랜으로 전환됐어요. 다시 구독하려면 결제 정보를 등록해 주세요.",
     href: "/mypage/subscription",
+  });
+}
+
+// payment_* 와 동일하게 채널이 아니라 계정(userId) 단위 알림. refId에 "YYYY-MM"을
+// 넣어 같은 달에는 한 번만 알린다.
+async function hasEverNotifiedAccountOfType(
+  userId: string,
+  type: NotificationType,
+  refId: string,
+) {
+  const [row] = await db
+    .select({ id: notifications.id })
+    .from(notifications)
+    .where(
+      and(
+        eq(notifications.userId, userId),
+        isNull(notifications.channelId),
+        eq(notifications.type, type),
+        eq(notifications.refId, refId),
+      ),
+    )
+    .limit(1);
+
+  return Boolean(row);
+}
+
+// 이번 달 계정 전체(연동 채널 합산) 댓글 분석 한도에 도달했을 때 — 월 1회만 알린다.
+// 분석 자체는 한도 도달 즉시 멈추고(analyzePendingComments), 다음 달이 되면
+// countAnalyzedCommentsThisMonthByUserId가 자연히 0부터 다시 세어져 재개된다.
+export async function maybeNotifyAnalysisQuotaReached(userId: string) {
+  const now = new Date();
+  const monthKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+
+  if (await hasEverNotifiedAccountOfType(userId, "analysis_quota_reached", monthKey)) {
+    return;
+  }
+
+  await db.insert(notifications).values({
+    userId,
+    type: "analysis_quota_reached",
+    title: "이번 달 댓글 분석 한도에 도달했어요",
+    message:
+      "현재 플랜의 월 분석 한도를 다 썼습니다. 분석되지 않은 댓글은 다음 달이 되면 이어서 분석됩니다. 더 많은 분석이 필요하면 플랜을 업그레이드해 주세요.",
+    href: "/mypage/subscription",
+    refId: monthKey,
   });
 }
 

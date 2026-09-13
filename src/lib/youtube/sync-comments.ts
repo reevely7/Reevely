@@ -3,11 +3,15 @@ import "server-only";
 import { decrypt } from "@/lib/crypto/token-cipher";
 import { markSynced } from "@/lib/db/queries/channels";
 import { insertNewComments } from "@/lib/db/queries/comments";
+import { getVideoLimitForUser } from "@/lib/db/queries/subscriptions";
 import { refreshAccessToken } from "@/lib/youtube/refresh-access-token";
 
-// 채널 규모와 무관하게 한 번의 sync가 쓰는 API 쿼터/비용 상한
-const MAX_VIDEOS = 10;
+// 한 sync가 모니터링하는 영상 수는 플랜별로 다르다(getVideoLimitForUser) — 여기
+// 상수는 영상 하나당 댓글 상한만 맡는다. 프로 플랜은 영상 수 제한이 없어(null)
+// 재생목록 끝까지 페이지네이션한다 — 영상이 아주 많은 채널은 sync당 유튜브 API
+// 쿼터를 많이 쓰게 됨(playlistItems.list 호출 수가 그만큼 늘어남).
 const MAX_COMMENTS_PER_VIDEO = 100;
+const PLAYLIST_PAGE_SIZE = 50; // YouTube playlistItems.list maxResults 상한
 
 type SyncableChannel = {
   id: string;
@@ -20,6 +24,7 @@ type YouTubePlaylistItemsResponse = {
   items?: Array<{
     contentDetails: { videoId: string; videoPublishedAt?: string };
   }>;
+  nextPageToken?: string;
 };
 
 type YouTubeCommentSnippet = {
@@ -71,6 +76,57 @@ async function detectVideoType(videoId: string): Promise<"video" | "shorts"> {
   }
 }
 
+// 플랜별 영상 모니터링 상한(videoLimit)만큼 재생목록을 페이지네이션해서 가져온다.
+// videoLimit이 null이면(pro) 재생목록 끝까지 전부 가져온다. 첫 페이지 조회
+// 실패는 sync 자체를 실패시키고, 이후 페이지 실패는 지금까지 모은 것만으로
+// 계속 진행한다(이미 확보한 영상까지는 정상적으로 동기화하기 위함).
+async function fetchVideoIds(
+  playlistId: string,
+  accessToken: string,
+  videoLimit: number | null,
+): Promise<{ videoIds: string[]; latestVideoPublishedAt: Date | null }> {
+  const videoIds: string[] = [];
+  let latestVideoPublishedAt: Date | null = null;
+  let pageToken: string | undefined;
+  let isFirstPage = true;
+
+  do {
+    const url = new URL("https://www.googleapis.com/youtube/v3/playlistItems");
+    url.searchParams.set("part", "contentDetails");
+    url.searchParams.set("playlistId", playlistId);
+    url.searchParams.set("maxResults", String(PLAYLIST_PAGE_SIZE));
+    if (pageToken) url.searchParams.set("pageToken", pageToken);
+
+    const playlistRes = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!playlistRes.ok) {
+      if (isFirstPage) {
+        throw new Error(`영상 목록 조회 실패 (${playlistRes.status})`);
+      }
+      break;
+    }
+
+    const playlistData: YouTubePlaylistItemsResponse = await playlistRes.json();
+    const items = playlistData.items ?? [];
+
+    // uploads 재생목록은 최신순이라 첫 페이지의 첫 항목이 가장 최근 영상의 게시 시각
+    if (isFirstPage && items[0]?.contentDetails.videoPublishedAt) {
+      latestVideoPublishedAt = new Date(items[0].contentDetails.videoPublishedAt);
+    }
+
+    videoIds.push(...items.map((item) => item.contentDetails.videoId));
+    pageToken = playlistData.nextPageToken;
+    isFirstPage = false;
+  } while (pageToken && (videoLimit === null || videoIds.length < videoLimit));
+
+  return {
+    videoIds: videoLimit === null ? videoIds : videoIds.slice(0, videoLimit),
+    latestVideoPublishedAt,
+  };
+}
+
 async function fetchVideoMeta(
   videoIds: string[],
   accessToken: string,
@@ -108,24 +164,13 @@ export async function syncComments(channel: SyncableChannel) {
   }
 
   const accessToken = await refreshAccessToken(decrypt(channel.refreshToken));
+  const videoLimit = await getVideoLimitForUser(channel.userId);
 
-  const playlistRes = await fetch(
-    `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=${channel.uploadsPlaylistId}&maxResults=${MAX_VIDEOS}`,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
+  const { videoIds, latestVideoPublishedAt } = await fetchVideoIds(
+    channel.uploadsPlaylistId,
+    accessToken,
+    videoLimit,
   );
-
-  if (!playlistRes.ok) {
-    throw new Error(`영상 목록 조회 실패 (${playlistRes.status})`);
-  }
-
-  const playlistData: YouTubePlaylistItemsResponse = await playlistRes.json();
-  const items = playlistData.items ?? [];
-  const videoIds = items.map((item) => item.contentDetails.videoId);
-
-  // uploads 재생목록은 최신순이라 첫 항목이 가장 최근 영상의 게시 시각
-  const latestVideoPublishedAt = items[0]?.contentDetails.videoPublishedAt
-    ? new Date(items[0].contentDetails.videoPublishedAt)
-    : null;
 
   const videoMetaById = await fetchVideoMeta(videoIds, accessToken);
 

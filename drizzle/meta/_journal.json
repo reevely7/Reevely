@@ -127,6 +127,13 @@
       "when": 1789067111638,
       "tag": "0017_wakeful_lady_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789279785309,
+      "tag": "0018_fuzzy_james_howlett",
+      "breakpoints": true
     }
   ]
 }

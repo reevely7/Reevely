@@ -2,6 +2,7 @@ import "server-only";
 
 import { analyzeComment } from "@/lib/ai/analyze-comment";
 import {
+  countAnalyzedCommentsThisMonthByUserId,
   countReviewQueue,
   getUnanalyzedComments,
   saveAnalysisResult,
@@ -9,17 +10,34 @@ import {
 import {
   createNewCommentNotification,
   isSubscribedToAuthor,
+  maybeNotifyAnalysisQuotaReached,
   maybeNotifyReviewBacklog,
   maybeNotifyVideoSpike,
   maybeSuggestAuthorSubscription,
 } from "@/lib/db/queries/notifications";
+import { getMonthlyAnalysisLimitForUser } from "@/lib/db/queries/subscriptions";
 
 // 한 번의 배치가 쓰는 OpenAI 호출 수 상한 (비용 방어). cron이 시간마다 도니까
 // 최대 하루 24회 × 20개 = 480개가 자연스러운 상한이라 별도 일일 카운터는 안 둔다.
+// (플랜별 월 분석량 한도와는 별개 — 그건 아래에서 계정 단위로 따로 체크한다)
 const MAX_BATCH = 20;
 
 export async function analyzePendingComments(userId: string, channelId: string) {
-  const pending = await getUnanalyzedComments(channelId, MAX_BATCH);
+  const [monthlyLimit, analyzedThisMonth] = await Promise.all([
+    getMonthlyAnalysisLimitForUser(userId),
+    countAnalyzedCommentsThisMonthByUserId(userId),
+  ]);
+  const remainingQuota = monthlyLimit - analyzedThisMonth;
+
+  if (remainingQuota <= 0) {
+    await maybeNotifyAnalysisQuotaReached(userId);
+    return { totalPending: 0, analyzed: 0, failed: 0, quotaReached: true };
+  }
+
+  const pending = await getUnanalyzedComments(
+    channelId,
+    Math.min(MAX_BATCH, remainingQuota),
+  );
 
   let analyzed = 0;
   let failed = 0;

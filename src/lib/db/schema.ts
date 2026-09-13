@@ -145,6 +145,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "payment_failed",
   // 재시도까지 실패해 무료로 전환됨
   "payment_downgraded",
+  // 이번 달 플랜별 댓글 분석 한도를 다 썼음 (계정 전체 채널 합산 기준)
+  "analysis_quota_reached",
 ]);
 
 // notifications 1행 = 알림 1건. new_comment 타입은 comments를 조인해서 위험도·
@@ -154,8 +156,9 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 export const notifications = pgTable("notifications", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull(),
-  // payment_failed/payment_downgraded만 예외적으로 null (계정 단위 알림이라 특정
-  // 채널에 안 묶임). 그 외 타입은 전부 채널 종속이라 애플리케이션 레벨에서 항상 채운다.
+  // payment_failed/payment_downgraded/analysis_quota_reached만 예외적으로 null
+  // (계정 단위 알림이라 특정 채널에 안 묶임). 그 외 타입은 전부 채널 종속이라
+  // 애플리케이션 레벨에서 항상 채운다.
   channelId: uuid("channel_id"),
   type: notificationTypeEnum("type").notNull().default("new_comment"),
   commentId: uuid("comment_id"),
