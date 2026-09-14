@@ -453,6 +453,27 @@ export async function maybeNotifyAnalysisQuotaReached(userId: string) {
   });
 }
 
+// 관리자 시스템 모니터링 전용 — 이번 달 월 분석 한도에 도달한 유저 목록.
+// maybeNotifyAnalysisQuotaReached가 이미 남겨둔 알림을 그대로 조회한다.
+export async function getAnalysisQuotaReachedUsersThisMonth() {
+  const now = new Date();
+  const monthKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+
+  return db
+    .select({
+      userId: notifications.userId,
+      createdAt: notifications.createdAt,
+    })
+    .from(notifications)
+    .where(
+      and(
+        eq(notifications.type, "analysis_quota_reached"),
+        eq(notifications.refId, monthKey),
+      ),
+    )
+    .orderBy(desc(notifications.createdAt));
+}
+
 // 결제 알림(channelId가 NULL인 계정 단위 알림)만 조회 — /mypage/subscription 전용
 export async function getAccountNotifications(userId: string) {
   return db

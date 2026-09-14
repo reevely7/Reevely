@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { analyzePendingComments } from "@/lib/ai/analyze-pending-comments";
 import { getAllChannels, isSyncDue, markReauthRequired } from "@/lib/db/queries/channels";
+import { recordCronRun } from "@/lib/db/queries/cron-runs";
 import { maybeCreateWeeklyDigest, notifyReauthRequired } from "@/lib/db/queries/notifications";
 import { getSyncIntervalForUser } from "@/lib/db/queries/subscriptions";
 import { getSuspendedUserIds } from "@/lib/db/queries/suspended-users";
@@ -105,43 +106,52 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const [channels, suspendedUserIds] = await Promise.all([
-    getAllChannels(),
-    getSuspendedUserIds(),
-  ]);
+  const { results } = await recordCronRun("process-comments", async () => {
+    const [channels, suspendedUserIds] = await Promise.all([
+      getAllChannels(),
+      getSuspendedUserIds(),
+    ]);
 
-  const channelsByUser = new Map<string, typeof channels>();
-  for (const channel of channels) {
-    const group = channelsByUser.get(channel.userId);
-    if (group) {
-      group.push(channel);
-    } else {
-      channelsByUser.set(channel.userId, [channel]);
+    const channelsByUser = new Map<string, typeof channels>();
+    for (const channel of channels) {
+      const group = channelsByUser.get(channel.userId);
+      if (group) {
+        group.push(channel);
+      } else {
+        channelsByUser.set(channel.userId, [channel]);
+      }
     }
-  }
 
-  const grouped = await mapWithConcurrency(
-    [...channelsByUser.values()],
-    USER_GROUP_CONCURRENCY,
-    async (userChannels) => {
-      // 관리자가 정지시킨 유저는 채널별로 다시 확인할 것 없이 그룹째 건너뛴다
-      if (suspendedUserIds.has(userChannels[0].userId)) {
-        return userChannels.map((channel) => ({
-          userId: channel.userId,
-          channelTitle: channel.channelTitle,
-          sync: "suspended" as const,
-        }));
-      }
+    const grouped = await mapWithConcurrency(
+      [...channelsByUser.values()],
+      USER_GROUP_CONCURRENCY,
+      async (userChannels) => {
+        // 관리자가 정지시킨 유저는 채널별로 다시 확인할 것 없이 그룹째 건너뛴다
+        if (suspendedUserIds.has(userChannels[0].userId)) {
+          return userChannels.map(
+            (channel): ChannelResultEntry => ({
+              userId: channel.userId,
+              channelTitle: channel.channelTitle,
+              sync: "suspended" as const,
+            }),
+          );
+        }
 
-      const entries: ChannelResultEntry[] = [];
-      for (const channel of userChannels) {
-        entries.push(await processChannel(channel));
-      }
-      return entries;
-    },
-  );
+        const entries: ChannelResultEntry[] = [];
+        for (const channel of userChannels) {
+          entries.push(await processChannel(channel));
+        }
+        return entries;
+      },
+    );
 
-  const results = grouped.flat();
+    const results = grouped.flat();
+    const errorCount = results.filter(
+      (r) => r.sync === "failed" || r.analyze === "failed",
+    ).length;
+
+    return { itemCount: results.length, errorCount, summary: results, results };
+  });
 
   return NextResponse.json({ processedChannels: results.length, results });
 }

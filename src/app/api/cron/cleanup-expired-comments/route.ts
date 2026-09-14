@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getAllChannels } from "@/lib/db/queries/channels";
 import { deleteExpiredComments } from "@/lib/db/queries/comments";
+import { recordCronRun } from "@/lib/db/queries/cron-runs";
 import { getRetentionDaysForUser } from "@/lib/db/queries/subscriptions";
 
 // Vercel Fluid Compute 기본 300초 한도까지 명시적으로 확보
@@ -17,29 +18,39 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const channels = await getAllChannels();
-  const userIds = [...new Set(channels.map((c) => c.userId))];
-  const results = [];
+  const { results } = await recordCronRun("cleanup-expired-comments", async () => {
+    const channels = await getAllChannels();
+    const userIds = [...new Set(channels.map((c) => c.userId))];
+    const results: Array<{
+      userId: string;
+      deleted: number | "failed";
+      retention?: string;
+      retentionDays?: number;
+    }> = [];
 
-  for (const userId of userIds) {
-    try {
-      const retentionDays = await getRetentionDaysForUser(userId);
+    for (const userId of userIds) {
+      try {
+        const retentionDays = await getRetentionDaysForUser(userId);
 
-      if (retentionDays === null) {
-        results.push({ userId, deleted: 0, retention: "unlimited" });
-        continue;
+        if (retentionDays === null) {
+          results.push({ userId, deleted: 0, retention: "unlimited" });
+          continue;
+        }
+
+        const cutoff = new Date(
+          Date.now() - retentionDays * 24 * 60 * 60 * 1000,
+        );
+        const deleted = await deleteExpiredComments(userId, cutoff);
+        results.push({ userId, deleted, retentionDays });
+      } catch (e) {
+        results.push({ userId, deleted: "failed" });
+        console.error(`[cron] 데이터 보관 기간 정리 실패 (userId=${userId}):`, e);
       }
-
-      const cutoff = new Date(
-        Date.now() - retentionDays * 24 * 60 * 60 * 1000,
-      );
-      const deleted = await deleteExpiredComments(userId, cutoff);
-      results.push({ userId, deleted, retentionDays });
-    } catch (e) {
-      results.push({ userId, deleted: "failed" });
-      console.error(`[cron] 데이터 보관 기간 정리 실패 (userId=${userId}):`, e);
     }
-  }
+
+    const errorCount = results.filter((r) => r.deleted === "failed").length;
+    return { itemCount: results.length, errorCount, summary: results, results };
+  });
 
   return NextResponse.json({ processedUsers: results.length, results });
 }

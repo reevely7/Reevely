@@ -3,6 +3,7 @@ import "server-only";
 import { encrypt } from "@/lib/crypto/token-cipher";
 import { getChannelsByUserId, upsertChannel } from "@/lib/db/queries/channels";
 import { getChannelLimitForUser } from "@/lib/db/queries/subscriptions";
+import { YOUTUBE_API_UNIT_COSTS, recordYoutubeApiUsage } from "@/lib/db/queries/youtube-quota";
 
 export class ChannelLimitError extends Error {}
 
@@ -34,6 +35,7 @@ export async function connectChannel({
     "https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,contentDetails&mine=true",
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
+  await recordYoutubeApiUsage(YOUTUBE_API_UNIT_COSTS.channelsList);
 
   if (!response.ok) {
     throw new Error(`YouTube API 채널 조회 실패 (${response.status})`);

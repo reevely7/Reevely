@@ -7,6 +7,7 @@ import {
   getCollectRepliesForUser,
   getVideoLimitForUser,
 } from "@/lib/db/queries/subscriptions";
+import { YOUTUBE_API_UNIT_COSTS, recordYoutubeApiUsage } from "@/lib/db/queries/youtube-quota";
 import { mapWithConcurrency } from "@/lib/utils/concurrency";
 import { refreshAccessToken } from "@/lib/youtube/refresh-access-token";
 
@@ -108,6 +109,7 @@ async function fetchVideoIds(
     const playlistRes = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
+    await recordYoutubeApiUsage(YOUTUBE_API_UNIT_COSTS.playlistItemsList);
 
     if (!playlistRes.ok) {
       if (isFirstPage) {
@@ -150,6 +152,7 @@ async function fetchVideoMeta(
     ),
     getKnownVideoTypes(channelId, videoIds),
   ]);
+  await recordYoutubeApiUsage(YOUTUBE_API_UNIT_COSTS.videosList);
   if (!res.ok) return metaById;
 
   const data: YouTubeVideosListResponse = await res.json();
@@ -209,6 +212,7 @@ export async function syncComments(channel: SyncableChannel) {
       `https://www.googleapis.com/youtube/v3/commentThreads?part=${commentThreadsPart}&videoId=${videoId}&maxResults=${MAX_COMMENTS_PER_VIDEO}&order=time&textFormat=plainText`,
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
+    await recordYoutubeApiUsage(YOUTUBE_API_UNIT_COSTS.commentThreadsList);
 
     if (!commentsRes.ok) {
       // 댓글이 막혀있거나 삭제된 영상 등 — 건너뛰고 계속 진행

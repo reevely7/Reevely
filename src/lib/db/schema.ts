@@ -1,6 +1,7 @@
 import {
   boolean,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -258,4 +259,28 @@ export const paymentHistory = pgTable("payment_history", {
   tossPaymentKey: text("toss_payment_key"),
   failReason: text("fail_reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// cron 1회 실행당 1행. 각 cron 라우트가 이미 만들고 있는 결과 요약(results
+// 배열)을 summary에 그대로 저장한다 — 별도 에러 로그 테이블 없이, 실패 건은
+// summary 안에서 status가 "failed"/"error"인 항목으로 확인한다.
+export const cronRuns = pgTable("cron_runs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  cronName: text("cron_name").notNull(),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+  itemCount: integer("item_count").notNull().default(0),
+  errorCount: integer("error_count").notNull().default(0),
+  summary: jsonb("summary"),
+  // 개별 항목 실패가 아니라 cron 전체가 최상위 예외로 죽은 경우만 채워진다
+  fatalError: text("fatal_error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// 날짜(UTC 기준 근사치 — 실제 유튜브 쿼터는 태평양시 자정 리셋)별 유튜브
+// Data API 사용 유닛 누적치. 프로젝트 전체가 하루 10,000유닛을 공유하므로
+// (src/lib/youtube/quota-usage.ts) 호출 지점마다 여기 누적한다.
+export const youtubeApiUsage = pgTable("youtube_api_usage", {
+  date: text("date").primaryKey(),
+  units: integer("units").notNull().default(0),
 });

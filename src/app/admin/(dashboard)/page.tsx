@@ -53,6 +53,12 @@ export default function AdminDashboardPage() {
         >
           AI 분석 품질 모니터링
         </Link>
+        <Link
+          href="/admin/system"
+          className="text-sm font-medium text-primary hover:underline"
+        >
+          시스템/인프라 운영
+        </Link>
       </nav>
     </main>
   );
