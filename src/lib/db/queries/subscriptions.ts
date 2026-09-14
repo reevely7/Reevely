@@ -20,6 +20,13 @@ export const PLAN_LABELS: Record<SubscriptionPlan, string> = {
   pro: "프로",
 };
 
+// 플랜 등급 비교용 — 값이 클수록 상위 플랜. 업그레이드/다운그레이드 판별에 쓴다.
+export const PLAN_ORDER: Record<SubscriptionPlan, number> = {
+  basic: 1,
+  plus: 2,
+  pro: 3,
+};
+
 export const PLAN_CHANNEL_LIMITS: Record<SubscriptionPlan, number> = {
   basic: 1,
   plus: 2,
@@ -302,7 +309,7 @@ type RecordPaymentHistoryInput = {
   failReason?: string;
 };
 
-// 관리자 유저 상세 화면 전용 — CS/환불 대응 시 결제 이력 열람
+// 관리자 유저 상세 화면(CS/환불 대응) + 마이페이지 결제 내역 양쪽에서 사용
 export async function getPaymentHistoryByUserId(userId: string) {
   return db
     .select()

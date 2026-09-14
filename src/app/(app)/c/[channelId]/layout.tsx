@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { NotificationBell } from "@/components/dashboard/notification-bell";
@@ -11,7 +12,9 @@ import {
 } from "@/lib/db/queries/notifications";
 import {
   getChannelLimitForUser,
+  getSubscriptionByUserId,
   getSyncIntervalForUser,
+  PLAN_LABELS,
 } from "@/lib/db/queries/subscriptions";
 
 const RECENT_NOTIFICATIONS_LIMIT = 8;
@@ -37,12 +40,14 @@ export default async function ChannelLayout({
     recentNotifications,
     channelLimit,
     syncIntervalMs,
+    subscription,
   ] = await Promise.all([
     countReviewQueue(channelId),
     countUnreadNotifications(channelId),
     getNotifications(channelId, RECENT_NOTIFICATIONS_LIMIT),
     getChannelLimitForUser(user.id),
     getSyncIntervalForUser(user.id),
+    getSubscriptionByUserId(user.id),
   ]);
 
   const channelsWithSync = channels.map((c) => ({
@@ -53,18 +58,28 @@ export default async function ChannelLayout({
   const atChannelLimit =
     channels.filter((c) => c.status === "active").length >= channelLimit;
 
+  const planLabel = subscription ? PLAN_LABELS[subscription.plan] : "무료";
+  const isPro = subscription?.plan === "pro";
+
   return (
     <div className="flex h-dvh flex-col overflow-hidden md:flex-row">
       <AppSidebar
         channels={channelsWithSync}
         activeChannelId={channelId}
-        nickname={nickname}
+        planLabel={planLabel}
+        isPro={isPro}
         reviewCount={reviewCount}
         unreadNotificationCount={unreadNotificationCount}
         atChannelLimit={atChannelLimit}
       />
       <div className="flex flex-1 flex-col overflow-y-auto bg-background">
-        <header className="flex shrink-0 items-center justify-end border-b border-border px-6 py-2 sm:px-10">
+        <header className="flex shrink-0 items-center justify-end gap-4 border-b border-border px-6 py-2 sm:px-10">
+          <Link
+            href="/mypage"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            {nickname || "마이페이지"}
+          </Link>
           <NotificationBell
             notifications={recentNotifications}
             unreadCount={unreadNotificationCount}

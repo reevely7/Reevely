@@ -1,5 +1,7 @@
 import { Check, X } from "lucide-react";
 
+import { FREE_PLAN_HIGHLIGHTS, PLAN_HIGHLIGHTS } from "@/lib/billing/plan-copy";
+
 type PlanFeatureValue = string | boolean;
 
 type Plan = {
@@ -17,12 +19,7 @@ const PLANS: Plan[] = [
     name: "무료",
     tagline: "일단 지켜보고 있다는 확신이 필요할 때",
     price: "0원",
-    highlights: [
-      "유튜브 1개 연동",
-      "영상 10개 모니터링",
-      "24시간마다 확인",
-      "월 1,000개 댓글 분석",
-    ],
+    highlights: FREE_PLAN_HIGHLIGHTS,
     accentClass: "bg-muted-foreground",
     textAccentClass: "text-muted-foreground",
   },
@@ -30,12 +27,7 @@ const PLANS: Plan[] = [
     name: "베이직",
     tagline: "혼자 채널을 운영하는 크리에이터의 기본기",
     price: "19,900원",
-    highlights: [
-      "유튜브 1개 연동",
-      "영상 50개 · 대댓글 수집",
-      "6시간마다 확인",
-      "월 10,000개 댓글 분석",
-    ],
+    highlights: PLAN_HIGHLIGHTS.basic,
     accentClass: "bg-primary",
     textAccentClass: "text-primary",
   },
@@ -43,12 +35,7 @@ const PLANS: Plan[] = [
     name: "플러스",
     tagline: "채널이 여러 개로 늘어날 때",
     price: "39,900원",
-    highlights: [
-      "유튜브 2개 연동",
-      "영상 200개 · 1시간마다 확인",
-      "월 30,000개 댓글 분석",
-      "증거 보관함 500건 + 묶음 PDF",
-    ],
+    highlights: PLAN_HIGHLIGHTS.plus,
     accentClass: "bg-chart-5",
     textAccentClass: "text-chart-5",
     recommended: true,
@@ -57,12 +44,7 @@ const PLANS: Plan[] = [
     name: "프로",
     tagline: "댓글 대응까지 자동으로 맡기고 싶을 때",
     price: "69,900원",
-    highlights: [
-      "유튜브 3개 연동 · 영상 수 제한 없음",
-      "30분마다 확인 · 월 50,000개 분석",
-      "증거 보관함 · 데이터 보관 무제한",
-      "자동 대응 관리 + 반복 위험 작성자 집중 모니터링",
-    ],
+    highlights: PLAN_HIGHLIGHTS.pro,
     accentClass: "bg-[#7f97b8]",
     textAccentClass: "text-[#7f97b8]",
   },
@@ -197,6 +179,16 @@ export function PricingTable() {
         ))}
       </div>
 
+      <PlanComparisonTable />
+    </div>
+  );
+}
+
+// 상세 비교표만 단독으로도 쓸 수 있게 분리 — 마이페이지 플랜 카드(자체 CTA 포함)
+// 아래에 이 표만 붙이는 용도.
+export function PlanComparisonTable() {
+  return (
+    <div>
       <p className="mb-4 text-center text-xs font-medium tracking-wide text-muted-foreground uppercase">
         상세 비교
       </p>

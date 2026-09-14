@@ -24,14 +24,16 @@ type SidebarChannel = {
 export function AppSidebar({
   channels,
   activeChannelId,
-  nickname,
+  planLabel,
+  isPro,
   reviewCount,
   unreadNotificationCount,
   atChannelLimit,
 }: {
   channels: SidebarChannel[];
   activeChannelId?: string;
-  nickname: string | null;
+  planLabel: string;
+  isPro: boolean;
   reviewCount: number;
   unreadNotificationCount: number;
   atChannelLimit: boolean;
@@ -189,12 +191,17 @@ export function AppSidebar({
 
         <div className="flex flex-col gap-3 border-t border-sidebar-border pt-4">
           <Link
-            href="/mypage"
-            className="flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-sidebar-accent"
+            href="/mypage/subscription/plans"
+            className="flex items-center justify-between rounded-lg px-1 py-1 hover:bg-sidebar-accent"
           >
-            <p className="truncate text-xs text-muted-foreground">
-              {nickname || "마이페이지"}
-            </p>
+            <span className="truncate text-xs text-muted-foreground">
+              {planLabel} 플랜
+            </span>
+            {!isPro && (
+              <span className="shrink-0 text-xs font-medium text-primary">
+                업그레이드
+              </span>
+            )}
           </Link>
 
           {activeChannel?.reauthRequiredAt ? (

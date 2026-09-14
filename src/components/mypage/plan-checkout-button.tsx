@@ -35,7 +35,7 @@ export function PlanCheckoutButton({
   }
 
   return (
-    <Button type="button" onClick={handleClick} disabled={isLoading}>
+    <Button type="button" className="w-full" onClick={handleClick} disabled={isLoading}>
       {isLoading ? "이동 중…" : label}
     </Button>
   );
