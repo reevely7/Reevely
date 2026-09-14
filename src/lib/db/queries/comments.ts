@@ -17,6 +17,7 @@ import {
   MODEL,
   PROMPT_VERSION,
   type CommentAnalysis,
+  type TokenUsage,
 } from "@/lib/ai/analyze-comment";
 import { db } from "@/lib/db";
 import { comments } from "@/lib/db/schema";
@@ -505,6 +506,7 @@ export async function deleteExpiredComments(userId: string, cutoff: Date) {
 export async function saveAnalysisResult(
   commentId: string,
   analysis: CommentAnalysis,
+  usage: TokenUsage,
 ) {
   // is_malicious=false → whitelisted(AI가 정상으로 판단, 검토 큐에 안 쌓임)
   // is_malicious=true && confidence>=0.7 → confirmed (자동 확정)
@@ -525,6 +527,8 @@ export async function saveAnalysisResult(
       reason: analysis.reason,
       aiModel: MODEL,
       promptVersion: PROMPT_VERSION,
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
       status,
       analyzedAt: new Date(),
     })

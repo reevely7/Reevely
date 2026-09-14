@@ -55,10 +55,10 @@ export async function analyzePendingComments(userId: string, channelId: string) 
 
   await mapWithConcurrency(pending, ANALYZE_CONCURRENCY, async (comment) => {
     try {
-      const result = await analyzeComment(comment.text);
-      await saveAnalysisResult(comment.id, result);
+      const { analysis, usage } = await analyzeComment(comment.text);
+      await saveAnalysisResult(comment.id, analysis, usage);
 
-      if (result.is_malicious) {
+      if (analysis.is_malicious) {
         const subscribed = await isSubscribedToAuthor(
           channelId,
           comment.authorChannelId,

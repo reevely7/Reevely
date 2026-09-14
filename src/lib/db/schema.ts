@@ -98,6 +98,10 @@ export const comments = pgTable(
     // 판정에 사용된 모델·프롬프트 버전 (추후 파인튜닝 학습 데이터의 출처 구분용)
     aiModel: text("ai_model"),
     promptVersion: text("prompt_version"),
+    // OpenAI 응답의 실제 토큰 사용량 — 관리자 AI 품질 대시보드의 비용 계산용.
+    // 이 컬럼이 생기기 전에 분석된 댓글은 null (비용 집계에서 자연히 제외됨)
+    promptTokens: integer("prompt_tokens"),
+    completionTokens: integer("completion_tokens"),
     status: commentStatusEnum("status").notNull().default("needs_review"),
     // status가 시스템 자동확정(confidence>=0.7)인지 사람이 검토 큐에서 직접
     // 확정/신고한 것인지 구분 (파인튜닝 학습 데이터의 신뢰도 판단용)

@@ -146,7 +146,17 @@ is_malicious는 반드시 true다. 이 둘이 어긋나는 답은 절대 허용�
 댓글이 위 예시와 표면적으로 비슷한지가 아니라, 판정 절차의 기준을
 충족하는지로 판단하라. 확신이 없으면 confidence를 낮춰라.`;
 
-export async function analyzeComment(text: string): Promise<CommentAnalysis> {
+export type TokenUsage = {
+  promptTokens: number;
+  completionTokens: number;
+};
+
+export type CommentAnalysisResult = {
+  analysis: CommentAnalysis;
+  usage: TokenUsage;
+};
+
+export async function analyzeComment(text: string): Promise<CommentAnalysisResult> {
   const completion = await openai.chat.completions.parse({
     model: MODEL,
     messages: [
@@ -163,9 +173,16 @@ export async function analyzeComment(text: string): Promise<CommentAnalysis> {
     ),
   });
 
-  const result = completion.choices[0]?.message.parsed;
-  if (!result) {
+  const analysis = completion.choices[0]?.message.parsed;
+  if (!analysis) {
     throw new Error("OpenAI가 판정 결과를 반환하지 않았습니다.");
   }
-  return result;
+
+  return {
+    analysis,
+    usage: {
+      promptTokens: completion.usage?.prompt_tokens ?? 0,
+      completionTokens: completion.usage?.completion_tokens ?? 0,
+    },
+  };
 }

@@ -47,6 +47,12 @@ export default function AdminDashboardPage() {
         >
           구독/결제 관리
         </Link>
+        <Link
+          href="/admin/ai-quality"
+          className="text-sm font-medium text-primary hover:underline"
+        >
+          AI 분석 품질 모니터링
+        </Link>
       </nav>
     </main>
   );

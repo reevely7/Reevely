@@ -21,10 +21,10 @@ async function main() {
   const failures: Failure[] = [];
 
   for (const testCase of GOLDEN_CASES) {
-    const result = await analyzeComment(testCase.text);
+    const { analysis } = await analyzeComment(testCase.text);
     const isMatch =
-      result.is_malicious === testCase.expected.is_malicious &&
-      result.category === testCase.expected.category;
+      analysis.is_malicious === testCase.expected.is_malicious &&
+      analysis.category === testCase.expected.category;
 
     if (isMatch) {
       passed++;
@@ -34,7 +34,7 @@ async function main() {
       failures.push({
         text: testCase.text,
         expected: `is_malicious=${testCase.expected.is_malicious}, category=${testCase.expected.category}`,
-        actual: `is_malicious=${result.is_malicious}, category=${result.category}`,
+        actual: `is_malicious=${analysis.is_malicious}, category=${analysis.category}`,
         note: testCase.note,
       });
     }
