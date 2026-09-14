@@ -1,6 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { getAdminIdFromSession } from "@/lib/auth/admin-session";
+import { recordAdminAction } from "@/lib/db/queries/admin-audit-log";
+import { getAdminUserById } from "@/lib/db/queries/admin-users";
 import { deleteChannelById, deleteChannelByUserId, getChannelById, getChannelsByUserId } from "@/lib/db/queries/channels";
 import { deleteCommentsByUserId } from "@/lib/db/queries/comments";
 import { deleteNotificationsByUserId, getNotificationsByUserId } from "@/lib/db/queries/notifications";
@@ -19,6 +22,20 @@ const RECENT_NOTIFICATIONS_LIMIT = 10;
 // 계정 정지는 Supabase Auth의 ban_duration으로 로그인을 막는다 — "none"이
 // 해제, 그 외엔 유효기간 문자열이 필요해 사실상 무기한인 값을 쓴다.
 const BAN_DURATION = "876000h"; // 100년
+
+// 감사 로그에 "누가" 했는지 남기기 위해 각 액션 맨 앞에서 호출한다. 세션이
+// 만료된 채로 폼만 남아있다 제출되는 경우까지 방어한다.
+async function requireAdminActor() {
+  const adminId = await getAdminIdFromSession();
+  if (!adminId) {
+    redirect("/admin/login");
+  }
+  const admin = await getAdminUserById(adminId);
+  if (!admin) {
+    redirect("/admin/login");
+  }
+  return { id: admin.id, username: admin.username };
+}
 
 function formatDateTime(value: string | Date): string {
   const d = typeof value === "string" ? new Date(value) : value;
@@ -51,33 +68,49 @@ export default async function AdminUserDetailPage({
 
   async function suspendAccount(formData: FormData) {
     "use server";
+    const actor = await requireAdminActor();
     const reason = String(formData.get("reason") ?? "").trim() || undefined;
 
     await createAdminClient().auth.admin.updateUserById(userId, {
       ban_duration: BAN_DURATION,
     });
     await suspendUser(userId, reason);
+    await recordAdminAction(actor.id, actor.username, "suspend_user", {
+      targetUserId: userId,
+      details: { reason },
+    });
     redirect(`/admin/users/${userId}`);
   }
 
   async function unsuspendAccount() {
     "use server";
+    const actor = await requireAdminActor();
     await createAdminClient().auth.admin.updateUserById(userId, {
       ban_duration: "none",
     });
     await unsuspendUser(userId);
+    await recordAdminAction(actor.id, actor.username, "unsuspend_user", {
+      targetUserId: userId,
+    });
     redirect(`/admin/users/${userId}`);
   }
 
   async function changePlanAdmin(formData: FormData) {
     "use server";
+    const actor = await requireAdminActor();
     const plan = String(formData.get("plan")) as SubscriptionPlan;
+    const previousPlan = subscription?.plan;
     await adminSetPlan(userId, plan);
+    await recordAdminAction(actor.id, actor.username, "change_plan", {
+      targetUserId: userId,
+      details: { fromPlan: previousPlan, toPlan: plan },
+    });
     redirect(`/admin/users/${userId}`);
   }
 
   async function grantPromotionalAdmin(formData: FormData) {
     "use server";
+    const actor = await requireAdminActor();
     const plan = String(formData.get("plan")) as SubscriptionPlan;
     const expiresAtValue = String(formData.get("expiresAt") ?? "");
     const expiresAt = expiresAtValue ? new Date(expiresAtValue) : null;
@@ -86,11 +119,16 @@ export default async function AdminUserDetailPage({
     }
 
     await grantPromotionalPlan(userId, plan, expiresAt);
+    await recordAdminAction(actor.id, actor.username, "grant_promotional_plan", {
+      targetUserId: userId,
+      details: { plan, expiresAt: expiresAt.toISOString() },
+    });
     redirect(`/admin/users/${userId}`);
   }
 
   async function disconnectChannelAdmin(formData: FormData) {
     "use server";
+    const actor = await requireAdminActor();
     const channelId = String(formData.get("channelId"));
 
     const channel = await getChannelById(channelId);
@@ -99,15 +137,25 @@ export default async function AdminUserDetailPage({
     }
 
     await deleteChannelById(channelId);
+    await recordAdminAction(actor.id, actor.username, "disconnect_channel", {
+      targetUserId: userId,
+      targetChannelId: channelId,
+      details: { channelTitle: channel.channelTitle },
+    });
     redirect(`/admin/users/${userId}`);
   }
 
   async function deleteAccountAdmin() {
     "use server";
+    const actor = await requireAdminActor();
     await deleteNotificationsByUserId(userId);
     await deleteCommentsByUserId(userId);
     await deleteChannelByUserId(userId);
     await createAdminClient().auth.admin.deleteUser(userId);
+    await recordAdminAction(actor.id, actor.username, "delete_account", {
+      targetUserId: userId,
+      details: { email: user.email || null },
+    });
     redirect("/admin/users");
   }
 

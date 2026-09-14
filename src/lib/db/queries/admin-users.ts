@@ -14,3 +14,8 @@ export async function getAdminUserByUsername(username: string) {
 
   return row ?? null;
 }
+
+export async function getAdminUserById(id: string) {
+  const [row] = await db.select().from(adminUsers).where(eq(adminUsers.id, id)).limit(1);
+  return row ?? null;
+}

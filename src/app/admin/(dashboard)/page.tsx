@@ -65,6 +65,12 @@ export default function AdminDashboardPage() {
         >
           콘텐츠/신고 관리
         </Link>
+        <Link
+          href="/admin/audit-log"
+          className="text-sm font-medium text-primary hover:underline"
+        >
+          감사 로그
+        </Link>
       </nav>
     </main>
   );

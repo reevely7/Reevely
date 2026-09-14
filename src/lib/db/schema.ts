@@ -277,6 +277,23 @@ export const cronRuns = pgTable("cron_runs", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// 관리자가 유저 데이터를 조작하는 액션(정지, 삭제, 플랜 변경 등)마다 1행.
+// adminUsername은 스냅샷 — 나중에 관리자 계정 이름이 바뀌거나 삭제돼도 로그
+// 자체는 그 당시 정보를 유지한다. targetUserId도 마찬가지로 계정이 삭제된
+// 뒤에도 "누구를 대상으로 한 액션이었는지" 추적할 수 있게 값 자체는 남긴다
+// (FK 없이 uuid로만 저장 — 이 프로젝트는 auth.users를 포함해 어디에도 DB
+// 레벨 FK를 걸지 않는 관례를 따른다).
+export const adminAuditLog = pgTable("admin_audit_log", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  adminId: uuid("admin_id").notNull(),
+  adminUsername: text("admin_username").notNull(),
+  action: text("action").notNull(),
+  targetUserId: uuid("target_user_id"),
+  targetChannelId: uuid("target_channel_id"),
+  details: jsonb("details"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // 날짜(UTC 기준 근사치 — 실제 유튜브 쿼터는 태평양시 자정 리셋)별 유튜브
 // Data API 사용 유닛 누적치. 프로젝트 전체가 하루 10,000유닛을 공유하므로
 // (src/lib/youtube/quota-usage.ts) 호출 지점마다 여기 누적한다.
