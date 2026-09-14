@@ -450,6 +450,36 @@ export async function countArchivedCommentsByUserId(userId: string) {
   return row?.count ?? 0;
 }
 
+// 관리자 콘텐츠/신고 관리 화면 전용 — 채널 구분 없이 오탐 신고된 댓글 전체
+// (재학습 데이터 후보/프롬프트 개선 패턴 파악용)
+export async function getReportedFalseComments(limit: number, offset: number) {
+  return db
+    .select()
+    .from(comments)
+    .where(eq(comments.status, "reported_false"))
+    .orderBy(sql`${comments.analyzedAt} desc nulls last`)
+    .limit(limit)
+    .offset(offset);
+}
+
+export async function countReportedFalseComments() {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(comments)
+    .where(eq(comments.status, "reported_false"));
+
+  return row?.count ?? 0;
+}
+
+// 관리자 콘텐츠/신고 관리 화면 전용 — 유저별 증거 보관함 사용 건수 전체
+export async function getArchivedCommentCountsByUser() {
+  return db
+    .select({ userId: comments.userId, count: sql<number>`count(*)::int` })
+    .from(comments)
+    .where(eq(comments.isArchived, true))
+    .groupBy(comments.userId);
+}
+
 export async function getArchivedComments(channelId: string) {
   return db
     .select()

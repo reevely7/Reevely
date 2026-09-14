@@ -59,6 +59,12 @@ export default function AdminDashboardPage() {
         >
           시스템/인프라 운영
         </Link>
+        <Link
+          href="/admin/content"
+          className="text-sm font-medium text-primary hover:underline"
+        >
+          콘텐츠/신고 관리
+        </Link>
       </nav>
     </main>
   );
