@@ -35,6 +35,12 @@ export default function AdminDashboardPage() {
         >
           유저 관리
         </Link>
+        <Link
+          href="/admin/channels"
+          className="text-sm font-medium text-primary hover:underline"
+        >
+          채널 연동 관리
+        </Link>
       </nav>
     </main>
   );
