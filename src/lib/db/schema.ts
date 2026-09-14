@@ -204,10 +204,16 @@ export const subscriptions = pgTable("subscriptions", {
   // 다음 결제일부터 적용될 플랜 변경 예약. 변경 없으면 null.
   pendingPlan: subscriptionPlanEnum("pending_plan"),
   status: subscriptionStatusEnum("status").notNull().default("active"),
+  // 관리자가 결제수단 없이 부여한 프로모션 구독인지 — true면 billingKey/
+  // tossCustomerKey가 null이고, nextBillingDate가 되면 결제 시도 없이 그냥
+  // 무료로 만료된다 (process-billing cron)
+  isPromotional: boolean("is_promotional").notNull().default(false),
   // 토스 빌링키 — refresh token과 동일하게 암호화 저장 (src/lib/crypto/token-cipher.ts)
-  billingKey: text("billing_key").notNull(),
+  // 프로모션 구독은 실제 결제수단이 없어 null
+  billingKey: text("billing_key"),
   // 토스 빌링 API가 요구하는 상점 측 고객 식별자. userId를 그대로 사용한다.
-  tossCustomerKey: text("toss_customer_key").notNull(),
+  // 프로모션 구독은 null
+  tossCustomerKey: text("toss_customer_key"),
   currentPeriodStart: timestamp("current_period_start", { withTimezone: true }).notNull(),
   // 정상 상태에선 "다음 정기결제일", payment_failed 상태에선 "재시도 예정일"로 재사용
   nextBillingDate: timestamp("next_billing_date", { withTimezone: true }).notNull(),

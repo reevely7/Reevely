@@ -4,7 +4,14 @@ import { Button } from "@/components/ui/button";
 import { deleteChannelById, deleteChannelByUserId, getChannelById, getChannelsByUserId } from "@/lib/db/queries/channels";
 import { deleteCommentsByUserId } from "@/lib/db/queries/comments";
 import { deleteNotificationsByUserId, getNotificationsByUserId } from "@/lib/db/queries/notifications";
-import { getPaymentHistoryByUserId, getSubscriptionByUserId, PLAN_LABELS } from "@/lib/db/queries/subscriptions";
+import {
+  adminSetPlan,
+  getPaymentHistoryByUserId,
+  getSubscriptionByUserId,
+  grantPromotionalPlan,
+  PLAN_LABELS,
+  type SubscriptionPlan,
+} from "@/lib/db/queries/subscriptions";
 import { isUserSuspended, suspendUser, unsuspendUser } from "@/lib/db/queries/suspended-users";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -62,6 +69,26 @@ export default async function AdminUserDetailPage({
     redirect(`/admin/users/${userId}`);
   }
 
+  async function changePlanAdmin(formData: FormData) {
+    "use server";
+    const plan = String(formData.get("plan")) as SubscriptionPlan;
+    await adminSetPlan(userId, plan);
+    redirect(`/admin/users/${userId}`);
+  }
+
+  async function grantPromotionalAdmin(formData: FormData) {
+    "use server";
+    const plan = String(formData.get("plan")) as SubscriptionPlan;
+    const expiresAtValue = String(formData.get("expiresAt") ?? "");
+    const expiresAt = expiresAtValue ? new Date(expiresAtValue) : null;
+    if (!expiresAt || Number.isNaN(expiresAt.getTime())) {
+      redirect(`/admin/users/${userId}`);
+    }
+
+    await grantPromotionalPlan(userId, plan, expiresAt);
+    redirect(`/admin/users/${userId}`);
+  }
+
   async function disconnectChannelAdmin(formData: FormData) {
     "use server";
     const channelId = String(formData.get("channelId"));
@@ -101,8 +128,48 @@ export default async function AdminUserDetailPage({
       <section className="space-y-3 rounded-2xl bg-card px-5 py-4">
         <h2 className="text-sm font-medium text-card-foreground">구독</h2>
         <p className="text-sm text-muted-foreground">
-          {subscription ? `${PLAN_LABELS[subscription.plan]} · 다음 결제일 ${formatDateTime(subscription.nextBillingDate)}` : "무료 플랜"}
+          {subscription
+            ? `${PLAN_LABELS[subscription.plan]}${subscription.isPromotional ? " (프로모션)" : ""} · 다음 결제일 ${formatDateTime(subscription.nextBillingDate)}`
+            : "무료 플랜"}
         </p>
+
+        {subscription ? (
+          <form action={changePlanAdmin} className="flex flex-wrap items-center gap-2">
+            <select
+              name="plan"
+              defaultValue={subscription.plan}
+              className="h-8 rounded-md border border-border bg-background px-2 text-sm text-foreground"
+            >
+              <option value="basic">베이직</option>
+              <option value="plus">플러스</option>
+              <option value="pro">프로</option>
+            </select>
+            <Button type="submit" variant="outline" size="sm">
+              플랜 변경 (결제 없이 즉시 적용)
+            </Button>
+          </form>
+        ) : (
+          <form action={grantPromotionalAdmin} className="flex flex-wrap items-center gap-2">
+            <select
+              name="plan"
+              defaultValue="basic"
+              className="h-8 rounded-md border border-border bg-background px-2 text-sm text-foreground"
+            >
+              <option value="basic">베이직</option>
+              <option value="plus">플러스</option>
+              <option value="pro">프로</option>
+            </select>
+            <input
+              type="date"
+              name="expiresAt"
+              required
+              className="h-8 rounded-md border border-border bg-background px-2 text-sm text-foreground"
+            />
+            <Button type="submit" variant="outline" size="sm">
+              프로모션 무료 플랜 부여
+            </Button>
+          </form>
+        )}
       </section>
 
       <section className="space-y-3 rounded-2xl bg-card px-5 py-4">

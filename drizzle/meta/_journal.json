@@ -169,6 +169,13 @@
       "when": 1789288869076,
       "tag": "0023_dashing_leader",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1789369274120,
+      "tag": "0024_premium_lightspeed",
+      "breakpoints": true
     }
   ]
 }

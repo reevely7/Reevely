@@ -41,6 +41,12 @@ export default function AdminDashboardPage() {
         >
           채널 연동 관리
         </Link>
+        <Link
+          href="/admin/subscriptions"
+          className="text-sm font-medium text-primary hover:underline"
+        >
+          구독/결제 관리
+        </Link>
       </nav>
     </main>
   );

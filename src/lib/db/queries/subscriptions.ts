@@ -126,7 +126,8 @@ export async function getSubscriptionByUserId(userId: string) {
     .limit(1);
 
   if (!row) return null;
-  return { ...row, billingKey: decrypt(row.billingKey) };
+  // 프로모션 구독(isPromotional)은 결제수단이 없어 billingKey가 null이다
+  return { ...row, billingKey: row.billingKey ? decrypt(row.billingKey) : null };
 }
 
 // 유저의 현재 플랜 기준 채널 연동 한도 — 구독 row가 없으면(무료) FREE_CHANNEL_LIMIT
@@ -178,6 +179,53 @@ export async function createSubscription(input: CreateSubscriptionInput) {
     });
 }
 
+// 관리자 전용 — 결제수단이 없는 무료 유저에게 프로모션으로 유료 플랜을
+// 부여한다. 이미 구독 row가 있는 유저(실결제든 프로모션이든)에게 쓰면 unique
+// 제약 위반으로 실패한다 — 기존 구독자 플랜을 바꾸려면 adminSetPlan을 쓴다.
+export async function grantPromotionalPlan(
+  userId: string,
+  plan: SubscriptionPlan,
+  expiresAt: Date,
+) {
+  await db.insert(subscriptions).values({
+    userId,
+    plan,
+    status: "active",
+    isPromotional: true,
+    billingKey: null,
+    tossCustomerKey: null,
+    currentPeriodStart: new Date(),
+    nextBillingDate: expiresAt,
+  });
+}
+
+// 관리자 전용 — 기존 구독자(프로모션이든 실결제든)의 플랜을 결제 트리거 없이
+// 바로 바꾼다. 실결제 구독이면 다음 결제부터 바뀐 플랜 금액으로 청구된다.
+export async function adminSetPlan(userId: string, plan: SubscriptionPlan) {
+  const updated = await db
+    .update(subscriptions)
+    .set({ plan, pendingPlan: null, updatedAt: new Date() })
+    .where(eq(subscriptions.userId, userId))
+    .returning({ id: subscriptions.id });
+
+  return updated.length > 0;
+}
+
+// 관리자 구독 현황 화면 전용 — billingKey 등 민감정보는 아예 select하지 않는다
+export async function getAllSubscriptionsForAdmin() {
+  return db
+    .select({
+      userId: subscriptions.userId,
+      plan: subscriptions.plan,
+      pendingPlan: subscriptions.pendingPlan,
+      status: subscriptions.status,
+      isPromotional: subscriptions.isPromotional,
+      currentPeriodStart: subscriptions.currentPeriodStart,
+      nextBillingDate: subscriptions.nextBillingDate,
+    })
+    .from(subscriptions);
+}
+
 // 유료 유저의 플랜 변경 예약. 구독 row가 없는(무료) 유저에겐 안 먹힌다 —
 // 무료→유료는 체크아웃 플로우(Task 5)를 타야 하므로 false 리턴.
 export async function setPendingPlan(userId: string, plan: SubscriptionPlan) {
@@ -207,7 +255,10 @@ export async function getDueSubscriptions(now: Date) {
     .from(subscriptions)
     .where(lte(subscriptions.nextBillingDate, now));
 
-  return rows.map((row) => ({ ...row, billingKey: decrypt(row.billingKey) }));
+  return rows.map((row) => ({
+    ...row,
+    billingKey: row.billingKey ? decrypt(row.billingKey) : null,
+  }));
 }
 
 // 결제 실패(재시도까지 실패) 또는 해지 유예기간 종료 — row 삭제로 무료 전환

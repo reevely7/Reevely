@@ -41,6 +41,22 @@ export async function GET(request: Request) {
         continue;
       }
 
+      // 관리자가 부여한 프로모션 구독은 결제수단이 없다 — 만료일이 되면
+      // 결제를 시도하지 않고 그냥 무료로 전환한다
+      const { billingKey, tossCustomerKey } = sub;
+      if (sub.isPromotional || !billingKey || !tossCustomerKey) {
+        if (!sub.isPromotional) {
+          console.error(`[cron] 실결제 구독인데 billingKey 없음 (userId=${sub.userId})`);
+        }
+        await deleteSubscription(sub.userId);
+        await reconcileChannelLocks(sub.userId, FREE_CHANNEL_LIMIT);
+        results.push({
+          userId: sub.userId,
+          result: sub.isPromotional ? "promotional_expired" : "error",
+        });
+        continue;
+      }
+
       const targetPlan = sub.pendingPlan ?? sub.plan;
       const amount = PLAN_PRICES[targetPlan];
       // 같은 유저·같은 결제월에는 항상 동일한 orderId를 쓴다 — 청구 성공 후
@@ -52,8 +68,8 @@ export async function GET(request: Request) {
       let chargeResult;
       try {
         chargeResult = await chargeBilling({
-          billingKey: sub.billingKey,
-          customerKey: sub.tossCustomerKey,
+          billingKey,
+          customerKey: tossCustomerKey,
           amount,
           orderId,
           orderName: `Reevely ${PLAN_LABELS[targetPlan]} 구독`,
