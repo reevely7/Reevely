@@ -5,6 +5,7 @@ import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import {
   countMaliciousCommentsByAuthor,
   countMaliciousCommentsInRange,
+  getCategoryBreakdownByAuthor,
 } from "@/lib/db/queries/comments";
 import { db } from "@/lib/db";
 import { authorSubscriptions, comments, notifications } from "@/lib/db/schema";
@@ -149,18 +150,29 @@ function repeatAuthorRefId(authorChannelId: string, threshold: number) {
   return `${authorChannelId}:${threshold}`;
 }
 
+function formatCategoryBreakdown(
+  breakdown: Array<{ category: string; count: number }>,
+): string {
+  return breakdown
+    .slice(0, 2)
+    .map((row) => `${row.category} ${row.count}건`)
+    .join("·");
+}
+
 function repeatAuthorMessage(
   authorDisplayName: string | null,
   threshold: number,
+  categoryBreakdown: string,
 ): string {
   const name = authorDisplayName ?? "이 작성자";
+  const suffix = categoryBreakdown ? ` (${categoryBreakdown})` : "";
   if (threshold >= 30) {
-    return `${name}님이 누적 ${threshold}번째 악성 댓글을 남겼어요. 매우 심각한 수준으로 반복되고 있습니다.`;
+    return `${name}님이 누적 ${threshold}번째 악성 댓글을 남겼어요${suffix}. 매우 심각한 수준으로 반복되고 있습니다.`;
   }
   if (threshold >= 10) {
-    return `${name}님이 누적 ${threshold}번째 악성 댓글을 남겼어요. 반복적으로 문제를 일으키고 있습니다.`;
+    return `${name}님이 누적 ${threshold}번째 악성 댓글을 남겼어요${suffix}. 반복적으로 문제를 일으키고 있습니다.`;
   }
-  return `${name}님이 벌써 ${threshold}번째 악성 댓글을 남겼어요. 알림을 받아볼까요?`;
+  return `${name}님이 벌써 ${threshold}번째 악성 댓글을 남겼어요${suffix}. 알림을 받아볼까요?`;
 }
 
 // 아직 구독 안 한 작성자가 누적 악성 댓글 수가 REPEAT_AUTHOR_THRESHOLDS의
@@ -183,16 +195,34 @@ export async function maybeSuggestAuthorSubscription(
     const refId = repeatAuthorRefId(authorChannelId, threshold);
     if (await hasEverNotifiedOfType(channelId, "repeat_author", refId)) continue;
 
+    const breakdown = await getCategoryBreakdownByAuthor(channelId, authorChannelId);
+
     await db.insert(notifications).values({
       userId,
       channelId,
       type: "repeat_author",
-      title: "반복 작성자 발견",
-      message: repeatAuthorMessage(authorDisplayName, threshold),
+      title: "반복 위험 작성자 발견",
+      message: repeatAuthorMessage(
+        authorDisplayName,
+        threshold,
+        formatCategoryBreakdown(breakdown),
+      ),
       href: `/c/${channelId}/authors/${encodeURIComponent(authorChannelId)}`,
       refId,
     });
   }
+}
+
+function formatRiskBreakdown(riskCounts: {
+  high: number;
+  medium: number;
+  low: number;
+}): string {
+  const parts: string[] = [];
+  if (riskCounts.high > 0) parts.push(`High ${riskCounts.high}건`);
+  if (riskCounts.medium > 0) parts.push(`Medium ${riskCounts.medium}건`);
+  if (riskCounts.low > 0) parts.push(`Low ${riskCounts.low}건`);
+  return parts.slice(0, 2).join("·");
 }
 
 // 한 번의 분석 배치 안에서 특정 영상에 VIDEO_SPIKE_THRESHOLD건 이상 악성 댓글이
@@ -203,6 +233,7 @@ export async function maybeNotifyVideoSpike(
   videoId: string,
   videoTitle: string | null,
   count: number,
+  riskCounts: { high: number; medium: number; low: number },
 ) {
   if (count < VIDEO_SPIKE_THRESHOLD) return;
   if (await hasUnreadNotificationOfType(channelId, "video_spike", videoId)) return;
@@ -211,8 +242,8 @@ export async function maybeNotifyVideoSpike(
     userId,
     channelId,
     type: "video_spike",
-    title: "영상에 악성 댓글이 몰리고 있어요",
-    message: `"${videoTitle ?? videoId}" 영상에 최근 ${count}건의 악성 댓글이 발생했습니다.`,
+    title: "위험 댓글 급증",
+    message: `"${videoTitle ?? videoId}" 영상에서 위험 댓글 ${count}건이 감지됐어요 (${formatRiskBreakdown(riskCounts)}).`,
     href: `/c/${channelId}/dashboard?video=${encodeURIComponent(videoId)}`,
     refId: videoId,
   });
@@ -233,7 +264,7 @@ export async function maybeNotifyReviewBacklog(
     channelId,
     type: "review_backlog",
     title: "검토 필요 댓글이 쌓이고 있어요",
-    message: `확신도가 낮아 검토가 필요한 댓글이 ${backlogCount}건입니다.`,
+    message: `AI 확신도가 낮아 사용자 확인이 필요한 댓글이 ${backlogCount}건 있습니다.`,
     href: `/c/${channelId}/review`,
   });
 }

@@ -46,11 +46,15 @@ export async function analyzePendingComments(userId: string, channelId: string) 
 
   let analyzed = 0;
   let failed = 0;
-  // 이번 배치 안에서 영상별로 몇 건이 악성으로 나왔는지 — 배치가 끝난 뒤
-  // 영상 저격(video_spike) 알림 여부를 판단하는 데 쓴다.
+  // 이번 배치 안에서 영상별로 몇 건이 악성으로 나왔는지, 위험도별로는 몇 건인지
+  // — 배치가 끝난 뒤 영상 저격(video_spike) 알림 여부·문구를 판단하는 데 쓴다.
   const videoMaliciousCounts = new Map<
     string,
-    { count: number; videoTitle: string | null }
+    {
+      count: number;
+      videoTitle: string | null;
+      riskCounts: { high: number; medium: number; low: number };
+    }
   >();
 
   await mapWithConcurrency(pending, ANALYZE_CONCURRENCY, async (comment) => {
@@ -82,8 +86,10 @@ export async function analyzePendingComments(userId: string, channelId: string) 
         const entry = videoMaliciousCounts.get(comment.videoId) ?? {
           count: 0,
           videoTitle: comment.videoTitle,
+          riskCounts: { high: 0, medium: 0, low: 0 },
         };
         entry.count += 1;
+        entry.riskCounts[analysis.risk_level] += 1;
         videoMaliciousCounts.set(comment.videoId, entry);
       }
       analyzed++;
@@ -93,8 +99,8 @@ export async function analyzePendingComments(userId: string, channelId: string) 
     }
   });
 
-  for (const [videoId, { count, videoTitle }] of videoMaliciousCounts) {
-    await maybeNotifyVideoSpike(userId, channelId, videoId, videoTitle, count);
+  for (const [videoId, { count, videoTitle, riskCounts }] of videoMaliciousCounts) {
+    await maybeNotifyVideoSpike(userId, channelId, videoId, videoTitle, count, riskCounts);
   }
 
   const backlogCount = await countReviewQueue(channelId);
