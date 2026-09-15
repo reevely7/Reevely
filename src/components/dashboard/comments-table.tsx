@@ -1,12 +1,16 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { ChevronDown, ChevronRight, Inbox } from "lucide-react";
+import { ChevronDown, ChevronRight, Inbox, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
 import { ArchiveActionButton } from "@/components/comments/archive-action-button";
+import { BulkActionBar } from "@/components/comments/bulk-action-bar";
 import { StatusActionButton } from "@/components/comments/status-action-button";
+import { Button } from "@/components/ui/button";
 import { RiskBadge } from "@/components/dashboard/risk-badge";
+import { InstagramIcon } from "@/components/icons/instagram-icon";
+import { YoutubeIcon } from "@/components/icons/youtube-icon";
 
 type Row = {
   id: string;
@@ -32,6 +36,11 @@ const PLATFORM_LABELS: Record<string, string> = {
   instagram: "인스타그램",
 };
 
+const PLATFORM_ICONS: Record<string, typeof YoutubeIcon> = {
+  youtube: YoutubeIcon,
+  instagram: InstagramIcon,
+};
+
 const VIDEO_TYPE_LABELS: Record<string, string> = {
   video: "동영상",
   shorts: "쇼츠",
@@ -47,15 +56,16 @@ function formatDate(date: Date): string {
   return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
 }
 
+// confirmed=검토 완료(그린), needs_review=검토 필요(옐로우), reported_false·whitelisted는
+// 둘 다 "정상"(그레이)으로 통합 표시한다. isArchived는 이 상태와 별개 축이라 배지를
+// 하나 더 붙인다("검토 완료"+"보호됨"을 동시에 가질 수 있음) — ProtectedBadge 참고.
 const STATUS_LABELS: Record<string, string> = {
-  confirmed: "확정",
+  confirmed: "검토 완료",
   needs_review: "검토 필요",
-  reported_false: "오탐 신고됨",
-  whitelisted: "화이트리스트",
+  reported_false: "정상",
+  whitelisted: "정상",
 };
 
-// "확정"은 초록(status-confirmed), "검토 필요"는 노랑(status-needs-review)으로 분리해
-// 골드(primary)·주황골드(risk-medium)와도, 서로와도 헷갈리지 않게 한다.
 const STATUS_PILL_CLASSES: Record<string, string> = {
   confirmed: "bg-status-confirmed-bg text-status-confirmed",
   needs_review: "bg-status-needs-review-bg text-status-needs-review",
@@ -69,6 +79,28 @@ function StatusPill({ status }: { status: string }) {
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_PILL_CLASSES[status] ?? "bg-muted text-muted-foreground"}`}
     >
       {STATUS_LABELS[status] ?? status}
+    </span>
+  );
+}
+
+function ProtectedBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+      <ShieldCheck className="size-3" aria-hidden />
+      보호됨
+    </span>
+  );
+}
+
+function PlatformIcon({ platform }: { platform: string }) {
+  const Icon = PLATFORM_ICONS[platform];
+  if (!Icon) return null;
+  return (
+    <span
+      className="inline-flex items-center text-muted-foreground"
+      title={PLATFORM_LABELS[platform] ?? platform}
+    >
+      <Icon className="size-4" />
     </span>
   );
 }
@@ -130,6 +162,25 @@ export function CommentsTable({
   channelId: string;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [hideOriginal, setHideOriginal] = useState(true);
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    setSelectedIds((prev) =>
+      prev.size === rows.length
+        ? new Set()
+        : new Set(rows.map((row) => row.id)),
+    );
+  }
 
   if (rows.length === 0) {
     return (
@@ -143,170 +194,220 @@ export function CommentsTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl bg-card">
-      <table className="w-full min-w-[720px] border-collapse text-left text-[13px]">
-        <thead>
-          <tr className="border-b border-border text-[11px] text-muted-foreground">
-            <th className="w-8 px-4 py-3 font-medium" />
-            <th className="px-2 py-3 font-medium">위험도</th>
-            <th className="px-2 py-3 font-medium">댓글</th>
-            <th className="max-w-[8rem] px-2 py-3 font-medium">작성자</th>
-            <th className="px-2 py-3 font-medium whitespace-nowrap">유형</th>
-            <th className="px-2 py-3 font-medium whitespace-nowrap">날짜</th>
-            <th className="px-2 py-3 font-medium whitespace-nowrap">상태</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const isExpanded = expandedId === row.id;
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <BulkActionBar
+          channelId={channelId}
+          selectedIds={Array.from(selectedIds)}
+          onClear={() => setSelectedIds(new Set())}
+        />
+        <Button
+          size="sm"
+          variant={hideOriginal ? "default" : "outline"}
+          onClick={() => setHideOriginal((v) => !v)}
+        >
+          원문 숨김 {hideOriginal ? "ON" : "OFF"}
+        </Button>
+      </div>
 
-            return (
-              <Fragment key={row.id}>
-                <tr
-                  onClick={() => setExpandedId(isExpanded ? null : row.id)}
-                  className={`cursor-pointer border-b border-border border-l-2 last:border-0 ${isExpanded ? "border-l-primary bg-highlight/10" : "border-l-transparent hover:bg-accent/50"}`}
-                >
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {isExpanded ? (
-                      <ChevronDown className="size-3.5" aria-hidden />
-                    ) : (
-                      <ChevronRight className="size-3.5" aria-hidden />
-                    )}
-                  </td>
-                  <td className="px-2 py-3">
-                    {row.riskLevel && <RiskBadge riskLevel={row.riskLevel} />}
-                  </td>
-                  <td
-                    className="max-w-md truncate px-2 py-3 text-card-foreground"
-                    title={row.text}
+      <div className="overflow-x-auto rounded-2xl bg-card">
+        <table className="w-full min-w-[820px] border-collapse text-left text-[13px]">
+          <thead>
+            <tr className="border-b border-border text-[11px] text-muted-foreground">
+              <th className="w-8 px-4 py-3 font-medium">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.size === rows.length}
+                  onChange={toggleSelectAll}
+                  aria-label="전체 선택"
+                  className="size-3.5 accent-primary"
+                />
+              </th>
+              <th className="w-8 px-2 py-3 font-medium" />
+              <th className="px-2 py-3 font-medium">위험도</th>
+              <th className="w-8 px-2 py-3 font-medium">플랫폼</th>
+              <th className="px-2 py-3 font-medium">댓글 내용 또는 AI 요약</th>
+              <th className="max-w-[8rem] px-2 py-3 font-medium">작성자</th>
+              <th className="px-2 py-3 font-medium whitespace-nowrap">유형</th>
+              <th className="px-2 py-3 font-medium whitespace-nowrap">날짜</th>
+              <th className="px-2 py-3 font-medium whitespace-nowrap">상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => {
+              const isExpanded = expandedId === row.id;
+              const isSelected = selectedIds.has(row.id);
+              const previewText = hideOriginal
+                ? (row.reason ?? row.text)
+                : row.text;
+
+              return (
+                <Fragment key={row.id}>
+                  <tr
+                    onClick={() => setExpandedId(isExpanded ? null : row.id)}
+                    className={`cursor-pointer border-b border-border border-l-2 last:border-0 ${isExpanded ? "border-l-primary bg-highlight/10" : "border-l-transparent hover:bg-accent/50"}`}
                   >
-                    {row.text}
-                  </td>
-                  <td
-                    className="max-w-[8rem] truncate px-2 py-3 text-muted-foreground"
-                    title={row.authorDisplayName ?? "알 수 없음"}
-                  >
-                    {row.authorDisplayName ?? "알 수 없음"}
-                  </td>
-                  <td className="px-2 py-3 whitespace-nowrap text-muted-foreground">
-                    {row.category ?? "미분류"}
-                  </td>
-                  <td className="px-2 py-3 whitespace-nowrap text-muted-foreground">
-                    {formatDate(row.createdAt)}
-                  </td>
-                  <td className="px-2 py-3 whitespace-nowrap text-muted-foreground">
-                    {STATUS_LABELS[row.status] ?? row.status}
-                  </td>
-                </tr>
-
-                {isExpanded && (
-                  <tr className="border-b border-border bg-background/40 last:border-0">
-                    <td colSpan={7} className="px-4 py-4">
-                      <div className="flex flex-col gap-4">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            {row.riskLevel && (
-                              <RiskBadge riskLevel={row.riskLevel} />
-                            )}
-                            <StatusPill status={row.status} />
-                            <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
-                              {row.category ?? "미분류"}
-                            </span>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-2">
-                            {row.status === "reported_false" ? (
-                              <span className="text-[11px] text-muted-foreground">
-                                오탐 신고됨
-                              </span>
-                            ) : (
-                              <StatusActionButton
-                                commentId={row.id}
-                                channelId={channelId}
-                                status="reported_false"
-                                label="오탐 신고"
-                              />
-                            )}
-                            <ArchiveActionButton
-                              commentId={row.id}
-                              channelId={channelId}
-                              isArchived={row.isArchived}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="rounded-lg border border-border bg-background/50 px-5 py-4">
-                          <p className="text-sm leading-relaxed text-card-foreground">
-                            “{row.text}”
-                          </p>
-                          {row.reason && (
-                            <p className="mt-2 text-[13px] text-muted-foreground">
-                              <span className="text-primary/80">
-                                AI 판정 근거·
-                              </span>
-                              {row.reason}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                          {row.platform === "youtube" && row.videoTitle && (
-                            <InfoTile
-                              label="영상 제목"
-                              value={row.videoTitle}
-                              href={
-                                row.videoType === "shorts"
-                                  ? `https://www.youtube.com/shorts/${row.videoId}`
-                                  : `https://www.youtube.com/watch?v=${row.videoId}`
-                              }
-                              span="col-span-2"
-                            />
-                          )}
-                          <InfoTile
-                            label="댓글"
-                            value="댓글로 이동"
-                            href={`https://www.youtube.com/watch?v=${row.videoId}&lc=${row.youtubeCommentId}`}
-                          />
-                          <InfoTile
-                            label="작성자"
-                            value={row.authorDisplayName ?? "알 수 없음"}
-                            internalHref={`/c/${channelId}/authors/${encodeURIComponent(row.authorChannelId)}`}
-                          />
-                          <InfoTile
-                            label="플랫폼"
-                            value={PLATFORM_LABELS[row.platform] ?? row.platform}
-                          />
-                          {row.platform === "youtube" && row.videoType && (
-                            <InfoTile
-                              label="콘텐츠 형식"
-                              value={
-                                VIDEO_TYPE_LABELS[row.videoType] ??
-                                row.videoType
-                              }
-                            />
-                          )}
-                          <InfoTile
-                            label="탐지 시각"
-                            value={formatDetectedAt(row.createdAt)}
-                          />
-                          <InfoTile
-                            label="AI 확신도"
-                            value={
-                              row.confidence
-                                ? `${Math.round(Number(row.confidence) * 100)}%`
-                                : "-"
-                            }
-                          />
-                        </div>
+                    <td
+                      className="px-4 py-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelected(row.id)}
+                        aria-label="댓글 선택"
+                        className="size-3.5 accent-primary"
+                      />
+                    </td>
+                    <td className="px-2 py-3 text-muted-foreground">
+                      {isExpanded ? (
+                        <ChevronDown className="size-3.5" aria-hidden />
+                      ) : (
+                        <ChevronRight className="size-3.5" aria-hidden />
+                      )}
+                    </td>
+                    <td className="px-2 py-3">
+                      {row.riskLevel && <RiskBadge riskLevel={row.riskLevel} />}
+                    </td>
+                    <td className="px-2 py-3">
+                      <PlatformIcon platform={row.platform} />
+                    </td>
+                    <td
+                      className="max-w-md truncate px-2 py-3 text-card-foreground"
+                      title={previewText}
+                    >
+                      {previewText}
+                    </td>
+                    <td
+                      className="max-w-[8rem] truncate px-2 py-3 text-muted-foreground"
+                      title={row.authorDisplayName ?? "알 수 없음"}
+                    >
+                      {row.authorDisplayName ?? "알 수 없음"}
+                    </td>
+                    <td className="px-2 py-3 whitespace-nowrap text-muted-foreground">
+                      {row.category ?? "미분류"}
+                    </td>
+                    <td className="px-2 py-3 whitespace-nowrap text-muted-foreground">
+                      {formatDate(row.createdAt)}
+                    </td>
+                    <td className="px-2 py-3 whitespace-nowrap">
+                      <div className="flex flex-wrap items-center gap-1">
+                        <StatusPill status={row.status} />
+                        {row.isArchived && <ProtectedBadge />}
                       </div>
                     </td>
                   </tr>
-                )}
-              </Fragment>
-            );
-          })}
-        </tbody>
-      </table>
+
+                  {isExpanded && (
+                    <tr className="border-b border-border bg-background/40 last:border-0">
+                      <td colSpan={9} className="px-4 py-4">
+                        <div className="flex flex-col gap-4">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              {row.riskLevel && (
+                                <RiskBadge riskLevel={row.riskLevel} />
+                              )}
+                              <StatusPill status={row.status} />
+                              {row.isArchived && <ProtectedBadge />}
+                              <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+                                {row.category ?? "미분류"}
+                              </span>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                              {row.status === "reported_false" ? (
+                                <span className="text-[11px] text-muted-foreground">
+                                  정상 댓글로 분류됨
+                                </span>
+                              ) : (
+                                <StatusActionButton
+                                  commentId={row.id}
+                                  channelId={channelId}
+                                  status="reported_false"
+                                  label="정상 댓글로 분류"
+                                />
+                              )}
+                              <ArchiveActionButton
+                                commentId={row.id}
+                                channelId={channelId}
+                                isArchived={row.isArchived}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="rounded-lg border border-border bg-background/50 px-5 py-4">
+                            <p className="text-sm leading-relaxed text-card-foreground">
+                              “{row.text}”
+                            </p>
+                            {row.reason && (
+                              <p className="mt-2 text-[13px] text-muted-foreground">
+                                <span className="text-primary/80">
+                                  AI 판정 근거·
+                                </span>
+                                {row.reason}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            {row.platform === "youtube" && row.videoTitle && (
+                              <InfoTile
+                                label="영상 제목"
+                                value={row.videoTitle}
+                                href={
+                                  row.videoType === "shorts"
+                                    ? `https://www.youtube.com/shorts/${row.videoId}`
+                                    : `https://www.youtube.com/watch?v=${row.videoId}`
+                                }
+                                span="col-span-2"
+                              />
+                            )}
+                            <InfoTile
+                              label="댓글"
+                              value="댓글로 이동"
+                              href={`https://www.youtube.com/watch?v=${row.videoId}&lc=${row.youtubeCommentId}`}
+                            />
+                            <InfoTile
+                              label="작성자"
+                              value={row.authorDisplayName ?? "알 수 없음"}
+                              internalHref={`/c/${channelId}/authors/${encodeURIComponent(row.authorChannelId)}`}
+                            />
+                            <InfoTile
+                              label="플랫폼"
+                              value={PLATFORM_LABELS[row.platform] ?? row.platform}
+                            />
+                            {row.platform === "youtube" && row.videoType && (
+                              <InfoTile
+                                label="콘텐츠 형식"
+                                value={
+                                  VIDEO_TYPE_LABELS[row.videoType] ??
+                                  row.videoType
+                                }
+                              />
+                            )}
+                            <InfoTile
+                              label="탐지 시각"
+                              value={formatDetectedAt(row.createdAt)}
+                            />
+                            <InfoTile
+                              label="AI 확신도"
+                              value={
+                                row.confidence
+                                  ? `${Math.round(Number(row.confidence) * 100)}%`
+                                  : "-"
+                              }
+                            />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
