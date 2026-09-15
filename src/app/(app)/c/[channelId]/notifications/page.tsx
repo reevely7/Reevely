@@ -1,18 +1,42 @@
 import { BellIcon } from "@/components/icons/bell-icon";
 import { MarkAllReadButton } from "@/components/notifications/mark-all-read-button";
 import { NotificationRow } from "@/components/notifications/notification-row";
+import { NotificationTabs } from "@/components/notifications/notification-tabs";
 import { requireChannelOwnership } from "@/lib/auth/require-channel-ownership";
-import { getNotifications } from "@/lib/db/queries/notifications";
+import {
+  countNotificationsByType,
+  getNotifications,
+} from "@/lib/db/queries/notifications";
+import { NOTIFICATION_TABS } from "@/lib/notifications/tabs";
 
 export default async function NotificationsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ channelId: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const { channelId } = await params;
   await requireChannelOwnership(channelId);
-  const notifications = await getNotifications(channelId);
+
+  const sp = await searchParams;
+  const activeTab =
+    NOTIFICATION_TABS.find((tab) => tab.key === sp.tab) ?? NOTIFICATION_TABS[0];
+
+  const [notifications, countsByType] = await Promise.all([
+    getNotifications(channelId, { types: activeTab.types ?? undefined }),
+    countNotificationsByType(channelId),
+  ]);
   const hasUnread = notifications.some((n) => !n.isRead);
+
+  const tabCounts = Object.fromEntries(
+    NOTIFICATION_TABS.map((tab) => [
+      tab.key,
+      tab.types
+        ? tab.types.reduce((sum, type) => sum + (countsByType[type] ?? 0), 0)
+        : Object.values(countsByType).reduce((sum, c) => sum + c, 0),
+    ]),
+  );
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
@@ -22,18 +46,21 @@ export default async function NotificationsPage({
             알림
           </p>
           <p className="text-xs text-muted-foreground">
-            알림 받기로 설정한 작성자가 새로 남긴 악성 댓글입니다.
+            위험 댓글 증가, 반복 작성자, 검토 필요 등 중요한 변화만 알려드립니다.
           </p>
         </div>
         {hasUnread && <MarkAllReadButton channelId={channelId} />}
       </header>
 
+      <NotificationTabs counts={tabCounts} />
+
       {notifications.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-2xl bg-card px-6 py-16 text-center">
           <BellIcon className="size-8 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
-            아직 알림이 없습니다. 작성자 상세 페이지에서 &quot;새 댓글 알림
-            받기&quot;를 눌러보세요.
+            {activeTab.key === "all"
+              ? "아직 알림이 없습니다. 작성자 상세 페이지에서 \"새 댓글 알림 받기\"를 눌러보세요."
+              : "이 탭에는 아직 알림이 없어요."}
           </p>
         </div>
       ) : (
