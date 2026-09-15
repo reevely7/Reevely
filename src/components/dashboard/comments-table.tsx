@@ -54,7 +54,7 @@ const STATUS_LABELS: Record<string, string> = {
   whitelisted: "화이트리스트",
 };
 
-// "확정"은 블루(status-confirmed), "검토 필요"는 퍼플(status-needs-review)로 분리해
+// "확정"은 초록(status-confirmed), "검토 필요"는 노랑(status-needs-review)으로 분리해
 // 골드(primary)·주황골드(risk-medium)와도, 서로와도 헷갈리지 않게 한다.
 const STATUS_PILL_CLASSES: Record<string, string> = {
   confirmed: "bg-status-confirmed-bg text-status-confirmed",
