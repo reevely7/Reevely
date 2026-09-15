@@ -10,6 +10,7 @@ import { TopAuthorsCard } from "@/components/dashboard/top-authors-card";
 import { TopVideosCard } from "@/components/dashboard/top-videos-card";
 import { countActiveChannelsByUserId, getChannelById } from "@/lib/db/queries/channels";
 import {
+  countAnalyzedCommentsByChannelId,
   countAnalyzedCommentsThisMonthByUserId,
   countArchivedCommentsByUserId,
   countMaliciousCommentsInRange,
@@ -28,10 +29,16 @@ import {
   getVideoLimitForUser,
   PLAN_LABELS,
 } from "@/lib/db/queries/subscriptions";
+import { formatClockTime } from "@/lib/format/clock-time";
 
 const RECENT_COMMENTS_LIMIT = 5;
 const TREND_DAYS = 7;
 const TOP_LIST_LIMIT = 5;
+
+function formatHeaderDate(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
+}
 
 export default async function DashboardPage({
   params,
@@ -54,7 +61,7 @@ export default async function DashboardPage({
     thisWeekCount,
     lastWeekCount,
     topAuthorsAllTime,
-    topAuthorsThisWeek,
+    analyzedCount,
     topVideos,
     subscription,
     monthlyAnalysisLimit,
@@ -72,7 +79,7 @@ export default async function DashboardPage({
     countMaliciousCommentsInRange(channelId, oneWeekAgo, now),
     countMaliciousCommentsInRange(channelId, twoWeeksAgo, oneWeekAgo),
     getTopAuthorsByMaliciousCount(channelId, TOP_LIST_LIMIT),
-    getTopAuthorsByMaliciousCount(channelId, TOP_LIST_LIMIT, oneWeekAgo),
+    countAnalyzedCommentsByChannelId(channelId),
     getTopVideosByMaliciousCount(channelId, oneWeekAgo, TOP_LIST_LIMIT),
     getSubscriptionByUserId(channel.userId),
     getMonthlyAnalysisLimitForUser(channel.userId),
@@ -87,22 +94,47 @@ export default async function DashboardPage({
   const planLabel = subscription ? PLAN_LABELS[subscription.plan] : "무료";
   const isPro = subscription?.plan === "pro";
 
+  const maliciousRate =
+    analyzedCount > 0 ? Math.round((summary.total / analyzedCount) * 100) : 0;
+  const protectedCount = Math.max(0, summary.total - summary.needsReview);
+
   const repeatAuthorNotifications = allNotifications
     .filter((n) => n.type === "repeat_author")
     .slice(0, 3);
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
-      <header>
-        <p className="text-xl font-semibold tracking-tight text-foreground">
-          대시보드
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {channel.channelTitle} 채널의 위험 댓글 현황입니다.
-        </p>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xl font-semibold tracking-tight text-foreground">
+            안녕하세요! 👋
+          </p>
+          <p className="text-xs text-muted-foreground">
+            오늘도 안전한 창작 활동을 응원해요.
+          </p>
+        </div>
+        <div className="text-left sm:text-right">
+          <p className="text-xs text-muted-foreground">
+            {formatHeaderDate(oneWeekAgo)} - {formatHeaderDate(now)}
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            최근 갱신{" "}
+            {channel.lastSyncedAt
+              ? formatClockTime(channel.lastSyncedAt)
+              : "-"}
+          </p>
+        </div>
       </header>
 
-      <SummaryTiles summary={summary} channelId={channelId} />
+      <SummaryTiles
+        kpis={{
+          totalMalicious: summary.total,
+          needsReview: summary.needsReview,
+          maliciousRate,
+          protectedCount,
+        }}
+        channelId={channelId}
+      />
 
       <ReviewCallout count={summary.needsReview} channelId={channelId} />
 
@@ -114,6 +146,16 @@ export default async function DashboardPage({
           lastWeekCount={lastWeekCount}
           channelId={channelId}
         />
+        <TopAuthorsCard
+          title="반복 위험 작성자 TOP 5"
+          rows={topAuthorsAllTime}
+          channelId={channelId}
+        />
+      </div>
+
+      <RecentCommentsPreview rows={recentComments} channelId={channelId} />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <PlanUsageCard
           planLabel={planLabel}
           isPro={isPro}
@@ -138,27 +180,10 @@ export default async function DashboardPage({
             limit: channelLimit,
           }}
         />
-      </div>
-
-      <RecentCommentsPreview rows={recentComments} channelId={channelId} />
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <TopAuthorsCard
-          title="요주의 작성자 (누적)"
-          rows={topAuthorsAllTime}
-          channelId={channelId}
-        />
-        <TopAuthorsCard
-          title="요주의 작성자 (최근 7일)"
-          rows={topAuthorsThisWeek}
-          channelId={channelId}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <TopVideosCard rows={topVideos} channelId={channelId} />
-        <RepeatAuthorNotificationsCard rows={repeatAuthorNotifications} />
       </div>
+
+      <RepeatAuthorNotificationsCard rows={repeatAuthorNotifications} />
     </main>
   );
 }
