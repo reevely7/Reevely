@@ -1,5 +1,4 @@
 {
-  "// TODO": "process-comments는 원래 */30 * * * * (30분마다, 프로 플랜 유저용 주기)였으나 Vercel Hobby 플랜은 하루 1회 초과 cron을 지원하지 않아 0 5 * * *로 임시 변경함. Pro 플랜으로 업그레이드하면 반드시 */30 * * * *로 되돌릴 것.",
   "crons": [
     {
       "path": "/api/cron/process-comments",
