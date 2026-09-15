@@ -53,8 +53,28 @@ export default async function LandingPage({
       {/* 상단 내비게이션 */}
       <header className="flex items-center justify-between px-8 py-5 sm:px-12">
         <p className="text-lg font-semibold tracking-tight text-foreground">
-          Reevely
+          reevely
         </p>
+        <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
+          <a href="#intro" className="hover:text-foreground">
+            서비스소개
+          </a>
+          <a href="#pricing" className="hover:text-foreground">
+            요금제
+          </a>
+          <span
+            title="준비 중입니다"
+            className="cursor-default text-muted-foreground/50"
+          >
+            고객사례
+          </span>
+          <span
+            title="준비 중입니다"
+            className="cursor-default text-muted-foreground/50"
+          >
+            리소스
+          </span>
+        </nav>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -87,14 +107,11 @@ export default async function LandingPage({
 
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 text-center">
           <h1 className="text-4xl leading-snug font-semibold tracking-tight sm:text-5xl">
-            악플이 아니라,
-            <br />
-            기록을 남깁니다.
+            좋은 크리에이터의 내일을 지킵니다
           </h1>
           <p className="max-w-xl text-sm text-muted-foreground sm:text-base">
-            소속사도 법무팀도 없는 채널이 대부분입니다. 당신 채널의 댓글을
-            대신 지켜보고, AI로 위험도를 판정해 필요한 순간 증거로
-            남겨둡니다.
+            AI가 댓글을 먼저 읽고 위험도를 판단합니다. 크리에이터는 필요한
+            댓글만 확인하세요.
           </p>
           {errorMessage && (
             <p className="rounded-md bg-risk-high-bg px-3 py-2 text-xs text-risk-high">
@@ -102,7 +119,7 @@ export default async function LandingPage({
             </p>
           )}
           <KakaoSignInButton
-            label="시작하기"
+            label="무료로 시작하기"
             className="h-12 w-auto px-10 text-base"
           />
           <p className="text-xs text-muted-foreground">
@@ -112,15 +129,15 @@ export default async function LandingPage({
       </section>
 
       {/* 왜 필요한가 */}
-      <section className="border-b border-border bg-background px-8 py-16 sm:px-12">
+      <section id="intro" className="border-b border-border bg-background px-8 py-16 sm:px-12">
         <div className="mx-auto max-w-2xl space-y-3 text-center">
           <h2 className="text-xl font-semibold tracking-tight text-foreground">
             구독자가 늘수록, 댓글창은 혼자 감당하기 버거워집니다
           </h2>
           <p className="text-sm text-muted-foreground">
-            구독자 1만~50만, 소속사나 법무팀 없이 채널을 운영하는
-            크리에이터를 위해 만들었습니다. 매번 댓글창을 직접 훑어보지
-            않아도, 위험한 댓글은 자동으로 걸러서 보여드려요.
+            혼자 댓글을 관리하는 크리에이터를 위해 만들었습니다. 매번
+            댓글창을 직접 훑어보지 않아도, 위험한 댓글은 자동으로 걸러서
+            보여드려요.
           </p>
         </div>
       </section>
@@ -170,13 +187,13 @@ export default async function LandingPage({
       </section>
 
       {/* 요금제 */}
-      <section className="border-b border-border bg-background px-8 py-16 sm:px-12">
+      <section id="pricing" className="border-b border-border bg-background px-8 py-16 sm:px-12">
         <div className="mx-auto max-w-6xl">
           <PricingTable />
 
           <div className="mt-8 flex flex-col items-center gap-3 text-center">
             <KakaoSignInButton
-              label="시작하기"
+              label="내 채널 보호하기"
               className="h-12 w-auto px-10 text-base"
             />
             <p className="text-xs text-muted-foreground">
@@ -196,7 +213,7 @@ export default async function LandingPage({
             카카오 로그인 후 유튜브 채널을 연동합니다.
           </p>
           <KakaoSignInButton
-            label="시작하기"
+            label="내 채널 보호하기"
             className="h-12 w-auto px-10 text-base"
           />
         </div>
