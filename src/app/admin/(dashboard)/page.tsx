@@ -208,7 +208,7 @@ export default async function AdminDashboardPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium text-card-foreground">최근 cron 실행</h2>
             <Link href="/admin/system" className="text-xs text-primary hover:underline">
-              전체 보기
+              전체 보기 →
             </Link>
           </div>
           {recentCronRuns.length === 0 ? (
@@ -239,7 +239,7 @@ export default async function AdminDashboardPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium text-card-foreground">최근 관리자 액션</h2>
             <Link href="/admin/audit-log" className="text-xs text-primary hover:underline">
-              전체 보기
+              전체 보기 →
             </Link>
           </div>
           {recentAuditLog.length === 0 ? (
