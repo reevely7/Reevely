@@ -308,6 +308,7 @@ export type CommentFilters = {
   riskLevel?: CommentRiskLevel;
   category?: string;
   status?: "confirmed" | "needs_review" | "reported_false" | "whitelisted";
+  platform?: "youtube" | "instagram";
   videoId?: string;
   search?: string;
   author?: string;
@@ -324,6 +325,7 @@ function buildFlaggedConditions(channelId: string, filters: CommentFilters) {
 
   if (filters.riskLevel) conditions.push(eq(comments.riskLevel, filters.riskLevel));
   if (filters.category) conditions.push(eq(comments.category, filters.category));
+  if (filters.platform) conditions.push(eq(comments.platform, filters.platform));
   if (filters.status) conditions.push(eq(comments.status, filters.status));
   if (filters.videoId) conditions.push(eq(comments.videoId, filters.videoId));
   if (filters.search) conditions.push(ilike(comments.text, `%${filters.search}%`));
@@ -453,6 +455,24 @@ export async function updateCommentStatus(
   return updated.length > 0;
 }
 
+export async function updateCommentStatusBulk(
+  commentIds: string[],
+  channelId: string,
+  status: CommentStatus,
+) {
+  if (commentIds.length === 0) return 0;
+
+  const updated = await db
+    .update(comments)
+    .set({ status, isHumanReviewed: true })
+    .where(
+      and(inArray(comments.id, commentIds), eq(comments.channelId, channelId)),
+    )
+    .returning({ id: comments.id });
+
+  return updated.length;
+}
+
 // 계정 전체(연동 채널 합산) 증거 보관함 저장 건수 — 플랜별 한도 체크에 쓴다
 export async function countArchivedCommentsByUserId(userId: string) {
   const [row] = await db
@@ -522,6 +542,23 @@ export async function unarchiveComment(commentId: string, channelId: string) {
     .returning({ id: comments.id });
 
   return updated.length > 0;
+}
+
+export async function archiveCommentsBulk(
+  commentIds: string[],
+  channelId: string,
+) {
+  if (commentIds.length === 0) return 0;
+
+  const updated = await db
+    .update(comments)
+    .set({ isArchived: true, archivedAt: new Date() })
+    .where(
+      and(inArray(comments.id, commentIds), eq(comments.channelId, channelId)),
+    )
+    .returning({ id: comments.id });
+
+  return updated.length;
 }
 
 export async function deleteCommentsByUserId(userId: string) {
