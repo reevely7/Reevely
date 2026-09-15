@@ -289,6 +289,19 @@ export async function getDashboardSummary(channelId: string) {
   return summary;
 }
 
+// 대시보드 "악성 비율" KPI 분모 — 채널에 수집된 댓글 중 AI 분석이 끝난 전체 건수
+// (악성 여부와 무관하게 isMalicious가 null이 아니면 분석 완료)
+export async function countAnalyzedCommentsByChannelId(channelId: string) {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(comments)
+    .where(
+      and(eq(comments.channelId, channelId), isNotNull(comments.isMalicious)),
+    );
+
+  return row?.count ?? 0;
+}
+
 export type CommentRiskLevel = "high" | "medium" | "low";
 
 export type CommentFilters = {
