@@ -1,7 +1,7 @@
 const LABELS: Record<string, string> = {
-  high: "High",
-  medium: "Medium",
-  low: "Low",
+  high: "높음",
+  medium: "보통",
+  low: "낮음",
 };
 
 const CLASSES: Record<string, string> = {
