@@ -14,7 +14,7 @@ export function MypageNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-1 border-b border-border">
+    <nav className="flex flex-wrap gap-2 border-b border-border pb-4">
       {TABS.map((tab) => {
         const isActive = pathname === tab.href;
 
@@ -22,10 +22,10 @@ export function MypageNav() {
           <Link
             key={tab.href}
             href={tab.href}
-            className={`px-3 py-2 text-sm transition-colors ${
+            className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
               isActive
-                ? "border-b-2 border-primary font-medium text-foreground"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-accent"
             }`}
           >
             {tab.label}

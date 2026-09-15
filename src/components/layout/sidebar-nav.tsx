@@ -43,13 +43,19 @@ export function SidebarNav({
             href={href}
             className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
               isActive
-                ? "bg-sidebar-accent text-primary"
+                ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
             }`}
           >
             <span>{item.label}</span>
             {count > 0 && (
-              <span className="font-mono text-xs text-primary">{count}</span>
+              <span
+                className={`font-mono text-xs ${
+                  isActive ? "text-primary-foreground" : "text-primary"
+                }`}
+              >
+                {count}
+              </span>
             )}
           </Link>
         );
