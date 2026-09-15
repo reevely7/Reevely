@@ -41,14 +41,12 @@ export default async function MypageLayout({
     channels.filter((c) => c.status === "active").length >= channelLimit;
 
   const planLabel = subscription ? PLAN_LABELS[subscription.plan] : "무료";
-  const isPro = subscription?.plan === "pro";
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden md:flex-row">
       <AppSidebar
         channels={channelsWithSync}
         planLabel={planLabel}
-        isPro={isPro}
         reviewCount={reviewCount}
         unreadNotificationCount={unreadNotificationCount}
         atChannelLimit={atChannelLimit}

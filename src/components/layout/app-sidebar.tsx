@@ -3,10 +3,21 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AlertTriangle, ChevronDown, Lock, Menu, Plus, X } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronDown,
+  CreditCard,
+  Lock,
+  Menu,
+  Plus,
+  Settings,
+  User,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 
 import { LogoutButton } from "@/components/auth/logout-button";
+import { BellIcon } from "@/components/icons/bell-icon";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { SyncCountdown } from "@/components/layout/sync-countdown";
 import { formatClockTime } from "@/lib/format/clock-time";
@@ -25,7 +36,6 @@ export function AppSidebar({
   channels,
   activeChannelId,
   planLabel,
-  isPro,
   reviewCount,
   unreadNotificationCount,
   atChannelLimit,
@@ -33,7 +43,6 @@ export function AppSidebar({
   channels: SidebarChannel[];
   activeChannelId?: string;
   planLabel: string;
-  isPro: boolean;
   reviewCount: number;
   unreadNotificationCount: number;
   atChannelLimit: boolean;
@@ -177,6 +186,52 @@ export function AppSidebar({
                     <Plus className="size-3.5 shrink-0" aria-hidden />
                     채널 추가
                   </Link>
+                  <div className="border-t border-sidebar-border py-1">
+                    <Link
+                      href="/mypage/profile"
+                      onClick={() => setIsSwitcherOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent"
+                    >
+                      <User
+                        className="size-3.5 shrink-0 text-muted-foreground"
+                        aria-hidden
+                      />
+                      내 프로필
+                    </Link>
+                    <Link
+                      href="/mypage/account"
+                      onClick={() => setIsSwitcherOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent"
+                    >
+                      <Settings
+                        className="size-3.5 shrink-0 text-muted-foreground"
+                        aria-hidden
+                      />
+                      계정 설정
+                    </Link>
+                    <Link
+                      href="/mypage/subscription/plans"
+                      onClick={() => setIsSwitcherOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent"
+                    >
+                      <CreditCard
+                        className="size-3.5 shrink-0 text-muted-foreground"
+                        aria-hidden
+                      />
+                      요금제 관리
+                    </Link>
+                    <Link
+                      href={`/c/${activeChannel.id}/notifications`}
+                      onClick={() => setIsSwitcherOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent"
+                    >
+                      <BellIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                      알림 설정
+                    </Link>
+                  </div>
+                  <div className="border-t border-sidebar-border p-2">
+                    <LogoutButton className="w-full justify-center border-sidebar-border bg-transparent text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground" />
+                  </div>
                 </div>
               )}
             </div>
@@ -190,19 +245,9 @@ export function AppSidebar({
         </div>
 
         <div className="flex flex-col gap-3 border-t border-sidebar-border pt-4">
-          <Link
-            href="/mypage/subscription/plans"
-            className="flex items-center justify-between rounded-lg px-1 py-1 hover:bg-sidebar-accent"
-          >
-            <span className="truncate text-xs text-muted-foreground">
-              {planLabel} 플랜
-            </span>
-            {!isPro && (
-              <span className="shrink-0 text-xs font-medium text-primary">
-                업그레이드
-              </span>
-            )}
-          </Link>
+          <p className="truncate text-xs text-muted-foreground">
+            {planLabel} 플랜
+          </p>
 
           {activeChannel?.reauthRequiredAt ? (
             <p className="text-[11px] leading-relaxed text-risk-high">
@@ -222,8 +267,6 @@ export function AppSidebar({
               </p>
             )
           )}
-
-          <LogoutButton className="border-sidebar-border bg-transparent text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground" />
         </div>
       </aside>
     </>
