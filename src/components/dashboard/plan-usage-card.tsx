@@ -54,7 +54,6 @@ function UsageBar({ label, used, limit }: UsageMetric) {
 }
 
 export function PlanUsageCard({
-  planLabel, // eslint-disable-line @typescript-eslint/no-unused-vars
   isPro,
   monthlyAnalysis,
   evidenceArchive,
