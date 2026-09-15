@@ -71,7 +71,7 @@ export function AppSidebar({
           href={homeHref}
           className="text-lg font-semibold tracking-tight text-sidebar-foreground"
         >
-          Reevely
+          reevely
         </Link>
         <button
           type="button"
@@ -102,7 +102,7 @@ export function AppSidebar({
               href={homeHref}
               className="text-xl font-semibold tracking-tight"
             >
-              Reevely
+              reevely
             </Link>
             <button
               type="button"

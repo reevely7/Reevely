@@ -8,7 +8,7 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-col gap-10 sm:flex-row sm:justify-between">
         <div className="max-w-xs">
           <p className="text-base font-semibold tracking-tight text-foreground">
-            Reevely
+            reevely
           </p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             소속사도 법무팀도 없는 크리에이터를 위한 AI 기반 악성 댓글
