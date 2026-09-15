@@ -275,9 +275,9 @@ export function AuthorCommentFeed({
             }
             options={[
               { value: "", label: "위험도 전체" },
-              { value: "high", label: "High" },
-              { value: "medium", label: "Medium" },
-              { value: "low", label: "Low" },
+              { value: "high", label: "높음" },
+              { value: "medium", label: "보통" },
+              { value: "low", label: "낮음" },
             ]}
           />
 

@@ -8,9 +8,9 @@ import {
 } from "@/lib/db/queries/ai-quality";
 
 const RISK_LABELS: Record<string, string> = {
-  high: "High",
-  medium: "Medium",
-  low: "Low",
+  high: "높음",
+  medium: "보통",
+  low: "낮음",
 };
 
 function formatPercent(value: number | null): string {
