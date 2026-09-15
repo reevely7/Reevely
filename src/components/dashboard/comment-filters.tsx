@@ -6,10 +6,9 @@ import { DateRangeFilter } from "@/components/dashboard/date-range-filter";
 import { FilterSelect } from "@/components/ui/filter-select";
 
 const STATUS_LABELS: Record<string, string> = {
-  confirmed: "확정",
+  confirmed: "검토 완료",
   needs_review: "검토 필요",
-  reported_false: "오탐 신고됨",
-  whitelisted: "화이트리스트",
+  reported_false: "정상",
 };
 
 type Props = {
@@ -55,6 +54,7 @@ export function CommentFilters({
     searchParams.get("risk") ||
       searchParams.get("category") ||
       searchParams.get("status") ||
+      searchParams.get("platform") ||
       searchParams.get("video") ||
       searchParams.get("search") ||
       searchParams.get("author") ||
@@ -102,6 +102,16 @@ export function CommentFilters({
               value,
               label,
             })),
+          ]}
+        />
+
+        <FilterSelect
+          value={searchParams.get("platform") ?? ""}
+          onValueChange={(value) => updateParam("platform", value)}
+          options={[
+            { value: "", label: "플랫폼 전체" },
+            { value: "youtube", label: "유튜브" },
+            { value: "instagram", label: "인스타그램" },
           ]}
         />
 

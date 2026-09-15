@@ -21,6 +21,7 @@ export default async function CommentsPage({
     risk?: string;
     category?: string;
     status?: string;
+    platform?: string;
     video?: string;
     search?: string;
     author?: string;
@@ -37,6 +38,7 @@ export default async function CommentsPage({
     riskLevel: sp.risk as CommentFiltersType["riskLevel"],
     category: sp.category,
     status: sp.status as CommentFiltersType["status"],
+    platform: sp.platform as CommentFiltersType["platform"],
     videoId: sp.video,
     search: sp.search,
     author: sp.author,
@@ -62,7 +64,7 @@ export default async function CommentsPage({
             댓글 목록
           </p>
           <p className="text-xs text-muted-foreground">
-            위험도별로 플래그된 댓글입니다.
+            AI가 분류한 댓글을 한눈에 확인하고 관리합니다.
           </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
