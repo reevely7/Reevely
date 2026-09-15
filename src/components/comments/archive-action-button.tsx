@@ -9,9 +9,10 @@ type Props = {
   commentId: string;
   channelId: string;
   isArchived: boolean;
+  label?: string;
 };
 
-export function ArchiveActionButton({ commentId, channelId, isArchived }: Props) {
+export function ArchiveActionButton({ commentId, channelId, isArchived, label }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -44,7 +45,7 @@ export function ArchiveActionButton({ commentId, channelId, isArchived }: Props)
         onClick={handleClick}
         disabled={isLoading}
       >
-        {isLoading ? "처리 중…" : isArchived ? "보관 해제" : "증거 보관"}
+        {isLoading ? "처리 중…" : (label ?? (isArchived ? "보관 해제" : "증거 보관"))}
       </Button>
       {error && <p className="max-w-[220px] text-right text-[11px] text-risk-high">{error}</p>}
     </div>
