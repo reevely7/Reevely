@@ -210,6 +210,34 @@ export async function getRiskBreakdownInRange(
   return breakdown;
 }
 
+// 주간 요약 "위험 유형별 비율"용 — 기간 내 악성 댓글의 카테고리별 집계(건수 내림차순)
+export async function getCategoryBreakdownInRange(
+  channelId: string,
+  from: Date,
+  to: Date,
+) {
+  const rows = await db
+    .select({
+      category: comments.category,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.channelId, channelId),
+        eq(comments.isMalicious, true),
+        gte(comments.createdAt, from),
+        lt(comments.createdAt, to),
+      ),
+    )
+    .groupBy(comments.category)
+    .orderBy(desc(sql`count(*)`));
+
+  return rows.filter(
+    (row): row is { category: string; count: number } => row.category !== null,
+  );
+}
+
 // 대시보드 추이 스파크라인용 — 기간 내 일별 악성 댓글 건수 (일자 오름차순)
 export async function getDailyMaliciousCounts(
   channelId: string,
@@ -326,6 +354,27 @@ export async function countAnalyzedCommentsByChannelId(channelId: string) {
     .from(comments)
     .where(
       and(eq(comments.channelId, channelId), isNotNull(comments.isMalicious)),
+    );
+
+  return row?.count ?? 0;
+}
+
+// 주간 요약 KPI "총 댓글" — 기간 내 분석 완료된 전체 댓글 수(악성 여부 무관)
+export async function countAnalyzedCommentsInRange(
+  channelId: string,
+  from: Date,
+  to: Date,
+) {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.channelId, channelId),
+        isNotNull(comments.isMalicious),
+        gte(comments.createdAt, from),
+        lt(comments.createdAt, to),
+      ),
     );
 
   return row?.count ?? 0;
@@ -558,6 +607,37 @@ export async function getArchivedComments(channelId: string) {
     .from(comments)
     .where(and(eq(comments.channelId, channelId), eq(comments.isArchived, true)))
     .orderBy(sql`${comments.archivedAt} desc`);
+}
+
+// 주간 요약 KPI "증거 보관"(누적 전체) — 이 채널에서 현재 보관 중인 증거 건수
+export async function countArchivedCommentsByChannelId(channelId: string) {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(comments)
+    .where(and(eq(comments.channelId, channelId), eq(comments.isArchived, true)));
+
+  return row?.count ?? 0;
+}
+
+// 주간 요약 인사이트용 — 기간 내 새로 보관된(archivedAt 기준) 증거 건수
+export async function countArchivedInRange(
+  channelId: string,
+  from: Date,
+  to: Date,
+) {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.channelId, channelId),
+        eq(comments.isArchived, true),
+        gte(comments.archivedAt, from),
+        lt(comments.archivedAt, to),
+      ),
+    );
+
+  return row?.count ?? 0;
 }
 
 // 해당 채널 소유 댓글만 보관 가능하도록 channelId까지 조건에 걸어 확인한다.
