@@ -77,7 +77,7 @@
   --secondary: #dbe6d9;
   --secondary-foreground: #1e2d26;
   --muted: #ededed;
-  --muted-foreground: #6b7a72;
+  --muted-foreground: #5c6b63;
   --accent: #dbe6d9;
   --accent-foreground: #1e2d26;
   --destructive: #dc2626;
@@ -108,20 +108,20 @@
   --risk-high: #dc2626;
   --risk-high-foreground: #ffffff;
   --risk-high-bg: rgba(220, 38, 38, 0.12);
-  --risk-medium: #d97706;
+  --risk-medium: #b45309;
   --risk-medium-foreground: #ffffff;
   --risk-medium-bg: rgba(217, 119, 6, 0.14);
-  --risk-low: #3e8562;
+  --risk-low: #2f6b4d;
   --risk-low-foreground: #ffffff;
   --risk-low-bg: rgba(62, 133, 98, 0.12);
 
   /* "확정/정상" 상태 배지 — 초록 계열 (risk-low와 계열은 같지만 별도 변수라
      이후 톤을 따로 미세조정할 수 있음) */
-  --status-confirmed: #2f855a;
+  --status-confirmed: #236b46;
   --status-confirmed-bg: rgba(47, 133, 90, 0.12);
 
   /* "검토 필요" 상태 배지 — 노랑/amber 계열 */
-  --status-needs-review: #b7791f;
+  --status-needs-review: #92600f;
   --status-needs-review-bg: rgba(183, 121, 31, 0.14);
 }
 

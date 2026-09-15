@@ -60,7 +60,7 @@ export function DateRangeFilter({ dateFrom, dateTo, onChange }: Props) {
 
       <PopoverContent
         align="start"
-        className="w-auto gap-0 bg-[#2e2e2e] p-0"
+        className="w-auto gap-0 p-0"
       >
         <Calendar
           mode="range"
