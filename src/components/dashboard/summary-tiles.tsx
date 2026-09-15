@@ -12,7 +12,7 @@ const TILES: Array<{
   key: keyof DashboardKpis;
   label: string;
   suffix: string;
-  hrefSuffix: string;
+  hrefSuffix: string | null;
   icon: typeof MessageSquareWarning;
   iconClassName: string;
 }> = [
@@ -20,7 +20,11 @@ const TILES: Array<{
     key: "totalComments",
     label: "총 댓글",
     suffix: "",
-    hrefSuffix: "",
+    // 이 숫자는 분석 완료된 전체 댓글(악성+정상)인데, /comments 목록은
+    // 항상 악성(플래그) 댓글만 보여줘서(getFlaggedComments가 isMalicious=true
+    // 고정) 링크를 걸면 숫자와 목록 건수가 안 맞는다. 그래서 이 타일만
+    // 클릭 불가능한 정보성 카드로 둔다.
+    hrefSuffix: null,
     icon: MessageSquareWarning,
     iconClassName: "bg-muted text-muted-foreground",
   },
@@ -61,12 +65,8 @@ export function SummaryTiles({
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {TILES.map((tile) => {
         const Icon = tile.icon;
-        return (
-          <Link
-            key={tile.key}
-            href={`/c/${channelId}/comments${tile.hrefSuffix}`}
-            className="flex flex-col gap-2 rounded-2xl bg-card px-4 py-4 transition-colors hover:bg-accent/50"
-          >
+        const content = (
+          <>
             <span
               aria-hidden
               className={`flex size-7 shrink-0 items-center justify-center rounded-full ${tile.iconClassName}`}
@@ -80,6 +80,27 @@ export function SummaryTiles({
               {kpis[tile.key].toLocaleString("ko-KR")}
               {tile.suffix}
             </p>
+          </>
+        );
+
+        if (tile.hrefSuffix === null) {
+          return (
+            <div
+              key={tile.key}
+              className="flex flex-col gap-2 rounded-2xl bg-card px-4 py-4"
+            >
+              {content}
+            </div>
+          );
+        }
+
+        return (
+          <Link
+            key={tile.key}
+            href={`/c/${channelId}/comments${tile.hrefSuffix}`}
+            className="flex flex-col gap-2 rounded-2xl bg-card px-4 py-4 transition-colors hover:bg-accent/50"
+          >
+            {content}
           </Link>
         );
       })}
