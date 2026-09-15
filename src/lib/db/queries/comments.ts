@@ -326,7 +326,17 @@ function buildFlaggedConditions(channelId: string, filters: CommentFilters) {
   if (filters.riskLevel) conditions.push(eq(comments.riskLevel, filters.riskLevel));
   if (filters.category) conditions.push(eq(comments.category, filters.category));
   if (filters.platform) conditions.push(eq(comments.platform, filters.platform));
-  if (filters.status) conditions.push(eq(comments.status, filters.status));
+  if (filters.status) {
+    // "정상" 필터(reported_false)는 UI에서 whitelisted와 같은 라벨로 합쳐 보여주므로
+    // 필터도 두 값을 동시에 매칭해야 화면에 보이는 것과 필터 결과가 일치한다.
+    if (filters.status === "reported_false") {
+      conditions.push(
+        inArray(comments.status, ["reported_false", "whitelisted"]),
+      );
+    } else {
+      conditions.push(eq(comments.status, filters.status));
+    }
+  }
   if (filters.videoId) conditions.push(eq(comments.videoId, filters.videoId));
   if (filters.search) conditions.push(ilike(comments.text, `%${filters.search}%`));
   if (filters.author)
