@@ -6,6 +6,7 @@ import { RiskBadge } from "@/components/dashboard/risk-badge";
 type Row = {
   id: string;
   text: string;
+  reason: string | null;
   riskLevel: string | null;
   category: string | null;
   createdAt: Date;
@@ -27,7 +28,7 @@ export function RecentCommentsPreview({
     <div className="rounded-2xl bg-card px-5 py-4">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-medium text-card-foreground">
-          최근 위험 댓글
+          최근 위험 알림
         </p>
         <Link
           href={`/c/${channelId}/comments`}
@@ -51,9 +52,9 @@ export function RecentCommentsPreview({
               {row.riskLevel && <RiskBadge riskLevel={row.riskLevel} />}
               <p
                 className="min-w-0 flex-1 truncate text-[13px] text-card-foreground"
-                title={row.text}
+                title={row.reason ?? row.text}
               >
-                {row.text}
+                {row.reason ?? row.text}
               </p>
               <span className="shrink-0 text-xs text-muted-foreground">
                 {row.category ?? "미분류"}
