@@ -2,7 +2,7 @@ import { CircleCheck, MessageSquareWarning, Percent, TimerReset } from "lucide-r
 import Link from "next/link";
 
 type DashboardKpis = {
-  totalMalicious: number;
+  totalComments: number;
   needsReview: number;
   maliciousRate: number;
   protectedCount: number;
@@ -17,7 +17,7 @@ const TILES: Array<{
   iconClassName: string;
 }> = [
   {
-    key: "totalMalicious",
+    key: "totalComments",
     label: "총 댓글",
     suffix: "",
     hrefSuffix: "",

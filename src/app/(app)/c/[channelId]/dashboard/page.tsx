@@ -128,7 +128,7 @@ export default async function DashboardPage({
 
       <SummaryTiles
         kpis={{
-          totalMalicious: summary.total,
+          totalComments: analyzedCount,
           needsReview: summary.needsReview,
           maliciousRate,
           protectedCount,
