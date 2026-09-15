@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   and,
+  desc,
   eq,
   gte,
   ilike,
@@ -127,6 +128,34 @@ export async function countMaliciousCommentsByAuthor(
     );
 
   return row?.count ?? 0;
+}
+
+// 반복 위험 작성자 알림의 유형 breakdown용 — 해당 작성자의 악성 댓글을
+// 카테고리별로 집계한다. isMalicious=true인 댓글만 대상이라 category는
+// 항상 "해당없음"이 아닌 실제 유형(협박/인신공격 등)이다.
+export async function getCategoryBreakdownByAuthor(
+  channelId: string,
+  authorChannelId: string,
+) {
+  const rows = await db
+    .select({
+      category: comments.category,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.channelId, channelId),
+        eq(comments.authorChannelId, authorChannelId),
+        eq(comments.isMalicious, true),
+      ),
+    )
+    .groupBy(comments.category)
+    .orderBy(desc(sql`count(*)`));
+
+  return rows.filter(
+    (row): row is { category: string; count: number } => row.category !== null,
+  );
 }
 
 // 주간 다이제스트 알림에 쓰는 기간별 악성 댓글 수 (from 이상, to 미만)
