@@ -1,15 +1,17 @@
 import { notFound } from "next/navigation";
 
 import { DailyTrendCard } from "@/components/dashboard/daily-trend-card";
-import { InstagramTrendPlaceholderCard } from "@/components/dashboard/instagram-trend-placeholder-card";
+import { PlanUsageCard } from "@/components/dashboard/plan-usage-card";
 import { RecentCommentsPreview } from "@/components/dashboard/recent-comments-preview";
 import { RepeatAuthorNotificationsCard } from "@/components/dashboard/repeat-author-notifications-card";
 import { ReviewCallout } from "@/components/dashboard/review-callout";
 import { SummaryTiles } from "@/components/dashboard/summary-tiles";
 import { TopAuthorsCard } from "@/components/dashboard/top-authors-card";
 import { TopVideosCard } from "@/components/dashboard/top-videos-card";
-import { getChannelById } from "@/lib/db/queries/channels";
+import { countActiveChannelsByUserId, getChannelById } from "@/lib/db/queries/channels";
 import {
+  countAnalyzedCommentsThisMonthByUserId,
+  countArchivedCommentsByUserId,
   countMaliciousCommentsInRange,
   getDailyMaliciousCounts,
   getDashboardSummary,
@@ -18,6 +20,14 @@ import {
   getTopVideosByMaliciousCount,
 } from "@/lib/db/queries/comments";
 import { getNotifications } from "@/lib/db/queries/notifications";
+import {
+  getChannelLimitForUser,
+  getEvidenceArchiveLimitForUser,
+  getMonthlyAnalysisLimitForUser,
+  getSubscriptionByUserId,
+  getVideoLimitForUser,
+  PLAN_LABELS,
+} from "@/lib/db/queries/subscriptions";
 
 const RECENT_COMMENTS_LIMIT = 5;
 const TREND_DAYS = 7;
@@ -46,6 +56,14 @@ export default async function DashboardPage({
     topAuthorsAllTime,
     topAuthorsThisWeek,
     topVideos,
+    subscription,
+    monthlyAnalysisLimit,
+    monthlyAnalysisUsed,
+    evidenceArchiveLimit,
+    evidenceArchiveUsed,
+    channelLimit,
+    channelsUsed,
+    videoLimit,
   ] = await Promise.all([
     getDashboardSummary(channelId),
     getFlaggedComments(channelId, { sort: "risk" }, 1, RECENT_COMMENTS_LIMIT),
@@ -56,7 +74,18 @@ export default async function DashboardPage({
     getTopAuthorsByMaliciousCount(channelId, TOP_LIST_LIMIT),
     getTopAuthorsByMaliciousCount(channelId, TOP_LIST_LIMIT, oneWeekAgo),
     getTopVideosByMaliciousCount(channelId, oneWeekAgo, TOP_LIST_LIMIT),
+    getSubscriptionByUserId(channel.userId),
+    getMonthlyAnalysisLimitForUser(channel.userId),
+    countAnalyzedCommentsThisMonthByUserId(channel.userId),
+    getEvidenceArchiveLimitForUser(channel.userId),
+    countArchivedCommentsByUserId(channel.userId),
+    getChannelLimitForUser(channel.userId),
+    countActiveChannelsByUserId(channel.userId),
+    getVideoLimitForUser(channel.userId),
   ]);
+
+  const planLabel = subscription ? PLAN_LABELS[subscription.plan] : "무료";
+  const isPro = subscription?.plan === "pro";
 
   const repeatAuthorNotifications = allNotifications
     .filter((n) => n.type === "repeat_author")
@@ -85,7 +114,30 @@ export default async function DashboardPage({
           lastWeekCount={lastWeekCount}
           channelId={channelId}
         />
-        <InstagramTrendPlaceholderCard />
+        <PlanUsageCard
+          planLabel={planLabel}
+          isPro={isPro}
+          monthlyAnalysis={{
+            label: "월 댓글 분석량",
+            used: monthlyAnalysisUsed,
+            limit: monthlyAnalysisLimit,
+          }}
+          videos={{
+            label: "모니터링 영상 수",
+            used: channel.monitoredVideoCount,
+            limit: videoLimit,
+          }}
+          evidenceArchive={{
+            label: "증거 보관함",
+            used: evidenceArchiveUsed,
+            limit: evidenceArchiveLimit,
+          }}
+          channels={{
+            label: "채널 연동",
+            used: channelsUsed,
+            limit: channelLimit,
+          }}
+        />
       </div>
 
       <RecentCommentsPreview rows={recentComments} channelId={channelId} />

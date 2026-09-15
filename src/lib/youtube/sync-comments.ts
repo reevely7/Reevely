@@ -258,7 +258,7 @@ export async function syncComments(channel: SyncableChannel) {
     totalNew += await insertNewComments(rows);
   }
 
-  await markSynced(channel.id, latestVideoPublishedAt);
+  await markSynced(channel.id, latestVideoPublishedAt, videoIds.length);
 
   return {
     videosScanned: videoIds.length,

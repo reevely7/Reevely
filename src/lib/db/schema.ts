@@ -37,6 +37,10 @@ export const channels = pgTable(
     latestVideoPublishedAt: timestamp("latest_video_published_at", {
       withTimezone: true,
     }),
+    // 마지막 sync에서 실제로 훑은 영상 수(fetchVideoIds 결과 개수) — 대시보드
+    // 사용량 카드가 "모니터링 영상 수"를 근사치가 아니라 정확히 보여주는 데 쓴다.
+    // 다음 sync 전까지는 마지막 값 그대로 유지(sync 주기만큼의 지연은 자연스러움).
+    monitoredVideoCount: integer("monitored_video_count").notNull().default(0),
     // 잠긴 채널은 cron sync 대상에서 제외됨(다운그레이드로 플랜 한도 초과 시)
     status: channelStatusEnum("status").notNull().default("active"),
     // non-null이면 refresh token이 만료/취소되어 재연동이 필요하다는 뜻

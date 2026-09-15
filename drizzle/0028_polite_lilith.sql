@@ -1,0 +1,1 @@
+ALTER TABLE "channels" ADD COLUMN "monitored_video_count" integer DEFAULT 0 NOT NULL;

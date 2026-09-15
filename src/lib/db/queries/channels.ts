@@ -118,11 +118,13 @@ export function getNextSyncAt(
 export async function markSynced(
   channelId: string,
   latestVideoPublishedAt: Date | null,
+  monitoredVideoCount: number,
 ) {
   await db
     .update(channels)
     .set({
       lastSyncedAt: new Date(),
+      monitoredVideoCount,
       ...(latestVideoPublishedAt ? { latestVideoPublishedAt } : {}),
     })
     .where(eq(channels.id, channelId));
