@@ -30,6 +30,7 @@ type Notification = {
   message: string | null;
   href: string | null;
   commentText: string | null;
+  reason: string | null;
   riskLevel: "high" | "medium" | "low" | null;
   category: string | null;
   authorDisplayName: string | null;
@@ -176,7 +177,7 @@ export function NotificationBell({
                       <RiskBadge riskLevel={notification.riskLevel} />
                     )}
                     <span className="line-clamp-1 text-xs text-muted-foreground">
-                      {notification.commentText}
+                      {notification.reason ?? notification.commentText}
                     </span>
                   </div>
                 </Link>

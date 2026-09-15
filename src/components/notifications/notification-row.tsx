@@ -22,6 +22,7 @@ type Notification = {
   message: string | null;
   href: string | null;
   commentText: string | null;
+  reason: string | null;
   riskLevel: "high" | "medium" | "low" | null;
   category: string | null;
   authorDisplayName: string | null;
@@ -115,7 +116,7 @@ export function NotificationRow({
       </div>
 
       <p className="line-clamp-2 text-sm text-card-foreground">
-        {notification.commentText}
+        {notification.reason ?? notification.commentText}
       </p>
 
       <p className="truncate text-xs text-muted-foreground">
