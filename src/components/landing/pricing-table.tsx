@@ -9,8 +9,6 @@ type Plan = {
   tagline: string;
   price: string;
   highlights: string[];
-  accentClass: string;
-  textAccentClass: string;
   recommended?: boolean;
 };
 
@@ -20,24 +18,18 @@ const PLANS: Plan[] = [
     tagline: "일단 지켜보고 있다는 확신이 필요할 때",
     price: "0원",
     highlights: FREE_PLAN_HIGHLIGHTS,
-    accentClass: "bg-muted-foreground",
-    textAccentClass: "text-muted-foreground",
   },
   {
     name: "베이직",
     tagline: "혼자 채널을 운영하는 크리에이터의 기본기",
     price: "19,900원",
     highlights: PLAN_HIGHLIGHTS.basic,
-    accentClass: "bg-primary",
-    textAccentClass: "text-primary",
   },
   {
     name: "플러스",
     tagline: "채널이 여러 개로 늘어날 때",
     price: "39,900원",
     highlights: PLAN_HIGHLIGHTS.plus,
-    accentClass: "bg-chart-5",
-    textAccentClass: "text-chart-5",
     recommended: true,
   },
   {
@@ -45,8 +37,6 @@ const PLANS: Plan[] = [
     tagline: "댓글 대응까지 자동으로 맡기고 싶을 때",
     price: "69,900원",
     highlights: PLAN_HIGHLIGHTS.pro,
-    accentClass: "bg-[#7f97b8]",
-    textAccentClass: "text-[#7f97b8]",
   },
 ];
 
@@ -119,11 +109,11 @@ export function PricingTable() {
     <div>
       <div className="mb-10 text-center">
         <h2 className="mb-2 text-xl font-semibold tracking-tight text-foreground">
-          채널 규모에 맞게 골라 쓰세요
+          채널 규모에 맞는 댓글 보호 플랜을 선택하세요
         </h2>
         <p className="text-sm text-muted-foreground">
-          어떤 등급이든 AI 판정 정확도는 똑같습니다. 등급별로 갈라지는 건
-          모니터링 범위와 기능 깊이뿐이에요.
+          어떤 등급이든 AI 판정 정확도는 동일합니다. 플랜별 차이는 분석량,
+          모니터링 주기, 보관/대응 기능입니다.
         </p>
       </div>
 
@@ -135,7 +125,7 @@ export function PricingTable() {
               plan.recommended ? "ring-1 ring-chart-5" : ""
             }`}
           >
-            <div className={`h-1.5 w-full ${plan.accentClass}`} />
+            <div className="h-1.5 w-full bg-primary" />
             <div className="flex flex-1 flex-col px-7 py-9">
               {plan.recommended ? (
                 <p className="mb-3 font-mono text-xs tracking-widest text-chart-5 uppercase">
@@ -144,9 +134,7 @@ export function PricingTable() {
               ) : (
                 <p className="mb-3 h-[16px]" aria-hidden />
               )}
-              <p
-                className={`text-base font-semibold tracking-wide uppercase ${plan.textAccentClass}`}
-              >
+              <p className="text-base font-semibold tracking-wide uppercase text-primary">
                 {plan.name}
               </p>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
@@ -167,7 +155,7 @@ export function PricingTable() {
                 {plan.highlights.map((highlight) => (
                   <li key={highlight} className="flex items-start gap-2.5">
                     <span
-                      className={`mt-1.5 size-1.5 shrink-0 rounded-full ${plan.accentClass}`}
+                      className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary"
                       aria-hidden
                     />
                     {highlight}
@@ -202,9 +190,7 @@ export function PlanComparisonTable() {
               </th>
               {PLANS.map((plan) => (
                 <th key={plan.name} scope="col" className="px-5 py-4 align-bottom">
-                  <span
-                    className={`text-xs font-semibold tracking-wide uppercase ${plan.textAccentClass}`}
-                  >
+                  <span className="text-xs font-semibold tracking-wide uppercase text-primary">
                     {plan.name}
                   </span>
                 </th>

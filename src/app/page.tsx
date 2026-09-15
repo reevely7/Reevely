@@ -180,8 +180,7 @@ export default async function LandingPage({
               className="h-12 w-auto px-10 text-base"
             />
             <p className="text-xs text-muted-foreground">
-              결제 기능은 아직 준비 중입니다. 지금 가입하면 정식 출시 때
-              가장 먼저 안내드릴게요.
+              지금 가입하면 정식 출시 시 가장 먼저 안내드립니다.
             </p>
           </div>
         </div>
