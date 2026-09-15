@@ -74,7 +74,7 @@ export default async function DashboardPage({
   ] = await Promise.all([
     getDashboardSummary(channelId),
     getFlaggedComments(channelId, { sort: "risk" }, 1, RECENT_COMMENTS_LIMIT),
-    getNotifications(channelId, 30),
+    getNotifications(channelId, { limit: 30 }),
     getDailyMaliciousCounts(channelId, oneWeekAgo, now),
     countMaliciousCommentsInRange(channelId, oneWeekAgo, now),
     countMaliciousCommentsInRange(channelId, twoWeeksAgo, oneWeekAgo),

@@ -44,7 +44,7 @@ export default async function ChannelLayout({
   ] = await Promise.all([
     countReviewQueue(channelId),
     countUnreadNotifications(channelId),
-    getNotifications(channelId, RECENT_NOTIFICATIONS_LIMIT),
+    getNotifications(channelId, { limit: RECENT_NOTIFICATIONS_LIMIT }),
     getChannelLimitForUser(user.id),
     getSyncIntervalForUser(user.id),
     getSubscriptionByUserId(user.id),

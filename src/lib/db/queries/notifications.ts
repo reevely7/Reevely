@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import {
   countMaliciousCommentsByAuthor,
@@ -9,7 +9,7 @@ import {
 import { db } from "@/lib/db";
 import { authorSubscriptions, comments, notifications } from "@/lib/db/schema";
 
-type NotificationType =
+export type NotificationType =
   | "new_comment"
   | "repeat_author"
   | "review_backlog"
@@ -321,7 +321,28 @@ export async function countUnreadNotifications(channelId: string) {
   return row?.count ?? 0;
 }
 
-export async function getNotifications(channelId: string, limit?: number) {
+// 알림 탭(전체/위험 알림/반복 작성자/공지사항)별 배지 숫자용 — 타입별 전체 건수.
+export async function countNotificationsByType(channelId: string) {
+  const rows = await db
+    .select({ type: notifications.type, count: sql<number>`count(*)::int` })
+    .from(notifications)
+    .where(eq(notifications.channelId, channelId))
+    .groupBy(notifications.type);
+
+  return Object.fromEntries(rows.map((row) => [row.type, row.count])) as Partial<
+    Record<NotificationType, number>
+  >;
+}
+
+export async function getNotifications(
+  channelId: string,
+  options?: { limit?: number; types?: NotificationType[] },
+) {
+  const conditions = [eq(notifications.channelId, channelId)];
+  if (options?.types) {
+    conditions.push(inArray(notifications.type, options.types));
+  }
+
   const query = db
     .select({
       id: notifications.id,
@@ -332,6 +353,7 @@ export async function getNotifications(channelId: string, limit?: number) {
       message: notifications.message,
       href: notifications.href,
       commentText: comments.text,
+      reason: comments.reason,
       riskLevel: comments.riskLevel,
       category: comments.category,
       authorDisplayName: comments.authorDisplayName,
@@ -340,10 +362,10 @@ export async function getNotifications(channelId: string, limit?: number) {
     })
     .from(notifications)
     .leftJoin(comments, eq(notifications.commentId, comments.id))
-    .where(eq(notifications.channelId, channelId))
+    .where(and(...conditions))
     .orderBy(desc(notifications.createdAt));
 
-  return limit ? query.limit(limit) : query;
+  return options?.limit ? query.limit(options.limit) : query;
 }
 
 // 관리자 유저 상세 화면 전용 — 채널 구분 없이 그 유저의 최근 알림 전체
