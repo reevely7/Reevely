@@ -195,7 +195,7 @@ export function CommentsTable({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <BulkActionBar
           channelId={channelId}
           selectedIds={Array.from(selectedIds)}
@@ -205,6 +205,7 @@ export function CommentsTable({
           size="sm"
           variant={hideOriginal ? "default" : "outline"}
           onClick={() => setHideOriginal((v) => !v)}
+          className="ml-auto"
         >
           원문 숨김 {hideOriginal ? "ON" : "OFF"}
         </Button>
