@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { KakaoSignInButton } from "@/components/auth/kakao-sign-in-button";
+import { LandingMobileNav } from "@/components/landing/landing-mobile-nav";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { Button } from "@/components/ui/button";
 import { PricingTable } from "@/components/landing/pricing-table";
@@ -51,7 +52,7 @@ export default async function LandingPage({
   return (
     <main className="flex flex-1 flex-col">
       {/* 상단 내비게이션 */}
-      <header className="flex items-center justify-between px-8 py-5 sm:px-12">
+      <header className="relative flex items-center justify-between px-8 py-5 sm:px-12">
         <p className="text-lg font-semibold tracking-tight text-foreground">
           reevely
         </p>
@@ -76,6 +77,7 @@ export default async function LandingPage({
           </span>
         </nav>
         <div className="flex items-center gap-2">
+          <LandingMobileNav />
           <Button
             variant="ghost"
             size="sm"
@@ -179,7 +181,7 @@ export default async function LandingPage({
             확신 없는 판정은, 확정하지 않습니다
           </h2>
           <p className="text-sm text-muted-foreground">
-            AI가 확신하지 못한 댓글(confidence 0.7 미만)은 자동으로 확정하지
+            AI가 확신하지 못한 댓글(신뢰도 70% 미만)은 자동으로 확정하지
             않고 별도의 검토 큐로 분리합니다. 잘못된 확정보다, 사람이 한 번
             더 확인하는 쪽을 택했습니다.
           </p>
