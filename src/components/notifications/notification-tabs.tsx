@@ -21,17 +21,20 @@ export function NotificationTabs({
     } else {
       params.set("tab", tabKey);
     }
-    router.push(`${pathname}?${params.toString()}`);
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2" role="tablist">
       {NOTIFICATION_TABS.map((tab) => {
         const isActive = activeTab === tab.key;
         return (
           <button
             key={tab.key}
             type="button"
+            role="tab"
+            aria-selected={isActive}
             onClick={() => handleClick(tab.key)}
             className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
               isActive
