@@ -38,7 +38,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  /* 위험도 배지 전용 색 — 브랜드 팔레트와 분리된 "인장(印章)" 톤 */
+  /* 위험도 배지 전용 색 — 브랜드 그린(primary)과 분리된 시맨틱 톤 */
   --color-risk-high: var(--risk-high);
   --color-risk-high-foreground: var(--risk-high-foreground);
   --color-risk-high-bg: var(--risk-high-bg);
@@ -49,7 +49,7 @@
   --color-risk-low-foreground: var(--risk-low-foreground);
   --color-risk-low-bg: var(--risk-low-bg);
   --color-highlight: var(--highlight);
-  /* 상태 배지 전용 색 — primary(골드)·risk-medium(주황골드)과 헷갈리지 않도록 분리 */
+  /* 상태 배지 전용 색 — primary(그린)·risk-low(연녹)와 헷갈리지 않도록 분리 */
   --color-status-confirmed: var(--status-confirmed);
   --color-status-confirmed-bg: var(--status-confirmed-bg);
   --color-status-needs-review: var(--status-needs-review);
@@ -64,66 +64,65 @@
 }
 
 :root {
-  /* Reevely 다크 팔레트: 완전 무채색(R=G=B) 스모크 그래파이트 + 골든 위트 포인트.
-     라이트모드는 없음 — :root 하나가 유일한 팔레트. */
-  --background: #191919;
-  --foreground: #ececec;
-  --card: #1f1f1f;
-  --card-foreground: #ececec;
-  --popover: #1f1f1f;
-  --popover-foreground: #ececec;
-  --primary: #ccae5f;
-  --primary-foreground: #18150f;
-  --secondary: #222222;
-  --secondary-foreground: #ececec;
-  --muted: #1c1c1c;
-  --muted-foreground: #979797;
-  --accent: #222222;
-  --accent-foreground: #ececec;
-  --destructive: #e5484d;
-  --destructive-foreground: #ececec;
-  --border: rgba(255, 255, 255, 0.06);
-  --input: rgba(255, 255, 255, 0.12);
-  --ring: #ccae5f;
-  --chart-1: #ccae5f;
-  --chart-2: #ddc37c;
-  --chart-3: #979797;
-  --chart-4: #e2726f;
-  --chart-5: #4fa8a0;
+  /* Reevely 화이트+딥그린 팔레트 (2026-09-15 리디자인).
+     :root 하나가 유일한 팔레트 — 다크모드 없음. */
+  --background: #f8faf7;
+  --foreground: #1e2d26;
+  --card: #ffffff;
+  --card-foreground: #1e2d26;
+  --popover: #ffffff;
+  --popover-foreground: #1e2d26;
+  --primary: #3e6856;
+  --primary-foreground: #ffffff;
+  --secondary: #dbe6d9;
+  --secondary-foreground: #1e2d26;
+  --muted: #ededed;
+  --muted-foreground: #6b7a72;
+  --accent: #dbe6d9;
+  --accent-foreground: #1e2d26;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #ededed;
+  --input: #cad6c7;
+  --ring: #3e6856;
+  --chart-1: #3e6856;
+  --chart-2: #6b9080;
+  --chart-3: #cad6c7;
+  --chart-4: #d97706;
+  --chart-5: #4a7c82;
   --radius: 0.625rem;
-  --sidebar: #141414;
-  --sidebar-foreground: #ececec;
-  --sidebar-primary: #ccae5f;
-  --sidebar-primary-foreground: #18150f;
-  --sidebar-accent: #222222;
-  --sidebar-accent-foreground: #ececec;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
-  --sidebar-ring: #ccae5f;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1e2d26;
+  --sidebar-primary: #3e6856;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #dbe6d9;
+  --sidebar-accent-foreground: #1e2d26;
+  --sidebar-border: #ededed;
+  --sidebar-ring: #3e6856;
 
-  /* 선택된 행 배경 워시 전용. primary(#ccae5f)는 채도가 낮아 거의 검정에
-     가까운 배경 위에 반투명으로 얹으면 올리브/갈색으로 밀리므로, 더 밝고
-     채도 높은 골드를 따로 둔다 (텍스트·버튼에는 쓰지 않음) */
-  --highlight: #f2c14e;
+  /* 선택/확장된 행 배경 워시 전용 (comments-table.tsx의 bg-highlight/10) */
+  --highlight: #6b9080;
 
-  /* 위험도 배지 — accent(골드)와 분리된 고정 시맨틱 컬러. Medium은 accent와 헷갈리지
-     않도록 주황 쪽으로 밀어둠 */
-  --risk-high: #e2726f;
-  --risk-high-foreground: #18150f;
-  --risk-high-bg: rgba(226, 114, 111, 0.15);
-  --risk-medium: #d99a52;
-  --risk-medium-foreground: #18150f;
-  --risk-medium-bg: rgba(217, 154, 82, 0.16);
-  --risk-low: #979797;
-  --risk-low-foreground: #18150f;
-  --risk-low-bg: rgba(151, 151, 151, 0.14);
+  /* 위험도 배지 — 연한 배경(-bg)에 진한 텍스트(base) 쌍으로 쓰는 소프트 배지와,
+     notification-bell.tsx처럼 배경을 꽉 채우는 solid 배지(-foreground) 둘 다 지원 */
+  --risk-high: #dc2626;
+  --risk-high-foreground: #ffffff;
+  --risk-high-bg: rgba(220, 38, 38, 0.12);
+  --risk-medium: #d97706;
+  --risk-medium-foreground: #ffffff;
+  --risk-medium-bg: rgba(217, 119, 6, 0.14);
+  --risk-low: #3e8562;
+  --risk-low-foreground: #ffffff;
+  --risk-low-bg: rgba(62, 133, 98, 0.12);
 
-  /* "확정" 상태 배지 — 골드(primary)·주황골드(risk-medium)와 구분되는 블루 톤 */
-  --status-confirmed: #6e93d6;
-  --status-confirmed-bg: rgba(110, 147, 214, 0.16);
+  /* "확정/정상" 상태 배지 — 초록 계열 (risk-low와 계열은 같지만 별도 변수라
+     이후 톤을 따로 미세조정할 수 있음) */
+  --status-confirmed: #2f855a;
+  --status-confirmed-bg: rgba(47, 133, 90, 0.12);
 
-  /* "검토 필요" 상태 배지 — risk-medium(주황)과 구분되는 퍼플 톤 */
-  --status-needs-review: #a687d9;
-  --status-needs-review-bg: rgba(166, 135, 217, 0.16);
+  /* "검토 필요" 상태 배지 — 노랑/amber 계열 */
+  --status-needs-review: #b7791f;
+  --status-needs-review-bg: rgba(183, 121, 31, 0.14);
 }
 
 @layer base {
