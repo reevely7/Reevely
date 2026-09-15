@@ -54,7 +54,7 @@ function UsageBar({ label, used, limit }: UsageMetric) {
 }
 
 export function PlanUsageCard({
-  planLabel,
+  planLabel, // eslint-disable-line @typescript-eslint/no-unused-vars
   isPro,
   monthlyAnalysis,
   evidenceArchive,
@@ -72,7 +72,7 @@ export function PlanUsageCard({
     <div className="flex h-full min-h-72 flex-col gap-5 rounded-2xl bg-card px-5 py-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-card-foreground">
-          이번 달 사용량 · {planLabel} 플랜
+          채널 사용량
         </p>
         {!isPro && (
           <Link

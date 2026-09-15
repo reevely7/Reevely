@@ -22,7 +22,7 @@ export function RepeatAuthorNotificationsCard({
   return (
     <div className="flex flex-col gap-3 rounded-2xl bg-card px-5 py-4">
       <p className="text-sm font-medium text-card-foreground">
-        구독 제안
+        집중 모니터링 제안
       </p>
       <div className="flex flex-col divide-y divide-border">
         {rows.map((row) => {
