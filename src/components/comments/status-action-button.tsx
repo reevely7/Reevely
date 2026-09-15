@@ -12,7 +12,7 @@ type Props = {
   channelId: string;
   status: Status;
   label: string;
-  variant?: "default" | "outline" | "secondary" | "ghost";
+  variant?: "default" | "outline" | "secondary" | "ghost" | "destructive";
 };
 
 export function StatusActionButton({
