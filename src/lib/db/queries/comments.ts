@@ -293,41 +293,6 @@ export async function getUnanalyzedComments(channelId: string, limit: number) {
     .limit(limit);
 }
 
-export async function getDashboardSummary(channelId: string) {
-  const rows = await db
-    .select({
-      riskLevel: comments.riskLevel,
-      status: comments.status,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(comments)
-    .where(and(eq(comments.channelId, channelId), eq(comments.isMalicious, true)))
-    .groupBy(comments.riskLevel, comments.status);
-
-  const summary = { total: 0, high: 0, medium: 0, low: 0, needsReview: 0 };
-  for (const row of rows) {
-    summary.total += row.count;
-    if (row.riskLevel === "high") summary.high += row.count;
-    if (row.riskLevel === "medium") summary.medium += row.count;
-    if (row.riskLevel === "low") summary.low += row.count;
-    if (row.status === "needs_review") summary.needsReview += row.count;
-  }
-  return summary;
-}
-
-// 대시보드 "악성 비율" KPI 분모 — 채널에 수집된 댓글 중 AI 분석이 끝난 전체 건수
-// (악성 여부와 무관하게 isMalicious가 null이 아니면 분석 완료)
-export async function countAnalyzedCommentsByChannelId(channelId: string) {
-  const [row] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(comments)
-    .where(
-      and(eq(comments.channelId, channelId), isNotNull(comments.isMalicious)),
-    );
-
-  return row?.count ?? 0;
-}
-
 // 주간 요약 KPI "총 댓글" — 기간 내 분석 완료된 전체 댓글 수(악성 여부 무관)
 export async function countAnalyzedCommentsInRange(
   channelId: string,
@@ -341,6 +306,28 @@ export async function countAnalyzedCommentsInRange(
       and(
         eq(comments.channelId, channelId),
         isNotNull(comments.isMalicious),
+        gte(comments.createdAt, from),
+        lt(comments.createdAt, to),
+      ),
+    );
+
+  return row?.count ?? 0;
+}
+
+// 대시보드 KPI 타일 "검토 필요" 지난주 대비 계산용 — 기간 내 검토 필요 상태인 악성 댓글 수
+export async function countNeedsReviewInRange(
+  channelId: string,
+  from: Date,
+  to: Date,
+) {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.channelId, channelId),
+        eq(comments.isMalicious, true),
+        eq(comments.status, "needs_review"),
         gte(comments.createdAt, from),
         lt(comments.createdAt, to),
       ),

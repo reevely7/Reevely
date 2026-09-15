@@ -20,6 +20,7 @@ import { LogoutButton } from "@/components/auth/logout-button";
 import { BellIcon } from "@/components/icons/bell-icon";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { SyncCountdown } from "@/components/layout/sync-countdown";
+import { wordmarkFont } from "@/lib/fonts";
 import { formatClockTime } from "@/lib/format/clock-time";
 
 type SidebarChannel = {
@@ -69,9 +70,10 @@ export function AppSidebar({
       <header className="flex items-center justify-between border-b border-sidebar-border bg-sidebar px-4 py-3 md:hidden">
         <Link
           href={homeHref}
-          className="text-lg font-semibold tracking-tight text-sidebar-foreground"
+          className="flex items-center gap-0.5 text-lg font-extrabold tracking-tight text-sidebar-foreground"
         >
-          reevely
+          <Image src="/logo-mark.png" alt="" width={44} height={44} />
+          <span className={`${wordmarkFont.className} relative top-1`}>Reevely</span>
         </Link>
         <button
           type="button"
@@ -92,7 +94,7 @@ export function AppSidebar({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 -translate-x-full flex-col justify-between bg-sidebar px-4 py-5 text-sidebar-foreground transition-transform duration-200 md:static md:z-auto md:w-60 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 -translate-x-full flex-col justify-between border-r border-[#CAD6CF] bg-sidebar px-4 py-5 text-sidebar-foreground transition-transform duration-200 md:static md:z-auto md:w-60 md:translate-x-0 ${
           isOpen ? "translate-x-0" : ""
         }`}
       >
@@ -100,9 +102,10 @@ export function AppSidebar({
           <div className="flex items-center justify-between">
             <Link
               href={homeHref}
-              className="text-xl font-semibold tracking-tight"
+              className="flex items-center gap-0.5 text-xl font-extrabold tracking-tight"
             >
-              reevely
+              <Image src="/logo-mark.png" alt="" width={52} height={52} />
+              <span className={`${wordmarkFont.className} relative top-1`}>Reevely</span>
             </Link>
             <button
               type="button"

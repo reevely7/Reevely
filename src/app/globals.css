@@ -67,7 +67,7 @@
 :root {
   /* Reevely 화이트+딥그린 팔레트 (2026-09-15 리디자인).
      :root 하나가 유일한 팔레트 — 다크모드 없음. */
-  --background: #f8faf7;
+  --background: #f8f8f8;
   --foreground: #1e2d26;
   --card: #ffffff;
   --card-foreground: #1e2d26;
@@ -84,7 +84,7 @@
   --accent-foreground: #1e2d26;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --border: #ededed;
+  --border: #d6d6d6;
   --input: #cad6c7;
   --ring: #3e6856;
   --chart-1: #3e6856;
@@ -93,13 +93,13 @@
   --chart-4: #d97706;
   --chart-5: #4a7c82;
   --radius: 0.625rem;
-  --sidebar: #ffffff;
+  --sidebar: #f8f8f8;
   --sidebar-foreground: #1e2d26;
-  --sidebar-primary: #3e6856;
+  --sidebar-primary: #1e2d26;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #dbe6d9;
   --sidebar-accent-foreground: #1e2d26;
-  --sidebar-border: #ededed;
+  --sidebar-border: #d6d6d6;
   --sidebar-ring: #3e6856;
 
   /* 선택/확장된 행 배경 워시 전용 (comments-table.tsx의 bg-highlight/10) */
@@ -123,8 +123,8 @@
   --status-confirmed-bg: rgba(47, 133, 90, 0.12);
 
   /* "검토 필요" 상태 배지 — 노랑/amber 계열 */
-  --status-needs-review: #92600f;
-  --status-needs-review-bg: rgba(183, 121, 31, 0.14);
+  --status-needs-review: #9a6700;
+  --status-needs-review-bg: #fff8c5;
 }
 
 @layer base {
@@ -132,7 +132,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-semibold;
   }
   html {
     @apply font-sans;

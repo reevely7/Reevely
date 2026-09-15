@@ -61,30 +61,45 @@ export default async function ChannelLayout({
   const planLabel = subscription ? PLAN_LABELS[subscription.plan] : "무료";
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden md:flex-row">
-      <AppSidebar
-        channels={channelsWithSync}
-        activeChannelId={channelId}
-        planLabel={planLabel}
-        reviewCount={reviewCount}
-        unreadNotificationCount={unreadNotificationCount}
-        atChannelLimit={atChannelLimit}
-      />
-      <div className="flex flex-1 flex-col overflow-y-auto bg-background">
-        <header className="flex shrink-0 items-center justify-end gap-4 border-b border-border px-6 py-2 sm:px-10">
-          <Link
-            href="/mypage"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            {nickname || "마이페이지"}
-          </Link>
-          <NotificationBell
-            notifications={recentNotifications}
-            unreadCount={unreadNotificationCount}
-            channelId={channelId}
-          />
-        </header>
-        {children}
+    <div className="flex h-dvh flex-col overflow-hidden">
+      <header className="hidden shrink-0 items-center justify-end gap-4 border-b border-[#CAD6CF] bg-[#EEEFF1] px-6 py-2 md:flex">
+        <Link
+          href="/mypage"
+          className="text-sm text-muted-foreground hover:text-foreground"
+        >
+          {nickname || "마이페이지"}
+        </Link>
+        <NotificationBell
+          notifications={recentNotifications}
+          unreadCount={unreadNotificationCount}
+          channelId={channelId}
+        />
+      </header>
+      <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
+        <AppSidebar
+          channels={channelsWithSync}
+          activeChannelId={channelId}
+          planLabel={planLabel}
+          reviewCount={reviewCount}
+          unreadNotificationCount={unreadNotificationCount}
+          atChannelLimit={atChannelLimit}
+        />
+        <div className="flex flex-1 flex-col overflow-y-auto bg-background">
+          <header className="flex shrink-0 items-center justify-end gap-4 border-b border-[#CAD6CF] bg-[#EEEFF1] px-6 py-2 sm:px-10 md:hidden">
+            <Link
+              href="/mypage"
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              {nickname || "마이페이지"}
+            </Link>
+            <NotificationBell
+              notifications={recentNotifications}
+              unreadCount={unreadNotificationCount}
+              channelId={channelId}
+            />
+          </header>
+          {children}
+        </div>
       </div>
     </div>
   );

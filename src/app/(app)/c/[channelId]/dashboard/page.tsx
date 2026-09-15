@@ -3,24 +3,21 @@ import { notFound } from "next/navigation";
 import { DailyTrendCard } from "@/components/dashboard/daily-trend-card";
 import { PlanUsageCard } from "@/components/dashboard/plan-usage-card";
 import { RecentCommentsPreview } from "@/components/dashboard/recent-comments-preview";
-import { RepeatAuthorNotificationsCard } from "@/components/dashboard/repeat-author-notifications-card";
-import { ReviewCallout } from "@/components/dashboard/review-callout";
 import { SummaryTiles } from "@/components/dashboard/summary-tiles";
 import { TopAuthorsCard } from "@/components/dashboard/top-authors-card";
 import { TopVideosCard } from "@/components/dashboard/top-videos-card";
 import { countActiveChannelsByUserId, getChannelById } from "@/lib/db/queries/channels";
 import {
-  countAnalyzedCommentsByChannelId,
+  countAnalyzedCommentsInRange,
   countAnalyzedCommentsThisMonthByUserId,
   countArchivedCommentsByUserId,
   countMaliciousCommentsInRange,
+  countNeedsReviewInRange,
   getDailyMaliciousCounts,
-  getDashboardSummary,
   getFlaggedComments,
   getTopAuthorsByMaliciousCount,
   getTopVideosByMaliciousCount,
 } from "@/lib/db/queries/comments";
-import { getNotifications } from "@/lib/db/queries/notifications";
 import {
   getChannelLimitForUser,
   getEvidenceArchiveLimitForUser,
@@ -29,7 +26,7 @@ import {
   getVideoLimitForUser,
   PLAN_LABELS,
 } from "@/lib/db/queries/subscriptions";
-import { formatClockTime } from "@/lib/format/clock-time";
+import { pickGreeting } from "@/lib/greeting";
 
 const RECENT_COMMENTS_LIMIT = 5;
 const TREND_DAYS = 7;
@@ -54,14 +51,15 @@ export default async function DashboardPage({
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
   const [
-    summary,
     recentComments,
-    allNotifications,
     dailyCounts,
     thisWeekCount,
     lastWeekCount,
+    thisWeekAnalyzed,
+    lastWeekAnalyzed,
+    thisWeekNeedsReview,
+    lastWeekNeedsReview,
     topAuthorsAllTime,
-    analyzedCount,
     topVideos,
     subscription,
     monthlyAnalysisLimit,
@@ -72,14 +70,15 @@ export default async function DashboardPage({
     channelsUsed,
     videoLimit,
   ] = await Promise.all([
-    getDashboardSummary(channelId),
     getFlaggedComments(channelId, { sort: "risk" }, 1, RECENT_COMMENTS_LIMIT),
-    getNotifications(channelId, { limit: 30 }),
     getDailyMaliciousCounts(channelId, oneWeekAgo, now),
     countMaliciousCommentsInRange(channelId, oneWeekAgo, now),
     countMaliciousCommentsInRange(channelId, twoWeeksAgo, oneWeekAgo),
+    countAnalyzedCommentsInRange(channelId, oneWeekAgo, now),
+    countAnalyzedCommentsInRange(channelId, twoWeeksAgo, oneWeekAgo),
+    countNeedsReviewInRange(channelId, oneWeekAgo, now),
+    countNeedsReviewInRange(channelId, twoWeeksAgo, oneWeekAgo),
     getTopAuthorsByMaliciousCount(channelId, TOP_LIST_LIMIT),
-    countAnalyzedCommentsByChannelId(channelId),
     getTopVideosByMaliciousCount(channelId, oneWeekAgo, TOP_LIST_LIMIT),
     getSubscriptionByUserId(channel.userId),
     getMonthlyAnalysisLimitForUser(channel.userId),
@@ -94,51 +93,43 @@ export default async function DashboardPage({
   const planLabel = subscription ? PLAN_LABELS[subscription.plan] : "무료";
   const isPro = subscription?.plan === "pro";
 
-  const maliciousRate =
-    analyzedCount > 0 ? Math.round((summary.total / analyzedCount) * 100) : 0;
-  const protectedCount = Math.max(0, summary.total - summary.needsReview);
+  const maliciousRateThisWeek =
+    thisWeekAnalyzed > 0 ? Math.round((thisWeekCount / thisWeekAnalyzed) * 100) : 0;
+  const maliciousRateLastWeek =
+    lastWeekAnalyzed > 0 ? Math.round((lastWeekCount / lastWeekAnalyzed) * 100) : 0;
+  const protectedCountThisWeek = Math.max(0, thisWeekCount - thisWeekNeedsReview);
+  const protectedCountLastWeek = Math.max(0, lastWeekCount - lastWeekNeedsReview);
 
-  const repeatAuthorNotifications = allNotifications
-    .filter((n) => n.type === "repeat_author")
-    .slice(0, 3);
+  const greeting = pickGreeting(now);
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xl font-semibold tracking-tight text-foreground">
-            안녕하세요! 👋
+          <p className="text-2xl font-bold tracking-tight text-foreground">
+            {greeting.heading}
           </p>
-          <p className="text-xs text-muted-foreground">
-            오늘도 안전한 창작 활동을 응원해요.
-          </p>
+          <p className="text-sm text-muted-foreground">{greeting.message}</p>
         </div>
-        <div className="text-left sm:text-right">
-          <p className="text-xs text-muted-foreground">
+        <div className="text-left sm:mt-8 sm:text-right">
+          <p className="text-base text-muted-foreground">
             {formatHeaderDate(oneWeekAgo)} - {formatHeaderDate(now)}
-          </p>
-          <p className="text-[11px] text-muted-foreground">
-            최근 갱신{" "}
-            {channel.lastSyncedAt
-              ? formatClockTime(channel.lastSyncedAt)
-              : "-"}
           </p>
         </div>
       </header>
 
       <SummaryTiles
         kpis={{
-          totalComments: analyzedCount,
-          needsReview: summary.needsReview,
-          maliciousRate,
-          protectedCount,
+          totalComments: { value: thisWeekAnalyzed, previous: lastWeekAnalyzed },
+          needsReview: { value: thisWeekNeedsReview, previous: lastWeekNeedsReview },
+          maliciousRate: { value: maliciousRateThisWeek, previous: maliciousRateLastWeek },
+          protectedCount: { value: protectedCountThisWeek, previous: protectedCountLastWeek },
         }}
         channelId={channelId}
       />
 
-      <ReviewCallout count={summary.needsReview} channelId={channelId} />
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr]">
+        <RecentCommentsPreview rows={recentComments} channelId={channelId} />
         <DailyTrendCard
           dailyCounts={dailyCounts}
           days={TREND_DAYS}
@@ -146,16 +137,15 @@ export default async function DashboardPage({
           lastWeekCount={lastWeekCount}
           channelId={channelId}
         />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <TopVideosCard rows={topVideos} channelId={channelId} />
         <TopAuthorsCard
           title="반복 위험 작성자 TOP 5"
           rows={topAuthorsAllTime}
           channelId={channelId}
         />
-      </div>
-
-      <RecentCommentsPreview rows={recentComments} channelId={channelId} />
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <PlanUsageCard
           planLabel={planLabel}
           isPro={isPro}
@@ -180,10 +170,7 @@ export default async function DashboardPage({
             limit: channelLimit,
           }}
         />
-        <TopVideosCard rows={topVideos} channelId={channelId} />
       </div>
-
-      <RepeatAuthorNotificationsCard rows={repeatAuthorNotifications} />
     </main>
   );
 }

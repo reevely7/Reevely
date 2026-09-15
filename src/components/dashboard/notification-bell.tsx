@@ -86,9 +86,9 @@ export function NotificationBell({
         aria-label={
           unreadCount > 0 ? `알림, 안읽음 ${unreadCount}개` : "알림"
         }
-        className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-md text-foreground transition-colors hover:bg-accent"
+        className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-foreground transition-colors hover:bg-accent"
       >
-        <BellIcon className="size-6" />
+        <BellIcon className="size-5" />
         {unreadCount > 0 && (
           <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-risk-high px-1 font-mono text-[10px] font-semibold text-risk-high-foreground">
             {unreadCount > 9 ? "9+" : unreadCount}

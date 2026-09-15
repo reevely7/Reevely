@@ -14,7 +14,7 @@ export function TopVideosCard({
   channelId: string;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl bg-card px-5 py-4">
+    <div className="flex flex-col gap-3 rounded-lg border border-[#CAD6CF] bg-card px-5 py-4">
       <p className="text-sm font-medium text-card-foreground">
         최근 위험 댓글이 몰린 영상
       </p>

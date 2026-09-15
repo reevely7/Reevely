@@ -40,7 +40,7 @@ export function DailyTrendCard({
   const max = Math.max(1, ...bars.map((bar) => bar.count));
 
   return (
-    <div className="flex h-full min-h-72 flex-col gap-4 rounded-2xl bg-card px-5 py-4">
+    <div className="flex h-full min-h-72 flex-col gap-4 rounded-lg border border-[#CAD6CF] bg-card px-5 py-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-card-foreground">
           최근 {days}일 위험 댓글 추이

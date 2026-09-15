@@ -16,7 +16,7 @@ export function TopAuthorsCard({
   channelId: string;
 }) {
   return (
-    <div className="flex h-full flex-col gap-3 rounded-2xl bg-card px-5 py-4">
+    <div className="flex h-full flex-col gap-3 rounded-lg border border-[#CAD6CF] bg-card px-5 py-4">
       <p className="text-sm font-medium text-card-foreground">{title}</p>
 
       {rows.length === 0 ? (

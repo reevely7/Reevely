@@ -2,14 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  Archive,
+  BarChart3,
+  Bell,
+  LayoutDashboard,
+  MessageSquare,
+  ShieldCheck,
+} from "lucide-react";
 
 const NAV_ITEMS = [
-  { path: "dashboard", label: "대시보드" },
-  { path: "comments", label: "댓글 목록" },
-  { path: "review", label: "검토 필요" },
-  { path: "evidence-archive", label: "증거 보관함" },
-  { path: "notifications", label: "알림" },
-  { path: "summary", label: "주간 요약" },
+  { path: "dashboard", label: "대시보드", icon: LayoutDashboard },
+  { path: "comments", label: "댓글 목록", icon: MessageSquare },
+  { path: "review", label: "검토 필요", icon: ShieldCheck },
+  { path: "evidence-archive", label: "증거 보관함", icon: Archive },
+  { path: "notifications", label: "알림", icon: Bell },
+  { path: "summary", label: "주간 요약", icon: BarChart3 },
 ];
 
 const BADGE_COUNT_PATH: Record<string, "reviewCount" | "unreadNotificationCount"> = {
@@ -41,19 +49,18 @@ export function SidebarNav({
           <Link
             key={item.path}
             href={href}
-            className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
+            className={`flex items-center justify-between rounded-lg pl-[30px] pr-3 py-2.5 text-sm font-semibold transition-colors ${
               isActive
-                ? "bg-primary text-primary-foreground"
+                ? "bg-sidebar-primary text-sidebar-primary-foreground"
                 : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
             }`}
           >
-            <span>{item.label}</span>
+            <span className="flex items-center gap-[22px]">
+              <item.icon className="size-4 shrink-0" aria-hidden />
+              <span>{item.label}</span>
+            </span>
             {count > 0 && (
-              <span
-                className={`font-mono text-xs ${
-                  isActive ? "text-primary-foreground" : "text-primary"
-                }`}
-              >
+              <span className="rounded-full bg-secondary px-2 py-0.5 font-mono text-xs text-secondary-foreground">
                 {count}
               </span>
             )}

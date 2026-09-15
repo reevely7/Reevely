@@ -33,7 +33,7 @@ function UsageBar({ label, used, limit }: UsageMetric) {
 
   const percent = Math.min(100, Math.round((used / limit) * 100));
   const barClass =
-    percent >= 90 ? "bg-risk-high" : percent >= 70 ? "bg-risk-medium" : "bg-primary";
+    percent >= 90 ? "bg-risk-high/60" : percent >= 70 ? "bg-risk-medium" : "bg-primary";
 
   return (
     <div className="space-y-1.5">
@@ -68,7 +68,7 @@ export function PlanUsageCard({
   videos: UsageMetric;
 }) {
   return (
-    <div className="flex h-full min-h-72 flex-col gap-5 rounded-2xl bg-card px-5 py-4">
+    <div className="flex h-full min-h-72 flex-col gap-5 rounded-lg border border-[#CAD6CF] bg-card px-5 py-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-card-foreground">
           채널 사용량
