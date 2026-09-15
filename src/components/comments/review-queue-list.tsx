@@ -115,9 +115,10 @@ export function ReviewQueueList({
                 <Button
                   size="sm"
                   variant="ghost"
+                  aria-expanded={isExpanded}
                   onClick={() => setExpandedId(isExpanded ? null : comment.id)}
                 >
-                  상세
+                  상세보기
                 </Button>
               </div>
             </div>

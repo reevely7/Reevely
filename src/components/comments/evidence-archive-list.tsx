@@ -126,6 +126,7 @@ export function EvidenceArchiveList({
                 <Button
                   size="sm"
                   variant="ghost"
+                  aria-expanded={isExpanded}
                   onClick={() => setExpandedId(isExpanded ? null : comment.id)}
                 >
                   미리보기
