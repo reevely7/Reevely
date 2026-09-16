@@ -328,6 +328,53 @@ export async function searchAuthors(
   }));
 }
 
+// 영상별 보기 페이지용 — query가 있으면 제목으로 필터링하고, 없으면(초기 화면)
+// 악성 댓글이 많은 순으로 기본 목록을 보여준다
+export async function searchVideos(
+  channelId: string,
+  query: string,
+  limit: number,
+  videoType?: "video" | "shorts",
+  sort: "latest" | "malicious" = "latest",
+) {
+  const conditions = [
+    eq(comments.channelId, channelId),
+    eq(comments.isMalicious, true),
+  ];
+  if (query) {
+    conditions.push(ilike(comments.videoTitle, `%${query}%`));
+  }
+  if (videoType) {
+    conditions.push(eq(comments.videoType, videoType));
+  }
+
+  const orderBy =
+    sort === "malicious"
+      ? sql`count(*) desc`
+      : sql`max(${comments.createdAt}) desc`;
+
+  const rows = await db
+    .select({
+      videoId: comments.videoId,
+      videoTitle: sql<string | null>`max(${comments.videoTitle})`,
+      videoType: sql<string | null>`max(${comments.videoType})`,
+      count: sql<number>`count(*)::int`,
+      // postgres.js는 집계 함수(max) 결과의 timestamptz를 Date가 아닌 문자열로
+      // 반환하므로, 일반 컬럼 select와 달리 여기서 직접 Date로 변환해줘야 한다
+      lastCommentAt: sql<string>`max(${comments.createdAt})`,
+    })
+    .from(comments)
+    .where(and(...conditions))
+    .groupBy(comments.videoId)
+    .orderBy(orderBy)
+    .limit(limit);
+
+  return rows.map((row) => ({
+    ...row,
+    lastCommentAt: new Date(row.lastCommentAt),
+  }));
+}
+
 // 대시보드 "최근 악성 댓글 몰린 영상" 위젯용 — 기간 내 영상별 악성 댓글 수 상위
 export async function getTopVideosByMaliciousCount(
   channelId: string,
@@ -496,22 +543,15 @@ export async function countFlaggedComments(
 
 export async function getFlaggedFilterOptions(channelId: string) {
   const rows = await db
-    .selectDistinct({
-      category: comments.category,
-      videoId: comments.videoId,
-      videoTitle: comments.videoTitle,
-    })
+    .selectDistinct({ category: comments.category })
     .from(comments)
     .where(and(eq(comments.channelId, channelId), eq(comments.isMalicious, true)));
 
   const categories = Array.from(
     new Set(rows.map((r) => r.category).filter((c): c is string => c !== null)),
   );
-  const videos = Array.from(
-    new Map(rows.map((r) => [r.videoId, r.videoTitle])).entries(),
-  ).map(([videoId, videoTitle]) => ({ videoId, videoTitle }));
 
-  return { categories, videos };
+  return { categories };
 }
 
 export async function getCommentsByAuthor(

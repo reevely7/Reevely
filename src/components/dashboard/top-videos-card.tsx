@@ -15,9 +15,17 @@ export function TopVideosCard({
 }) {
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-[#CAD6CF] bg-card px-5 py-4">
-      <p className="text-sm font-medium text-card-foreground">
-        최근 위험 댓글이 몰린 영상
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-card-foreground">
+          최근 위험 댓글이 몰린 영상
+        </p>
+        <Link
+          href={`/c/${channelId}/videos`}
+          className="text-xs text-primary underline underline-offset-2"
+        >
+          전체 보기 →
+        </Link>
+      </div>
 
       {rows.length === 0 ? (
         <p className="py-4 text-center text-sm text-muted-foreground">

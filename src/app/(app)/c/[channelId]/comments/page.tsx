@@ -74,7 +74,6 @@ export default async function CommentsPage({
 
       <CommentFilters
         categories={filterOptions.categories}
-        videos={filterOptions.videos}
         totalCount={allCount}
         filteredCount={totalCount}
       />

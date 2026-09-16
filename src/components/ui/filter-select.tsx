@@ -34,7 +34,7 @@ export function FilterSelect({
         onValueChange(next === ALL_VALUE || next === null ? "" : next)
       }
     >
-      <SelectTrigger className="h-8 w-fit min-w-28 text-sm">
+      <SelectTrigger className="data-[size=default]:h-9 w-fit min-w-28 rounded-md border-border bg-background px-3 text-xs">
         <SelectValue>
           {(selected: string) => labelByValue[selected] ?? selected}
         </SelectValue>

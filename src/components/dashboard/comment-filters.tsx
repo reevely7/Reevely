@@ -14,14 +14,12 @@ const STATUS_LABELS: Record<string, string> = {
 
 type Props = {
   categories: string[];
-  videos: Array<{ videoId: string; videoTitle: string | null }>;
   totalCount: number;
   filteredCount: number;
 };
 
 export function CommentFilters({
   categories,
-  videos,
   totalCount,
   filteredCount,
 }: Props) {
@@ -123,18 +121,6 @@ export function CommentFilters({
             { value: "", label: "플랫폼 전체" },
             { value: "youtube", label: "유튜브" },
             { value: "instagram", label: "인스타그램" },
-          ]}
-        />
-
-        <FilterSelect
-          value={searchParams.get("video") ?? ""}
-          onValueChange={(value) => updateParam("video", value)}
-          options={[
-            { value: "", label: "영상 전체" },
-            ...videos.map(({ videoId, videoTitle }) => ({
-              value: videoId,
-              label: videoTitle ?? videoId,
-            })),
           ]}
         />
 

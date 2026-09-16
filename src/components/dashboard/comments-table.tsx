@@ -205,8 +205,8 @@ export function CommentsTable({
       <div className="overflow-x-auto rounded-2xl border border-[#CAD6CF] bg-card">
         <table className="w-full min-w-[820px] border-collapse text-left text-[13px]">
           <thead>
-            <tr className="border-b border-border bg-[#EEEFF1] text-[11px] text-muted-foreground">
-              <th className="w-8 px-4 py-4 font-medium">
+            <tr className="border-b border-border bg-[#EEEFF1] text-[13px] text-muted-foreground">
+              <th className="w-8 px-4 py-4 font-semibold">
                 <input
                   type="checkbox"
                   checked={selectedIds.size === rows.length}
@@ -215,14 +215,14 @@ export function CommentsTable({
                   className="size-3.5 accent-primary"
                 />
               </th>
-              <th className="w-8 px-2 py-4 font-medium" />
-              <th className="px-2 py-4 font-medium">위험도</th>
-              <th className="px-2 py-4 font-medium whitespace-nowrap">플랫폼</th>
-              <th className="px-2 py-4 font-medium">댓글 내용 또는 AI 요약</th>
-              <th className="max-w-[8rem] px-2 py-4 font-medium">작성자</th>
-              <th className="px-2 py-4 font-medium whitespace-nowrap">유형</th>
-              <th className="px-2 py-4 font-medium whitespace-nowrap">날짜</th>
-              <th className="px-2 py-4 font-medium whitespace-nowrap">상태</th>
+              <th className="w-8 px-2 py-4 font-semibold" />
+              <th className="px-2 py-4 font-semibold">위험도</th>
+              <th className="px-2 py-4 font-semibold whitespace-nowrap">플랫폼</th>
+              <th className="px-2 py-4 font-semibold">댓글 내용 또는 AI 요약</th>
+              <th className="max-w-[8rem] px-2 py-4 font-semibold">작성자</th>
+              <th className="px-2 py-4 font-semibold whitespace-nowrap">유형</th>
+              <th className="px-2 py-4 font-semibold whitespace-nowrap">날짜</th>
+              <th className="px-2 py-4 font-semibold whitespace-nowrap">상태</th>
             </tr>
           </thead>
           <tbody>
