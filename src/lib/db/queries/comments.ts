@@ -766,12 +766,21 @@ export async function getArchivedCommentCountsByUser() {
     .groupBy(comments.userId);
 }
 
-export async function getArchivedComments(channelId: string) {
+// 증거 보관함 좌측 목록 무한스크롤 한 번에 불러오는 건수
+export const ARCHIVE_PAGE_SIZE = 30;
+
+export async function getArchivedComments(
+  channelId: string,
+  limit: number,
+  offset: number,
+) {
   return db
     .select()
     .from(comments)
     .where(and(eq(comments.channelId, channelId), eq(comments.isArchived, true)))
-    .orderBy(sql`${comments.archivedAt} desc`);
+    .orderBy(sql`${comments.archivedAt} desc`)
+    .limit(limit)
+    .offset(offset);
 }
 
 // 주간 요약 KPI "증거 보관"(누적 전체) — 이 채널에서 현재 보관 중인 증거 건수

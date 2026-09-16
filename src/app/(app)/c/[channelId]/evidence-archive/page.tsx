@@ -4,7 +4,12 @@ import { Archive } from "lucide-react";
 import { EvidenceArchiveList } from "@/components/comments/evidence-archive-list";
 import { buttonVariants } from "@/components/ui/button";
 import { requireChannelOwnership } from "@/lib/auth/require-channel-ownership";
-import { getArchivedComments, getCommentsByAuthor } from "@/lib/db/queries/comments";
+import {
+  ARCHIVE_PAGE_SIZE,
+  countArchivedCommentsByChannelId,
+  getArchivedComments,
+  getCommentsByAuthor,
+} from "@/lib/db/queries/comments";
 
 export default async function EvidenceArchivePage({
   params,
@@ -13,7 +18,10 @@ export default async function EvidenceArchivePage({
 }) {
   const { channelId } = await params;
   await requireChannelOwnership(channelId);
-  const archived = await getArchivedComments(channelId);
+  const [archived, total] = await Promise.all([
+    getArchivedComments(channelId, ARCHIVE_PAGE_SIZE, 0),
+    countArchivedCommentsByChannelId(channelId),
+  ]);
 
   // 작성자별로 한 번만 조회해서 "이 작성자의 다른 댓글" 요약에 재사용한다
   // (같은 작성자가 여러 건 보관돼 있어도 중복 쿼리하지 않음)
@@ -57,6 +65,7 @@ export default async function EvidenceArchivePage({
           archived={archived}
           channelId={channelId}
           authorHistory={authorHistory}
+          hasMore={archived.length < total}
         />
       )}
     </main>

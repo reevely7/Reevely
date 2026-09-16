@@ -87,6 +87,26 @@ type HistoryRow = {
   createdAt: Date;
 };
 
+// fetch로 받은 JSON은 Date가 문자열로 직렬화돼 있어, 화면에서 쓰기 전에
+// 실제 Date 인스턴스로 되돌려야 한다 (formatDate 등이 Date 메서드를 호출함)
+type RawRow = Omit<Row, "createdAt" | "archivedAt"> & {
+  createdAt: string;
+  archivedAt: string | null;
+};
+type RawHistoryRow = Omit<HistoryRow, "createdAt"> & { createdAt: string };
+
+function reviveRow(raw: RawRow): Row {
+  return {
+    ...raw,
+    createdAt: new Date(raw.createdAt),
+    archivedAt: raw.archivedAt ? new Date(raw.archivedAt) : null,
+  };
+}
+
+function reviveHistoryRow(raw: RawHistoryRow): HistoryRow {
+  return { ...raw, createdAt: new Date(raw.createdAt) };
+}
+
 type RiskLevel = "high" | "medium" | "low";
 
 const RISK_LEVELS: RiskLevel[] = ["high", "medium", "low"];
@@ -113,20 +133,28 @@ export function EvidenceArchiveList({
   archived,
   channelId,
   authorHistory,
+  hasMore: initialHasMore,
 }: {
   archived: Row[];
   channelId: string;
   authorHistory: Record<string, HistoryRow[]>;
+  hasMore: boolean;
 }) {
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "all">("all");
+  const [items, setItems] = useState(archived);
+  const [authorHistoryMap, setAuthorHistoryMap] =
+    useState<Record<string, HistoryRow[]>>(authorHistory);
   const [selectedId, setSelectedId] = useState(archived[0]?.id ?? null);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(
     () =>
       riskFilter === "all"
-        ? archived
-        : archived.filter((comment) => comment.riskLevel === riskFilter),
-    [archived, riskFilter],
+        ? items
+        : items.filter((comment) => comment.riskLevel === riskFilter),
+    [items, riskFilter],
   );
 
   const selected =
@@ -136,8 +164,54 @@ export function EvidenceArchiveList({
     setRiskFilter(level);
   }
 
+  async function loadMore() {
+    if (isLoadingMore || !hasMore) return;
+    setIsLoadingMore(true);
+
+    const res = await fetch(
+      `/api/comments/archive?channelId=${channelId}&offset=${items.length}`,
+    );
+
+    if (res.ok) {
+      const data = (await res.json()) as {
+        items: RawRow[];
+        authorHistory: Record<string, RawHistoryRow[]>;
+        hasMore: boolean;
+      };
+      setItems((prev) => [...prev, ...data.items.map(reviveRow)]);
+      setAuthorHistoryMap((prev) => {
+        const next = { ...prev };
+        for (const [authorChannelId, history] of Object.entries(data.authorHistory)) {
+          next[authorChannelId] = history.map(reviveHistoryRow);
+        }
+        return next;
+      });
+      setHasMore(data.hasMore);
+    } else {
+      setHasMore(false);
+    }
+    setIsLoadingMore(false);
+  }
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          void loadMore();
+        }
+      },
+      { root: sentinel.parentElement, rootMargin: "200px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMore, isLoadingMore, items.length]);
+
   return (
-    <div className="flex min-h-[70vh] overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="flex h-[78vh] overflow-hidden rounded-2xl border border-border bg-card">
       <div className="flex w-[340px] shrink-0 flex-col border-r border-border">
         <div className="flex gap-1.5 border-b border-border p-3">
           <button
@@ -201,6 +275,13 @@ export function EvidenceArchiveList({
               </button>
             );
           })}
+          {hasMore && (
+            <div ref={sentinelRef} className="flex justify-center py-4">
+              <span className="text-[11px] text-muted-foreground">
+                {isLoadingMore ? "불러오는 중…" : ""}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -214,7 +295,7 @@ export function EvidenceArchiveList({
             key={selected.id}
             comment={selected}
             channelId={channelId}
-            history={authorHistory[selected.authorChannelId] ?? []}
+            history={authorHistoryMap[selected.authorChannelId] ?? []}
           />
         )}
       </div>
@@ -242,7 +323,7 @@ function EvidenceDetail({
   const otherComments = history.filter((row) => row.id !== comment.id).slice(0, 4);
 
   return (
-    <div className="flex max-w-4xl flex-col gap-5">
+    <div className="mx-auto flex max-w-4xl flex-col gap-5">
       <div className="flex flex-wrap items-center gap-2">
         {risk && <RiskBadge riskLevel={risk} />}
         <PlatformIcon platform={comment.platform} />
