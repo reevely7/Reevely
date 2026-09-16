@@ -82,7 +82,7 @@ export default async function ChannelLayout({
           unreadNotificationCount={unreadNotificationCount}
           atChannelLimit={atChannelLimit}
         />
-        <div className="flex flex-1 flex-col overflow-y-auto bg-background">
+        <div className="flex flex-1 flex-col overflow-y-scroll bg-background">
           <header className="flex shrink-0 items-center justify-end gap-4 border-b border-[#CAD6CF] bg-[#EEEFF1] px-6 py-2 sm:px-10 md:hidden">
             <TopBarAccountMenu
               nickname={nickname}

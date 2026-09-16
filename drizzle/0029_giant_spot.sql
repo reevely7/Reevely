@@ -1,0 +1,1 @@
+ALTER TABLE "comments" ADD COLUMN "uncertainty_reason" text;

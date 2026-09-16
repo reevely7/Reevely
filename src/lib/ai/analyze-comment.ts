@@ -11,7 +11,7 @@ export const MODEL = "gpt-4o-mini";
 
 // SYSTEM_PROMPT나 CommentAnalysisSchema(카테고리 등)를 바꿀 때마다 올린다.
 // 파인튜닝용 데이터 축적 시 어느 버전의 판정 기준으로 라벨링됐는지 구분하기 위함.
-export const PROMPT_VERSION = "v5";
+export const PROMPT_VERSION = "v6";
 
 export const CommentAnalysisSchema = z.object({
   is_malicious: z.boolean(),
@@ -29,6 +29,9 @@ export const CommentAnalysisSchema = z.object({
   ]),
   confidence: z.number().min(0).max(1),
   reason: z.string(),
+  // confidence가 0.7 이상이면 null. 미만이면 왜 확신하지 못했는지(애매함의
+  // 원인)를 한 문장으로 — 검토 필요 큐에서 사람이 뭘 판단해야 하는지 보여준다.
+  uncertainty_reason: z.string().nullable(),
 });
 
 export type CommentAnalysis = z.infer<typeof CommentAnalysisSchema>;
@@ -122,6 +125,15 @@ is_malicious는 반드시 true다. 이 둘이 어긋나는 답은 절대 허용�
 - 크리에이터가 대시보드에서 직접 읽는 문구다. 명확하고 담백하게 쓰고,
   댓글의 공격 표현을 그대로 반복해서 옮기지 마라.
 - 예: "거주지를 안다고 언급하며 위협하는 표현이 있어 협박으로 판정"
+
+[uncertainty_reason 작성 규칙]
+- confidence가 0.7 이상이면 null.
+- confidence가 0.7 미만이면, reason(판정 근거)과 겹치지 않게, 왜 확신하지
+  못했는지(애매함의 원인)를 한국어 한 문장으로 쓴다. 검토 필요 큐에서
+  사람이 정확히 뭘 확인해야 하는지 알려주는 문구다.
+- 예: "인용 형식이라 실제로 있었던 일인지 확인이 안 됨",
+  "반어법인지 진심인지 텍스트만으로는 애매함",
+  "영상 맥락을 봐야 조롱인지 감상인지 정확히 판단 가능"
 
 [판정 예시 — 표면적 유사성이 아니라 위 기준의 충족 여부로 판정하라]
 - "너 사는 곳 알아냈다 조심해라" → 협박, high (신상 언급 + 위해 암시)

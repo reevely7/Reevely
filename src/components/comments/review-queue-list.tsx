@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { CircleHelp, Sparkles } from "lucide-react";
 
 import { StatusActionButton } from "@/components/comments/status-action-button";
 import { RiskBadge } from "@/components/dashboard/risk-badge";
@@ -50,6 +50,7 @@ type Row = {
   category: string | null;
   confidence: string | null;
   reason: string | null;
+  uncertaintyReason: string | null;
   createdAt: Date;
 };
 
@@ -143,9 +144,19 @@ export function ReviewQueueList({
     setVisibleRisks((prev) => ({ ...prev, [level]: !prev[level] }));
   }
 
+  const hasVisibleItems = queue.some(
+    (comment) =>
+      !isRiskLevel(comment.riskLevel) || visibleRisks[comment.riskLevel],
+  );
+
   return (
     <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_272px]">
       <div className="flex flex-col">
+        {!hasVisibleItems && (
+          <div className="rounded-2xl bg-card px-6 py-16 text-center text-sm text-muted-foreground">
+            선택한 위험도에 해당하는 댓글이 없습니다.
+          </div>
+        )}
         {dayGroups.map((group) => {
           const visibleItems = group.items.filter(
             (comment) =>
@@ -200,13 +211,25 @@ export function ReviewQueueList({
                         </p>
 
                         {comment.reason && (
-                          <div className="mb-3 flex items-start gap-2 rounded-lg bg-accent px-3 py-2">
+                          <div className="mb-2 flex items-start gap-2 rounded-lg bg-accent px-3 py-2">
                             <Sparkles
                               className="mt-0.5 size-3.5 shrink-0 text-primary"
                               aria-hidden
                             />
                             <p className="text-xs leading-relaxed text-accent-foreground">
                               {comment.reason}
+                            </p>
+                          </div>
+                        )}
+
+                        {comment.uncertaintyReason && (
+                          <div className="mb-3 flex items-start gap-2 rounded-lg bg-muted px-3 py-2">
+                            <CircleHelp
+                              className="mt-0.5 size-3.5 shrink-0 text-muted-foreground"
+                              aria-hidden
+                            />
+                            <p className="text-xs leading-relaxed text-muted-foreground">
+                              {comment.uncertaintyReason}
                             </p>
                           </div>
                         )}

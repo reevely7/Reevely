@@ -60,21 +60,18 @@ function formatDate(date: Date): string {
   return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
 }
 
-// confirmed=검토 완료(그린), needs_review=검토 필요(옐로우), reported_false·whitelisted는
-// 둘 다 "정상"(그레이)으로 통합 표시한다. isArchived는 이 상태와 별개 축이라 배지를
-// 하나 더 붙인다("검토 완료"+"보호됨"을 동시에 가질 수 있음) — ProtectedBadge 참고.
+// 정상(reported_false·whitelisted)으로 분류된 댓글은 쿼리 단계에서 이미
+// 제외되어 이 목록에 들어오지 않으므로, 여기 남는 상태는 이 둘뿐이다.
+// isArchived는 이 상태와 별개 축이라 배지를 하나 더 붙인다("검토 완료"+"보호됨"을
+// 동시에 가질 수 있음) — ProtectedBadge 참고.
 const STATUS_LABELS: Record<string, string> = {
   confirmed: "검토 완료",
   needs_review: "검토 필요",
-  reported_false: "정상",
-  whitelisted: "정상",
 };
 
 const STATUS_PILL_CLASSES: Record<string, string> = {
   confirmed: "bg-status-confirmed-bg text-status-confirmed",
   needs_review: "bg-status-needs-review-bg text-status-needs-review",
-  reported_false: "bg-muted text-muted-foreground",
-  whitelisted: "bg-muted text-muted-foreground",
 };
 
 function StatusPill({ status }: { status: string }) {
@@ -474,20 +471,14 @@ export function CommentsTable({
                             </div>
 
                             <div className="flex flex-wrap items-center gap-2">
-                              {row.status === "reported_false" ? (
-                                <span className="text-[11px] text-muted-foreground">
-                                  정상 댓글로 분류됨
-                                </span>
-                              ) : (
-                                <StatusActionButton
-                                  commentId={row.id}
-                                  channelId={channelId}
-                                  status="reported_false"
-                                  label="정상 댓글로 분류"
-                                  className="h-10 gap-1.5 px-4"
-                                  icon={<ShieldCheck className="size-4" aria-hidden />}
-                                />
-                              )}
+                              <StatusActionButton
+                                commentId={row.id}
+                                channelId={channelId}
+                                status="reported_false"
+                                label="정상 댓글로 분류"
+                                className="h-10 gap-1.5 px-4"
+                                icon={<ShieldCheck className="size-4" aria-hidden />}
+                              />
                               <ArchiveActionButton
                                 commentId={row.id}
                                 channelId={channelId}

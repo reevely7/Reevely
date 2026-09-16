@@ -204,6 +204,13 @@
       "when": 1789470208957,
       "tag": "0028_polite_lilith",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1789569876609,
+      "tag": "0029_giant_spot",
+      "breakpoints": true
     }
   ]
 }

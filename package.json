@@ -16,6 +16,7 @@
     "test:subscriptions": "tsx --conditions=react-server --env-file=.env.local scripts/test-subscriptions.ts",
     "test:billing-cron": "tsx --conditions=react-server --env-file=.env.local scripts/test-billing-cron.ts",
     "db:backfill-channel-ids": "tsx --conditions=react-server --env-file=.env.local scripts/backfill-channel-ids.ts",
+    "db:reanalyze-review-queue": "tsx --conditions=react-server --env-file=.env.local scripts/reanalyze-review-queue.ts",
     "db:seed-admin": "tsx --conditions=react-server --env-file=.env.local scripts/seed-admin.ts"
   },
   "dependencies": {

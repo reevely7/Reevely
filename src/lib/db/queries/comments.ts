@@ -10,6 +10,7 @@ import {
   isNotNull,
   isNull,
   lt,
+  notInArray,
   sql,
   type SQL,
 } from "drizzle-orm";
@@ -515,7 +516,7 @@ export type CommentRiskLevel = "high" | "medium" | "low";
 export type CommentFilters = {
   riskLevel?: CommentRiskLevel;
   category?: string;
-  status?: "confirmed" | "needs_review" | "reported_false" | "whitelisted";
+  status?: "confirmed" | "needs_review";
   platform?: "youtube" | "instagram";
   videoId?: string;
   search?: string;
@@ -528,22 +529,15 @@ function buildFlaggedConditions(channelId: string, filters: CommentFilters) {
   const conditions = [
     eq(comments.channelId, channelId),
     eq(comments.isMalicious, true),
+    // 사람이 "정상 댓글로 분류"하면 이 목록에서 완전히 빠진다 — 정상 판정된
+    // 댓글은 작성자 상세 페이지의 "전체 댓글 보기"에서만 계속 볼 수 있다
+    notInArray(comments.status, ["reported_false", "whitelisted"]),
   ];
 
   if (filters.riskLevel) conditions.push(eq(comments.riskLevel, filters.riskLevel));
   if (filters.category) conditions.push(eq(comments.category, filters.category));
   if (filters.platform) conditions.push(eq(comments.platform, filters.platform));
-  if (filters.status) {
-    // "정상" 필터(reported_false)는 UI에서 whitelisted와 같은 라벨로 합쳐 보여주므로
-    // 필터도 두 값을 동시에 매칭해야 화면에 보이는 것과 필터 결과가 일치한다.
-    if (filters.status === "reported_false") {
-      conditions.push(
-        inArray(comments.status, ["reported_false", "whitelisted"]),
-      );
-    } else {
-      conditions.push(eq(comments.status, filters.status));
-    }
-  }
+  if (filters.status) conditions.push(eq(comments.status, filters.status));
   if (filters.videoId) conditions.push(eq(comments.videoId, filters.videoId));
   if (filters.search) {
     conditions.push(ilike(comments.text, `%${filters.search}%`));
@@ -625,7 +619,13 @@ export async function getFlaggedFilterOptions(channelId: string) {
   const rows = await db
     .selectDistinct({ category: comments.category })
     .from(comments)
-    .where(and(eq(comments.channelId, channelId), eq(comments.isMalicious, true)));
+    .where(
+      and(
+        eq(comments.channelId, channelId),
+        eq(comments.isMalicious, true),
+        notInArray(comments.status, ["reported_false", "whitelisted"]),
+      ),
+    );
 
   const categories = Array.from(
     new Set(rows.map((r) => r.category).filter((c): c is string => c !== null)),
@@ -646,6 +646,7 @@ export async function getCommentsByAuthor(
         eq(comments.channelId, channelId),
         eq(comments.authorChannelId, authorChannelId),
         eq(comments.isMalicious, true),
+        notInArray(comments.status, ["reported_false", "whitelisted"]),
       ),
     )
     .orderBy(sql`${comments.createdAt} desc`);
@@ -888,6 +889,7 @@ export async function saveAnalysisResult(
       category: analysis.category,
       confidence: analysis.confidence.toFixed(2),
       reason: analysis.reason,
+      uncertaintyReason: analysis.uncertainty_reason,
       aiModel: MODEL,
       promptVersion: PROMPT_VERSION,
       promptTokens: usage.promptTokens,

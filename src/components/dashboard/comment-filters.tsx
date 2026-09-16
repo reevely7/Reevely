@@ -8,7 +8,6 @@ import { FilterSelect } from "@/components/ui/filter-select";
 const STATUS_LABELS: Record<string, string> = {
   confirmed: "검토 완료",
   needs_review: "검토 필요",
-  reported_false: "정상",
 };
 
 type Props = {

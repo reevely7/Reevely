@@ -100,6 +100,9 @@ export const comments = pgTable(
     category: text("category"),
     confidence: numeric("confidence", { precision: 3, scale: 2 }),
     reason: text("reason"),
+    // confidence<0.7(검토 필요)일 때만 채워짐 — reason(판정 근거)과 별개로,
+    // AI가 왜 확신하지 못했는지(애매함의 원인)를 검토자에게 보여주기 위한 필드
+    uncertaintyReason: text("uncertainty_reason"),
     // 판정에 사용된 모델·프롬프트 버전 (추후 파인튜닝 학습 데이터의 출처 구분용)
     aiModel: text("ai_model"),
     promptVersion: text("prompt_version"),
