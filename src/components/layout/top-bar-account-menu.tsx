@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ChevronDown, CreditCard, User } from "lucide-react";
+import { ChevronDown, CreditCard, LogOut, User } from "lucide-react";
 
 import { LogoutButton } from "@/components/auth/logout-button";
 import {
@@ -75,7 +75,16 @@ export function TopBarAccountMenu({
         </Link>
 
         <div className="border-t border-border pt-1">
-          <LogoutButton className="w-full justify-center" />
+          <LogoutButton
+            variant="ghost"
+            className={`w-full justify-start ${menuItemClassName}`}
+            icon={
+              <LogOut
+                className="size-3.5 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+            }
+          />
         </div>
       </PopoverContent>
     </Popover>

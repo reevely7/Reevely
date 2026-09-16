@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ type Props = {
   className?: string;
   variant?: "default" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "sm" | "lg";
+  icon?: ReactNode;
 };
 
 export function KakaoSignInButton({
@@ -17,6 +19,7 @@ export function KakaoSignInButton({
   className,
   variant = "default",
   size = "lg",
+  icon,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -42,6 +45,7 @@ export function KakaoSignInButton({
       onClick={handleSignIn}
       disabled={isLoading}
     >
+      {!isLoading && icon}
       {isLoading ? "이동하는 중…" : label}
     </Button>
   );
