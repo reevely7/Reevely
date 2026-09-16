@@ -68,7 +68,7 @@ export default async function CommentsPage({
           </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          <CommentSearch placeholder="댓글 내용 또는 작성자 검색" />
+          <CommentSearch placeholder="댓글 내용 검색" />
         </div>
       </header>
 

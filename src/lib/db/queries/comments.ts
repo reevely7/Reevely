@@ -10,7 +10,6 @@ import {
   isNotNull,
   isNull,
   lt,
-  or,
   sql,
   type SQL,
 } from "drizzle-orm";
@@ -293,6 +292,42 @@ export async function getTopAuthorsByMaliciousCount(
     .limit(limit);
 }
 
+// 작성자 검색 페이지용 — query가 있으면 이름으로 필터링하고, 없으면(초기 화면)
+// 악성 댓글이 많은 순으로 기본 목록을 보여준다
+export async function searchAuthors(
+  channelId: string,
+  query: string,
+  limit: number,
+) {
+  const conditions = [
+    eq(comments.channelId, channelId),
+    eq(comments.isMalicious, true),
+  ];
+  if (query) {
+    conditions.push(ilike(comments.authorDisplayName, `%${query}%`));
+  }
+
+  const rows = await db
+    .select({
+      authorChannelId: comments.authorChannelId,
+      authorDisplayName: sql<string | null>`max(${comments.authorDisplayName})`,
+      count: sql<number>`count(*)::int`,
+      // postgres.js는 집계 함수(max) 결과의 timestamptz를 Date가 아닌 문자열로
+      // 반환하므로, 일반 컬럼 select와 달리 여기서 직접 Date로 변환해줘야 한다
+      lastCommentAt: sql<string>`max(${comments.createdAt})`,
+    })
+    .from(comments)
+    .where(and(...conditions))
+    .groupBy(comments.authorChannelId)
+    .orderBy(sql`count(*) desc`)
+    .limit(limit);
+
+  return rows.map((row) => ({
+    ...row,
+    lastCommentAt: new Date(row.lastCommentAt),
+  }));
+}
+
 // 대시보드 "최근 악성 댓글 몰린 영상" 위젯용 — 기간 내 영상별 악성 댓글 수 상위
 export async function getTopVideosByMaliciousCount(
   channelId: string,
@@ -380,7 +415,6 @@ export type CommentFilters = {
   status?: "confirmed" | "needs_review" | "reported_false" | "whitelisted";
   platform?: "youtube" | "instagram";
   videoId?: string;
-  // 댓글 내용 또는 작성자 이름 중 하나라도 매칭되면 결과에 포함 (OR)
   search?: string;
   dateFrom?: string;
   dateTo?: string;
@@ -409,12 +443,7 @@ function buildFlaggedConditions(channelId: string, filters: CommentFilters) {
   }
   if (filters.videoId) conditions.push(eq(comments.videoId, filters.videoId));
   if (filters.search) {
-    conditions.push(
-      or(
-        ilike(comments.text, `%${filters.search}%`),
-        ilike(comments.authorDisplayName, `%${filters.search}%`),
-      )!,
-    );
+    conditions.push(ilike(comments.text, `%${filters.search}%`));
   }
   // dateFrom/dateTo는 "YYYY-MM-DD" 문자열. from은 그 날 00시 이상, to는 다음 날
   // 00시 미만으로 잡아 선택한 날짜 하루 전체가 포함되게 한다.

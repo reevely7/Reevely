@@ -9,11 +9,13 @@ import {
   LayoutDashboard,
   MessageSquare,
   ShieldCheck,
+  UserRound,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { path: "dashboard", label: "대시보드", icon: LayoutDashboard },
   { path: "comments", label: "댓글 목록", icon: MessageSquare },
+  { path: "authors", label: "작성자 검색", icon: UserRound },
   { path: "review", label: "검토 필요", icon: ShieldCheck },
   { path: "evidence-archive", label: "증거 보관함", icon: Archive },
   { path: "notifications", label: "알림", icon: Bell },
