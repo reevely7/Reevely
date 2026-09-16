@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -10,9 +11,20 @@ type Props = {
   channelId: string;
   isArchived: boolean;
   label?: string;
+  icon?: ReactNode;
+  className?: string;
+  variant?: "default" | "outline" | "secondary" | "ghost" | "destructive";
 };
 
-export function ArchiveActionButton({ commentId, channelId, isArchived, label }: Props) {
+export function ArchiveActionButton({
+  commentId,
+  channelId,
+  isArchived,
+  label,
+  icon,
+  className,
+  variant,
+}: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -41,10 +53,12 @@ export function ArchiveActionButton({ commentId, channelId, isArchived, label }:
     <div className="flex flex-col items-end gap-1">
       <Button
         size="sm"
-        variant={isArchived ? "secondary" : "outline"}
+        variant={variant ?? (isArchived ? "secondary" : "outline")}
+        className={className}
         onClick={handleClick}
         disabled={isLoading}
       >
+        {!isLoading && icon}
         {isLoading ? "처리 중…" : (label ?? (isArchived ? "보관 해제" : "증거 보관"))}
       </Button>
       {error && <p className="max-w-[220px] text-right text-[11px] text-risk-high">{error}</p>}

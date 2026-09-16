@@ -114,16 +114,6 @@ export function CommentFilters({
           ]}
         />
 
-        <FilterSelect
-          value={searchParams.get("platform") ?? ""}
-          onValueChange={(value) => updateParam("platform", value)}
-          options={[
-            { value: "", label: "플랫폼 전체" },
-            { value: "youtube", label: "유튜브" },
-            { value: "instagram", label: "인스타그램" },
-          ]}
-        />
-
         <DateRangeFilter
           dateFrom={searchParams.get("dateFrom") ?? ""}
           dateTo={searchParams.get("dateTo") ?? ""}

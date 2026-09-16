@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -13,6 +14,8 @@ type Props = {
   status: Status;
   label: string;
   variant?: "default" | "outline" | "secondary" | "ghost" | "destructive";
+  icon?: ReactNode;
+  className?: string;
 };
 
 export function StatusActionButton({
@@ -21,6 +24,8 @@ export function StatusActionButton({
   status,
   label,
   variant = "outline",
+  icon,
+  className,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -44,9 +49,11 @@ export function StatusActionButton({
     <Button
       size="sm"
       variant={variant}
+      className={className}
       onClick={handleClick}
       disabled={isLoading}
     >
+      {!isLoading && icon}
       {isLoading ? "처리 중…" : label}
     </Button>
   );

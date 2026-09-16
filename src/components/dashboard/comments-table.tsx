@@ -1,8 +1,18 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { ChevronDown, ChevronRight, Inbox, ShieldCheck } from "lucide-react";
-import Link from "next/link";
+import type { ReactNode } from "react";
+import {
+  Archive,
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  Inbox,
+  MessageSquare,
+  ShieldCheck,
+  Sparkles,
+  Video,
+} from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
 import { ArchiveActionButton } from "@/components/comments/archive-action-button";
@@ -106,51 +116,43 @@ function PlatformIcon({ platform }: { platform: string }) {
   return null;
 }
 
-function InfoTile({
+function SectionHeader({
+  icon,
+  title,
+  action,
+}: {
+  icon: ReactNode;
+  title: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <h3 className="flex items-center gap-1.5 text-base font-bold text-card-foreground">
+        {icon}
+        {title}
+      </h3>
+      {action}
+    </div>
+  );
+}
+
+function DetailRow({
   label,
   value,
-  href,
-  internalHref,
-  span,
+  size = "sm",
 }: {
   label: string;
-  value: string;
-  href?: string;
-  internalHref?: string;
-  span?: string;
+  value: ReactNode;
+  size?: "sm" | "base";
 }) {
-  const linkClassName =
-    "block truncate text-[13px] font-medium text-primary underline underline-offset-2";
-
   return (
     <div
-      className={`rounded-lg border border-border bg-background/50 px-3 py-2 ${span ?? ""}`}
+      className={`flex items-center justify-between gap-3 ${size === "base" ? "text-[15px]" : "text-sm"}`}
     >
-      <p className="text-[10px] tracking-wide text-muted-foreground uppercase">
-        {label}
-      </p>
-      {internalHref ? (
-        <Link href={internalHref} className={linkClassName} title={value}>
-          {value}
-        </Link>
-      ) : href ? (
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={linkClassName}
-          title={value}
-        >
-          {value}
-        </a>
-      ) : (
-        <p
-          className="truncate text-[13px] font-medium text-card-foreground"
-          title={value}
-        >
-          {value}
-        </p>
-      )}
+      <span className="w-24 shrink-0 text-muted-foreground">{label}</span>
+      <span className="min-w-0 flex-1 truncate text-left font-medium text-card-foreground">
+        {value}
+      </span>
     </div>
   );
 }
@@ -331,17 +333,143 @@ export function CommentsTable({
 
                   {isExpanded && (
                     <tr className="border-b border-border bg-background/40 last:border-0">
-                      <td colSpan={9} className="px-4 py-4">
-                        <div className="flex flex-col gap-4">
-                          <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="flex flex-wrap items-center gap-2">
-                              {row.riskLevel && (
-                                <RiskBadge riskLevel={row.riskLevel} />
+                      <td colSpan={9} className="px-8 py-6">
+                        <div className="rounded-2xl border border-border bg-card p-6">
+                          <div className="grid gap-4 md:grid-cols-[1.3fr_0.8fr_1fr]">
+                            <section className="min-w-0 space-y-3 rounded-xl border border-border p-5">
+                              <SectionHeader
+                                icon={
+                                  <MessageSquare
+                                    className="size-4 text-primary"
+                                    aria-hidden
+                                  />
+                                }
+                                title="댓글 원문"
+                              />
+                              <p className="text-sm leading-relaxed text-card-foreground">
+                                “{row.text}”
+                              </p>
+                              <a
+                                href={`https://www.youtube.com/watch?v=${row.videoId}&lc=${row.youtubeCommentId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                              >
+                                <ExternalLink className="size-3.5" aria-hidden />
+                                댓글로 이동
+                              </a>
+                            </section>
+
+                            {row.reason && (
+                              <section className="min-w-0 space-y-3 rounded-xl border border-border p-5">
+                                <SectionHeader
+                                  icon={
+                                    <Sparkles
+                                      className="size-4 text-primary"
+                                      aria-hidden
+                                    />
+                                  }
+                                  title="AI 판정 근거"
+                                />
+                                <p className="text-sm leading-relaxed text-muted-foreground">
+                                  {row.reason}
+                                </p>
+                              </section>
+                            )}
+
+                            <section className="min-w-0 space-y-2.5 rounded-xl border border-border p-5">
+                              <SectionHeader
+                                icon={
+                                  <Video className="size-4 text-primary" aria-hidden />
+                                }
+                                title="콘텐츠 정보"
+                              />
+                              {row.platform === "youtube" && row.videoTitle && (
+                                <DetailRow
+                                  label="영상 제목"
+                                  value={
+                                    <a
+                                      href={
+                                        row.videoType === "shorts"
+                                          ? `https://www.youtube.com/shorts/${row.videoId}`
+                                          : `https://www.youtube.com/watch?v=${row.videoId}`
+                                      }
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="block truncate text-primary underline underline-offset-2"
+                                      title={row.videoTitle}
+                                    >
+                                      {row.videoTitle}
+                                    </a>
+                                  }
+                                />
                               )}
-                              <StatusPill status={row.status} />
-                              {row.isArchived && <ProtectedBadge />}
-                              <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
-                                {row.category ?? "미분류"}
+                              <DetailRow
+                                label="플랫폼"
+                                value={PLATFORM_LABELS[row.platform] ?? row.platform}
+                              />
+                              {row.platform === "youtube" && row.videoType && (
+                                <DetailRow
+                                  label="콘텐츠 형식"
+                                  value={
+                                    VIDEO_TYPE_LABELS[row.videoType] ?? row.videoType
+                                  }
+                                />
+                              )}
+                            </section>
+                          </div>
+
+                          <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4">
+                            <div className="flex flex-wrap items-center gap-x-7 gap-y-3 text-sm">
+                              <span className="flex items-center gap-2">
+                                <span className="text-muted-foreground">위험도</span>
+                                {row.riskLevel ? (
+                                  <RiskBadge riskLevel={row.riskLevel} />
+                                ) : (
+                                  "-"
+                                )}
+                              </span>
+                              <span className="flex items-center gap-2">
+                                <span className="text-muted-foreground">유형</span>
+                                <span className="font-semibold text-card-foreground">
+                                  {row.category ?? "미분류"}
+                                </span>
+                              </span>
+                              <span className="flex items-center gap-2">
+                                <span className="text-muted-foreground">상태</span>
+                                <StatusPill status={row.status} />
+                              </span>
+                              <span className="flex items-center gap-2">
+                                <span className="text-muted-foreground">AI 확신도</span>
+                                {row.confidence ? (
+                                  <span className="flex items-center gap-2">
+                                    <span className="font-mono text-sm font-semibold text-card-foreground">
+                                      {Math.round(Number(row.confidence) * 100)}%
+                                    </span>
+                                    <span className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
+                                      <span
+                                        className="block h-full rounded-full bg-primary"
+                                        style={{
+                                          width: `${Math.round(Number(row.confidence) * 100)}%`,
+                                        }}
+                                      />
+                                    </span>
+                                  </span>
+                                ) : (
+                                  "-"
+                                )}
+                              </span>
+                              <span className="flex items-center gap-2">
+                                <span className="text-muted-foreground">탐지 시각</span>
+                                <span className="font-semibold text-card-foreground">
+                                  {formatDetectedAt(row.createdAt)}
+                                </span>
+                              </span>
+                              <span className="flex items-center gap-2">
+                                <span className="text-muted-foreground">작성자</span>
+                                <span className="font-semibold text-card-foreground">
+                                  {row.authorDisplayName ?? "알 수 없음"}
+                                </span>
                               </span>
                             </div>
 
@@ -356,78 +484,19 @@ export function CommentsTable({
                                   channelId={channelId}
                                   status="reported_false"
                                   label="정상 댓글로 분류"
+                                  className="h-10 gap-1.5 px-4"
+                                  icon={<ShieldCheck className="size-4" aria-hidden />}
                                 />
                               )}
                               <ArchiveActionButton
                                 commentId={row.id}
                                 channelId={channelId}
                                 isArchived={row.isArchived}
+                                variant={row.isArchived ? "secondary" : "default"}
+                                className="h-10 gap-1.5 px-4"
+                                icon={<Archive className="size-4" aria-hidden />}
                               />
                             </div>
-                          </div>
-
-                          <div className="rounded-lg border border-border bg-background/50 px-5 py-4">
-                            <p className="text-sm leading-relaxed text-card-foreground">
-                              “{row.text}”
-                            </p>
-                            {row.reason && (
-                              <p className="mt-2 text-[13px] text-muted-foreground">
-                                <span className="text-primary/80">
-                                  AI 판정 근거·
-                                </span>
-                                {row.reason}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                            {row.platform === "youtube" && row.videoTitle && (
-                              <InfoTile
-                                label="영상 제목"
-                                value={row.videoTitle}
-                                href={
-                                  row.videoType === "shorts"
-                                    ? `https://www.youtube.com/shorts/${row.videoId}`
-                                    : `https://www.youtube.com/watch?v=${row.videoId}`
-                                }
-                                span="col-span-2"
-                              />
-                            )}
-                            <InfoTile
-                              label="댓글"
-                              value="댓글로 이동"
-                              href={`https://www.youtube.com/watch?v=${row.videoId}&lc=${row.youtubeCommentId}`}
-                            />
-                            <InfoTile
-                              label="작성자"
-                              value={row.authorDisplayName ?? "알 수 없음"}
-                              internalHref={`/c/${channelId}/authors/${encodeURIComponent(row.authorChannelId)}`}
-                            />
-                            <InfoTile
-                              label="플랫폼"
-                              value={PLATFORM_LABELS[row.platform] ?? row.platform}
-                            />
-                            {row.platform === "youtube" && row.videoType && (
-                              <InfoTile
-                                label="콘텐츠 형식"
-                                value={
-                                  VIDEO_TYPE_LABELS[row.videoType] ??
-                                  row.videoType
-                                }
-                              />
-                            )}
-                            <InfoTile
-                              label="탐지 시각"
-                              value={formatDetectedAt(row.createdAt)}
-                            />
-                            <InfoTile
-                              label="AI 확신도"
-                              value={
-                                row.confidence
-                                  ? `${Math.round(Number(row.confidence) * 100)}%`
-                                  : "-"
-                              }
-                            />
                           </div>
                         </div>
                       </td>
