@@ -3,7 +3,6 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 import { DateRangeFilter } from "@/components/dashboard/date-range-filter";
-import { Button } from "@/components/ui/button";
 import { FilterSelect } from "@/components/ui/filter-select";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -66,12 +65,12 @@ export function CommentFilters({
 
   const hideOriginal = searchParams.get("hideOriginal") !== "0";
 
-  function toggleHideOriginal() {
+  function setHideOriginal(next: boolean) {
     const params = new URLSearchParams(searchParams.toString());
-    if (hideOriginal) {
-      params.set("hideOriginal", "0");
-    } else {
+    if (next) {
       params.delete("hideOriginal");
+    } else {
+      params.set("hideOriginal", "0");
     }
     router.push(`${pathname}?${params.toString()}`);
   }
@@ -136,14 +135,30 @@ export function CommentFilters({
       </p>
 
       <div className="relative -top-3 flex justify-end">
-        <Button
-          size="sm"
-          variant={hideOriginal ? "default" : "outline"}
-          onClick={toggleHideOriginal}
-          className="h-8"
-        >
-          원문 숨김 {hideOriginal ? "ON" : "OFF"}
-        </Button>
+        <div className="inline-flex w-fit rounded-full border border-border bg-background p-1">
+          <button
+            type="button"
+            onClick={() => setHideOriginal(false)}
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+              !hideOriginal
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            원문 표시
+          </button>
+          <button
+            type="button"
+            onClick={() => setHideOriginal(true)}
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+              hideOriginal
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            원문 숨김
+          </button>
+        </div>
       </div>
     </div>
   );

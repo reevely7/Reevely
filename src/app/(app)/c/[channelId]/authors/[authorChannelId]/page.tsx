@@ -1,10 +1,10 @@
-import Link from "next/link";
-import { ArrowLeft, Inbox } from "lucide-react";
+import { Inbox } from "lucide-react";
 
 import { AuthorCommentFeed } from "@/components/authors/author-comment-feed";
 import { RiskBadge } from "@/components/dashboard/risk-badge";
 import { requireChannelOwnership } from "@/lib/auth/require-channel-ownership";
 import {
+  getAllCommentsByAuthor,
   getCommentsByAuthor,
   type CommentRiskLevel,
 } from "@/lib/db/queries/comments";
@@ -15,10 +15,12 @@ function formatDate(date: Date): string {
   return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
 }
 
+// RiskBadge와 같은 파스텔 톤(#C55556 / #EFD3A1 / #D6EACB)을 재사용 — 진한
+// risk-* 토큰 대신 써서 배지-막대 색이 서로 어긋나지 않게 한다
 const RISK_BAR_CLASSES: Record<CommentRiskLevel, string> = {
-  high: "bg-risk-high",
-  medium: "bg-risk-medium",
-  low: "bg-risk-low",
+  high: "bg-[#C55556]",
+  medium: "bg-[#EFD3A1]",
+  low: "bg-[#D6EACB]",
 };
 
 export default async function AuthorPage({
@@ -29,11 +31,12 @@ export default async function AuthorPage({
   const { channelId, authorChannelId } = await params;
   await requireChannelOwnership(channelId);
   const decodedAuthorChannelId = decodeURIComponent(authorChannelId);
-  const [comments, isSubscribed] = await Promise.all([
+  const [maliciousComments, allComments, isSubscribed] = await Promise.all([
     getCommentsByAuthor(channelId, decodedAuthorChannelId),
+    getAllCommentsByAuthor(channelId, decodedAuthorChannelId),
     isSubscribedToAuthor(channelId, decodedAuthorChannelId),
   ]);
-  const displayName = comments[0]?.authorDisplayName ?? "알 수 없음";
+  const displayName = maliciousComments[0]?.authorDisplayName ?? "알 수 없음";
   const initial = displayName.replace(/^@/, "").charAt(0).toUpperCase() || "?";
 
   const riskCounts: Record<CommentRiskLevel, number> = {
@@ -42,7 +45,7 @@ export default async function AuthorPage({
     low: 0,
   };
   const categoryCounts = new Map<string, number>();
-  for (const comment of comments) {
+  for (const comment of maliciousComments) {
     if (comment.riskLevel) riskCounts[comment.riskLevel] += 1;
     if (comment.category) {
       categoryCounts.set(
@@ -55,19 +58,12 @@ export default async function AuthorPage({
     .sort((a, b) => b[1] - a[1])
     .slice(0, 4)
     .map(([category]) => category);
-  const firstSeen = comments[comments.length - 1]?.createdAt;
+  const firstSeen =
+    maliciousComments[maliciousComments.length - 1]?.createdAt;
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
-      <Link
-        href={`/c/${channelId}/dashboard`}
-        className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-3.5" aria-hidden />
-        대시보드로 돌아가기
-      </Link>
-
-      {comments.length === 0 ? (
+      {maliciousComments.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-2xl bg-card px-6 py-16 text-center">
           <Inbox className="size-8 text-muted-foreground" aria-hidden />
           <p className="text-sm text-muted-foreground">
@@ -109,8 +105,8 @@ export default async function AuthorPage({
                     <div
                       className={`h-full ${RISK_BAR_CLASSES[level]}`}
                       style={{
-                        width: comments.length
-                          ? `${(riskCounts[level] / comments.length) * 100}%`
+                        width: maliciousComments.length
+                          ? `${(riskCounts[level] / maliciousComments.length) * 100}%`
                           : "0%",
                       }}
                     />
@@ -140,7 +136,7 @@ export default async function AuthorPage({
 
           <div className="pt-7 lg:pt-0">
             <AuthorCommentFeed
-              comments={comments}
+              comments={allComments}
               displayName={displayName}
               initial={initial}
               channelId={channelId}

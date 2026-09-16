@@ -45,7 +45,7 @@ export function SidebarNav({
     <nav className="flex flex-col gap-1">
       {NAV_ITEMS.map((item) => {
         const href = channelId ? `/c/${channelId}/${item.path}` : "/mypage";
-        const isActive = pathname === href;
+        const isActive = pathname === href || pathname.startsWith(`${href}/`);
         const countKey = BADGE_COUNT_PATH[item.path];
         const count = countKey ? counts[countKey] : 0;
 

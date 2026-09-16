@@ -293,39 +293,67 @@ export async function getTopAuthorsByMaliciousCount(
 }
 
 // 작성자 검색 페이지용 — query가 있으면 이름으로 필터링하고, 없으면(초기 화면)
-// 악성 댓글이 많은 순으로 기본 목록을 보여준다
+// 악성 댓글이 많은 순으로 기본 목록을 보여준다. "총 댓글"(악성 여부 무관)도
+// 같이 보여줘야 해서 WHERE는 악성 여부로 거르지 않고, 대신 HAVING으로
+// 악성 댓글이 1건 이상인 작성자만 남긴다
 export async function searchAuthors(
   channelId: string,
   query: string,
   limit: number,
 ) {
-  const conditions = [
-    eq(comments.channelId, channelId),
-    eq(comments.isMalicious, true),
-  ];
+  const conditions = [eq(comments.channelId, channelId)];
   if (query) {
     conditions.push(ilike(comments.authorDisplayName, `%${query}%`));
   }
+  const maliciousCount = sql`count(*) filter (where ${comments.isMalicious})`;
 
   const rows = await db
     .select({
       authorChannelId: comments.authorChannelId,
       authorDisplayName: sql<string | null>`max(${comments.authorDisplayName})`,
-      count: sql<number>`count(*)::int`,
+      count: sql<number>`${maliciousCount}::int`,
+      totalCount: sql<number>`count(*)::int`,
       // postgres.js는 집계 함수(max) 결과의 timestamptz를 Date가 아닌 문자열로
       // 반환하므로, 일반 컬럼 select와 달리 여기서 직접 Date로 변환해줘야 한다
-      lastCommentAt: sql<string>`max(${comments.createdAt})`,
+      lastCommentAt: sql<string>`max(${comments.createdAt}) filter (where ${comments.isMalicious})`,
     })
     .from(comments)
     .where(and(...conditions))
     .groupBy(comments.authorChannelId)
-    .orderBy(sql`count(*) desc`)
+    .having(sql`${maliciousCount} >= 1`)
+    .orderBy(sql`${maliciousCount} desc`)
     .limit(limit);
 
   return rows.map((row) => ({
     ...row,
     lastCommentAt: new Date(row.lastCommentAt),
   }));
+}
+
+// 작성자 검색 페이지 상단 통계 카드 "반복 작성자 수" — 악성 댓글을 2건 이상
+// 남긴 작성자(distinct) 수
+export async function countRepeatAuthors(channelId: string) {
+  const rows = await db
+    .select({ authorChannelId: comments.authorChannelId })
+    .from(comments)
+    .where(and(eq(comments.channelId, channelId), eq(comments.isMalicious, true)))
+    .groupBy(comments.authorChannelId)
+    .having(sql`count(*) >= 2`);
+
+  return rows.length;
+}
+
+// 작성자 검색 페이지 상단 통계 카드 "총 악성 댓글 작성자 수" — 악성 댓글이
+// 1건 이상 있는 작성자(distinct) 수
+export async function countTotalMaliciousAuthors(channelId: string) {
+  const [row] = await db
+    .select({
+      count: sql<number>`count(distinct ${comments.authorChannelId})::int`,
+    })
+    .from(comments)
+    .where(and(eq(comments.channelId, channelId), eq(comments.isMalicious, true)));
+
+  return row?.count ?? 0;
 }
 
 // 영상별 보기 페이지용 — query가 있으면 제목으로 필터링하고, 없으면(초기 화면)
@@ -590,6 +618,24 @@ export async function getCommentsByAuthor(
         eq(comments.channelId, channelId),
         eq(comments.authorChannelId, authorChannelId),
         eq(comments.isMalicious, true),
+      ),
+    )
+    .orderBy(sql`${comments.createdAt} desc`);
+}
+
+// 작성자 상세 페이지 "전체 댓글 보기" 피드용 — 악성 여부와 무관하게 이
+// 작성자가 남긴 모든 댓글
+export async function getAllCommentsByAuthor(
+  channelId: string,
+  authorChannelId: string,
+) {
+  return db
+    .select()
+    .from(comments)
+    .where(
+      and(
+        eq(comments.channelId, channelId),
+        eq(comments.authorChannelId, authorChannelId),
       ),
     )
     .orderBy(sql`${comments.createdAt} desc`);
