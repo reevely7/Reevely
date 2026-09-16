@@ -11,24 +11,17 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { Fragment } from "react";
 
 import { KakaoSignInButton } from "@/components/auth/kakao-sign-in-button";
 import { EyebrowBadge } from "@/components/landing/eyebrow-badge";
-import { HeroDashboardPreview } from "@/components/landing/hero-dashboard-preview";
+import { HeroAppMockup } from "@/components/landing/hero-app-mockup";
+import { LandingComparisonTable } from "@/components/landing/landing-comparison-table";
 import { LandingMobileNav } from "@/components/landing/landing-mobile-nav";
+import { PlaceholderArt } from "@/components/landing/placeholder-art";
+import { PricingTable } from "@/components/landing/pricing-table";
+import { Reveal } from "@/components/landing/reveal";
 import { SiteFooter } from "@/components/landing/site-footer";
-import {
-  AiJudgeVisual,
-  ConnectChannelVisual,
-  DashboardVisual,
-  WatchCommentsVisual,
-} from "@/components/landing/step-icons";
 import { Button } from "@/components/ui/button";
-import {
-  PlanComparisonTable,
-  PricingTable,
-} from "@/components/landing/pricing-table";
 import { getChannelsByUserId } from "@/lib/db/queries/channels";
 import { handwritingFont, wordmarkFont } from "@/lib/fonts";
 import { createClient } from "@/lib/supabase/server";
@@ -41,22 +34,22 @@ const STEPS = [
   {
     title: "채널을 연동해요",
     body: "유튜브 채널을 OAuth로 직접 연동합니다. 소스코드 없이 YouTube Data API 공식 연동이라 계정 정보는 저희를 거치지 않아요.",
-    visual: ConnectChannelVisual,
+    artLabel: "3D 이미지 자리 — 유튜브와 리블리가 케이블로 연결되는 3D 오브젝트",
   },
   {
-    title: "댓글을 조용히 지켜봐요",
-    body: "새 영상이 올라오면 1시간마다, 없으면 6시간마다 댓글을 확인합니다. 실시간은 아니지만, 계속 지켜보고 있어요.",
-    visual: WatchCommentsVisual,
+    title: "잠든 사이에도 확인해요",
+    body: "크리에이터가 콘텐츠에 집중하는 동안, 백그라운드에서 새 댓글을 놓치지 않고 확인합니다.",
+    artLabel: "3D 이미지 자리 — 돋보기로 말풍선을 살펴보는 3D 오브젝트",
   },
   {
     title: "AI가 위험도를 판정해요",
     body: "댓글 하나하나를 분석해 위험도와 유형, 판정 근거를 함께 남깁니다.",
-    visual: AiJudgeVisual,
+    artLabel: "3D 이미지 자리 — 댓글을 판정하는 AI 로봇 3D 캐릭터",
   },
   {
     title: "대시보드에서 확인해요",
     body: "위험도별로 정리된 화면에서 확인하고, 필요하면 숨김 처리나 오탐 신고를 한 번으로 끝낼 수 있어요.",
-    visual: DashboardVisual,
+    artLabel: "3D 이미지 자리 — 위험도 차트가 떠 있는 3D 모니터",
   },
 ];
 
@@ -119,6 +112,44 @@ const CLOSING_HIGHLIGHTS = [
   },
 ];
 
+// 포스터형 CTA 버튼 — 다크(잉크) 배경 위주 섹션과 화이트 섹션에서 공유.
+const CTA_ON_DARK =
+  "h-[56px] w-auto rounded-full bg-[var(--landing-lime)] px-9 text-base font-extrabold text-[var(--landing-ink)] shadow-none transition-all duration-300 hover:-translate-y-0.5 hover:bg-white";
+const CTA_ON_LIGHT =
+  "h-[56px] w-auto rounded-full bg-[var(--landing-ink)] px-9 text-base font-bold text-white shadow-none transition-all duration-300 hover:-translate-y-0.5 hover:bg-[var(--landing-forest)]";
+
+function HighlightPills({
+  items,
+}: {
+  items: Array<{
+    icon: (typeof HERO_HIGHLIGHTS)[number]["icon"];
+    title: string;
+    caption: string;
+  }>;
+}) {
+  return (
+    <div className="flex flex-col items-stretch justify-center gap-4 sm:flex-row sm:flex-wrap">
+      {items.map((item, index) => (
+        <Reveal key={item.title} delay={index * 90}>
+          <div className="flex h-full items-center gap-3.5 rounded-full border border-black/[0.07] bg-white py-3.5 pr-7 pl-4 transition-transform duration-300 hover:-translate-y-1">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--landing-lime)] text-[var(--landing-ink)]">
+              <item.icon className="size-5" />
+            </span>
+            <div>
+              <p className="text-[15px] leading-tight font-extrabold text-[#16241d]">
+                {item.title}
+              </p>
+              <p className="mt-0.5 text-[13px] leading-tight text-[#71806f]">
+                {item.caption}
+              </p>
+            </div>
+          </div>
+        </Reveal>
+      ))}
+    </div>
+  );
+}
+
 export default async function LandingPage({
   searchParams,
 }: {
@@ -138,211 +169,207 @@ export default async function LandingPage({
   }
 
   return (
-    <main className="font-pretendard flex flex-1 flex-col">
-      {/* 헤더 + 히어로 — 옅은 세이지 그라데이션 배경을 공유하고, 목업이
-          오른쪽 화면 끝에서 잘리도록 이 래퍼에서 overflow를 자른다 */}
-      <div className="font-pretendard relative overflow-hidden bg-[linear-gradient(168deg,#ffffff_0%,#f6f9f6_45%,#eaf2ec_100%)]">
-        {/* 유기적인 배경 블롭 */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-44 right-[-14%] size-[620px] rounded-full bg-[#dceade] opacity-70 blur-[110px]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute top-24 right-[2%] size-[440px] rounded-full bg-[#cfe2d4] opacity-60 blur-[100px]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-48 left-[-12%] size-[520px] rounded-full bg-[#e6efe7] opacity-80 blur-[110px]"
-        />
+    <main className="font-pretendard flex flex-1 flex-col bg-[#f8f8f8]">
+      {/* ── 히어로: 풀블리드 딥그린 포스터 블록 ─────────────────── */}
+      <div>
+        <div className="relative overflow-hidden bg-[var(--landing-forest)]">
+          {/* 깊은 그린 블롭 배경 */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-40 -right-32 size-[560px] rounded-full bg-[var(--landing-forest-deep)] opacity-80 blur-[100px]"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -bottom-48 -left-32 size-[520px] rounded-full bg-[#3a6d58] opacity-60 blur-[110px]"
+          />
 
-        {/* 상단 내비게이션 */}
-        <header className="relative z-10 mx-auto flex w-full max-w-[1200px] items-center justify-between px-6 py-5">
-          <div className="flex items-center gap-2">
-            <Image
-              src="/logo-mark.png"
-              alt=""
-              width={36}
-              height={36}
-              className="size-9"
-            />
-            <span
-              className={`${wordmarkFont.className} relative top-0.5 text-xl font-extrabold tracking-tight text-[#16241d]`}
-            >
-              Reevely
-            </span>
-          </div>
-          <nav className="hidden items-center gap-8 text-[15px] font-medium text-[#3d4a43] md:flex">
-            <a href="#how-it-works" className="hover:text-[#111]">
-              서비스 소개
-            </a>
-            <a href="#pricing" className="hover:text-[#111]">
-              요금제
-            </a>
-          </nav>
-          <div className="flex items-center gap-2">
-            <LandingMobileNav />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 w-auto px-3 text-sm text-[#3d4a43]"
-              nativeButton={false}
-              render={<a href="/login">로그인</a>}
-            />
-          </div>
-        </header>
-
-        {/* 히어로 */}
-        <section className="relative mx-auto w-full max-w-[1200px] px-6 pt-8 pb-12 md:pt-12 md:pb-14">
-          <div className="grid items-center gap-14 lg:grid-cols-[45fr_55fr] lg:gap-4">
-            {/* 좌측 텍스트 */}
-            <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
-              <span className="inline-flex items-center gap-2 rounded-full bg-[#e4efe6] px-4 py-2 text-[13px] font-semibold text-primary">
-                <Check className="size-3.5" />
-                크리에이터의 더 안전한 내일을 위해
+          {/* 상단 내비게이션 */}
+          <header className="relative z-20 mx-auto flex w-full max-w-[1240px] items-center justify-between px-6 py-6 sm:px-8">
+            <div className="flex items-center gap-2.5">
+              <Image
+                src="/icon.png"
+                alt=""
+                width={32}
+                height={32}
+                className="size-8"
+              />
+              <span
+                className={`${wordmarkFont.className} relative top-0.5 text-xl font-extrabold tracking-tight text-white`}
+              >
+                Reevely
               </span>
-
-              <h1 className="mt-6 text-[38px] leading-[1.18] font-extrabold tracking-tight text-[#111111] sm:text-[52px] lg:text-[64px]">
-                좋은 크리에이터의
-                <br />
-                내일을 지킵니다
-              </h1>
-
-              <p className="mt-6 max-w-[430px] text-base leading-relaxed text-[#4b5a51] lg:text-[17px]">
-                Reevely는 악성 댓글로부터 크리에이터를 보호하고,{" "}
-                <br className="hidden sm:inline" />
-                더 건강한 커뮤니티 문화를 만들어가는{" "}
-                <br className="hidden sm:inline" />
-                AI 기반 댓글 관리 솔루션입니다.
-              </p>
-
-              {errorMessage && (
-                <p className="mt-4 rounded-md bg-risk-high-bg px-3 py-2 text-xs text-risk-high">
-                  {errorMessage}
-                </p>
-              )}
-
-              <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
-                <KakaoSignInButton
-                  label="무료로 시작하기 →"
-                  className="h-[52px] w-auto rounded-xl px-8 text-base font-semibold shadow-lg shadow-primary/25"
-                />
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="h-[52px] w-auto rounded-xl border-[#e0e6e1] bg-white px-8 text-base font-semibold text-[#1e2d26] shadow-sm hover:bg-white hover:shadow-md"
-                  nativeButton={false}
-                  render={<a href="#how-it-works">서비스 소개 보기</a>}
-                />
-              </div>
             </div>
-
-            {/* 우측 대시보드 목업 — 컨테이너 오른쪽 밖으로 튀어나가 화면 끝에서 잘린다 */}
-            <div className="relative flex justify-center lg:-mr-44 lg:justify-start lg:pl-4">
-              <HeroDashboardPreview />
+            <nav className="hidden items-center gap-2 md:flex">
+              <a
+                href="#how-it-works"
+                className="rounded-full px-4 py-2 text-[15px] font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                서비스 소개
+              </a>
+              <a
+                href="#pricing"
+                className="rounded-full px-4 py-2 text-[15px] font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                요금제
+              </a>
+            </nav>
+            <div className="flex items-center gap-2">
+              <LandingMobileNav />
+              <a
+                href="/login"
+                className="hidden rounded-full border border-white/25 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-white hover:text-[var(--landing-ink)] md:inline-block"
+              >
+                로그인
+              </a>
             </div>
-          </div>
+          </header>
 
-          {/* 하단 기능 3개 */}
-          <div className="mt-14 flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-14">
-            {HERO_HIGHLIGHTS.map((item) => (
-              <div key={item.title} className="flex items-center gap-3">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#e4efe6] text-primary">
-                  <item.icon className="size-5" />
+          {/* 히어로 본문 */}
+          <section className="relative z-10 mx-auto w-full max-w-[1240px] px-6 pt-6 pb-16 sm:px-8 md:pt-10 md:pb-20">
+            <div className="grid items-center gap-12 lg:grid-cols-[54fr_46fr] lg:gap-6">
+              {/* 좌측 타이포 */}
+              <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
+                <span
+                  className="landing-rise inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[13px] font-semibold text-white backdrop-blur-sm"
+                  style={{ animationDelay: "0.05s" }}
+                >
+                  <Check className="size-3.5 text-[var(--landing-lime)]" />
+                  크리에이터의 더 안전한 내일을 위해
                 </span>
-                <div>
-                  <p className="text-[15px] font-bold text-[#16241d]">
-                    {item.title}
+
+                <h1
+                  className="landing-rise mt-7 text-[clamp(34px,7vw,88px)] leading-[1.08] font-extrabold tracking-[-0.03em] text-white break-keep"
+                  style={{ animationDelay: "0.15s" }}
+                >
+                  좋은 크리에이터의
+                  <br />
+                  <span className="relative inline-block rotate-[-2deg] rounded-[0.45em] bg-[var(--landing-lime)] px-[0.2em] pb-[0.06em] text-[var(--landing-ink)]">
+                    내일
+                  </span>
+                  을 지킵니다
+                </h1>
+
+                <p
+                  className="landing-rise mt-7 max-w-[460px] text-base leading-relaxed text-white/75 lg:text-[17px]"
+                  style={{ animationDelay: "0.28s" }}
+                >
+                  Reevely는 악성 댓글로부터 크리에이터를 보호하고,{" "}
+                  <br className="hidden sm:inline" />
+                  더 건강한 커뮤니티 문화를 만들어가는{" "}
+                  <br className="hidden sm:inline" />
+                  AI 기반 댓글 관리 솔루션입니다.
+                </p>
+
+                {errorMessage && (
+                  <p className="mt-4 rounded-xl bg-[#fce8e8] px-4 py-2.5 text-xs font-semibold text-[#c04545]">
+                    {errorMessage}
                   </p>
-                  <p className="text-[13px] text-[#71806f]">{item.caption}</p>
+                )}
+
+                <div
+                  className="landing-rise mt-9 flex flex-col items-center gap-3 sm:flex-row"
+                  style={{ animationDelay: "0.4s" }}
+                >
+                  <KakaoSignInButton
+                    label="무료로 시작하기 →"
+                    className={CTA_ON_DARK}
+                  />
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="h-[56px] w-auto rounded-full border-white/25 bg-transparent px-9 text-base font-bold text-white shadow-none transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white"
+                    nativeButton={false}
+                    render={<a href="#how-it-works">서비스 소개 보기</a>}
+                  />
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
+
+              {/* 우측 스티커 클러스터 */}
+              <HeroAppMockup />
+            </div>
+          </section>
+        </div>
       </div>
 
-      {/* 동작 원리 */}
-      <section id="how-it-works" className="bg-background px-6 py-16 md:py-24">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="mx-auto mb-12 flex max-w-2xl flex-col items-center gap-4 text-center">
-            <EyebrowBadge icon={Leaf}>간단한 설정으로 더 안전한 커뮤니티</EyebrowBadge>
-            <h2 className="text-3xl font-extrabold tracking-tight text-[#111111] break-keep sm:text-4xl">
-              이렇게 동작해요
-            </h2>
-            <p className="text-[15px] leading-relaxed text-[#5b6a61]">
-              복잡한 설정 없이, 4단계만으로 채널의 댓글을 AI가 실시간으로
-              모니터링합니다.{" "}
-              <br className="hidden sm:inline" />
-              지금 바로 시작해보세요.
-            </p>
-          </div>
+      {/* ── 동작 원리 ───────────────────────────────────────────── */}
+      <section id="how-it-works" className="scroll-mt-6 px-6 py-20 md:py-28">
+        <div className="mx-auto max-w-[1240px]">
+          <Reveal>
+            <div className="mx-auto mb-14 flex max-w-3xl flex-col items-center gap-5 text-center">
+              <EyebrowBadge icon={Leaf}>간단한 설정으로 더 안전한 커뮤니티</EyebrowBadge>
+              <h2 className="text-[clamp(32px,4.5vw,54px)] leading-[1.12] font-extrabold tracking-[-0.02em] text-[var(--landing-ink)] break-keep">
+                이렇게 동작해요
+              </h2>
+              <p className="text-[15px] leading-relaxed text-[#5b6a61] sm:text-base">
+                복잡한 설정 없이, 4단계만으로 채널의 댓글을 AI가 실시간으로
+                모니터링합니다.{" "}
+                <br className="hidden sm:inline" />
+                지금 바로 시작해보세요.
+              </p>
+            </div>
+          </Reveal>
 
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-0">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((step, index) => (
-              <Fragment key={step.title}>
-                <div className="flex flex-1 flex-col rounded-2xl border border-black/[0.06] bg-white px-6 pt-6 pb-7 text-left shadow-sm">
-                  <span className="flex size-9 items-center justify-center rounded-full bg-[#e4efe6] text-[13px] font-bold text-primary">
+              <Reveal key={step.title} delay={index * 100} className="h-full">
+                <div
+                  className={`group flex h-full flex-col rounded-[2rem] bg-white p-7 ring-1 ring-black/[0.05] transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_30px_60px_-30px_rgba(20,33,27,0.35)] ${
+                    index % 2 === 0 ? "lg:rotate-[-1.2deg]" : "lg:rotate-[1.2deg]"
+                  } lg:hover:rotate-0`}
+                >
+                  <span className="inline-flex size-11 rotate-[-6deg] items-center justify-center self-start rounded-2xl bg-[var(--landing-ink)] text-[15px] font-extrabold text-[var(--landing-lime)] transition-transform duration-300 group-hover:rotate-6">
                     {String(index + 1).padStart(2, "0")}
                   </span>
-                  <step.visual />
-                  <p className="mt-3 text-[17px] font-extrabold text-[#16241d]">
+                  <PlaceholderArt label={step.artLabel} className="mt-6 h-36" />
+                  <p className="mt-6 text-lg font-extrabold text-[var(--landing-ink)]">
                     {step.title}
                   </p>
-                  <p className="mt-2 text-sm leading-relaxed text-[#5b6a61]">
+                  <p className="mt-2.5 text-sm leading-relaxed text-[#5b6a61]">
                     {step.body}
                   </p>
                 </div>
-                {index < STEPS.length - 1 && (
-                  <div
-                    aria-hidden
-                    className="hidden shrink-0 items-center justify-center px-2.5 lg:flex"
-                  >
-                    <div className="flex gap-1">
-                      <span className="size-1 rounded-full bg-[#c9d4cb]" />
-                      <span className="size-1 rounded-full bg-[#c9d4cb]" />
-                      <span className="size-1 rounded-full bg-[#c9d4cb]" />
-                    </div>
-                  </div>
-                )}
-              </Fragment>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 오탐 관리 원칙 */}
-      <section className="bg-background px-6 pb-16 md:pb-24">
-        <div className="relative mx-auto max-w-[1200px] overflow-hidden rounded-3xl bg-[#e9f2ea] px-8 py-14 text-center">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-24 -left-24 size-72 rounded-full bg-white/50 blur-3xl"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -right-24 -bottom-24 size-72 rounded-full bg-white/40 blur-3xl"
-          />
-          <div className="relative flex flex-col items-center gap-5">
-            <EyebrowBadge tone="white" icon={ShieldCheck}>
-              오탐 관리 원칙
-            </EyebrowBadge>
-            <h2 className="text-3xl font-extrabold tracking-tight text-[#111111] break-keep sm:text-4xl">
-              확신 없는 판정은, 확정하지 않습니다
-            </h2>
-            <p className="max-w-2xl text-[15px] leading-relaxed text-[#4b5a51]">
-              AI가 확신하지 못한 댓글(confidence 0.7 미만)은 자동으로 확정하지
-              않고{" "}
-              <br className="hidden sm:inline" />
-              별도의 검토 큐로 분리합니다. 잘못된 확정보다, 사람이 한 번 더
-              확인하는 쪽을 택했습니다.
-            </p>
+      {/* ── 오탐 관리 원칙: 라임 포스터 블록 ─────────────────────── */}
+      <section className="px-3 pb-20 sm:px-4 md:pb-28">
+        <Reveal>
+          <div className="relative overflow-hidden rounded-[2rem] bg-[var(--landing-lime)] px-6 py-20 sm:rounded-[2.75rem] md:py-28">
+            {/* 잉크 낙서 밑줄 원 — 배경 장식 */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full border-[3px] border-[var(--landing-ink)]/10"
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -bottom-28 -left-16 size-80 rounded-full border-[3px] border-[var(--landing-ink)]/10"
+            />
+
+            <div className="relative mx-auto flex max-w-4xl flex-col items-center gap-6 text-center">
+              <EyebrowBadge tone="white" icon={ShieldCheck}>
+                오탐 관리 원칙
+              </EyebrowBadge>
+              <h2 className="text-[clamp(32px,5vw,60px)] leading-[1.12] font-extrabold tracking-[-0.02em] text-[var(--landing-ink)] break-keep">
+                확신 없는 판정은, 확정하지 않습니다
+              </h2>
+              <p className="max-w-2xl text-[15px] leading-relaxed text-[var(--landing-ink)]/70 sm:text-base">
+                AI가 확신하지 못한 댓글(confidence 0.7 미만)은 자동으로 확정하지
+                않고{" "}
+                <br className="hidden sm:inline" />
+                별도의 검토 큐로 분리합니다. 잘못된 확정보다, 사람이 한 번 더
+                확인하는 쪽을 택했습니다.
+              </p>
+            </div>
           </div>
-        </div>
+        </Reveal>
       </section>
 
-      {/* 요금제 카드 */}
-      <section id="pricing" className="bg-background px-6 py-16 md:py-24">
-        <div className="mx-auto max-w-[1200px]">
+      {/* ── 요금제 ─────────────────────────────────────────────── */}
+      <section id="pricing" className="scroll-mt-6 px-6 pb-20 md:pb-28">
+        <div className="mx-auto max-w-[1240px]">
           <div className="relative">
             <div
               aria-hidden
@@ -372,114 +399,128 @@ export default async function LandingPage({
             <PricingTable />
           </div>
 
-          <div className="mt-12 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <KakaoSignInButton
-              label="지금 시작하기 →"
-              className="h-[52px] w-auto rounded-xl px-10 text-base font-semibold shadow-lg shadow-primary/25"
-            />
-            <Button
-              variant="outline"
-              size="lg"
-              className="h-[52px] w-auto rounded-xl border-[#e0e6e1] bg-white px-10 text-base font-semibold text-[#1e2d26] shadow-sm hover:bg-white hover:shadow-md"
-              nativeButton={false}
-              render={<a href="#how-it-works">서비스 소개 보기</a>}
-            />
-          </div>
-          <p className="mt-4 text-center text-[13px] text-[#71806f]">
-            결제 기능은 아직 준비 중입니다. 지금 가입하면 정식 출시 때 가장
-            먼저 안내드릴게요.
-          </p>
-
-          <div className="mt-14 flex flex-col gap-6 border-t border-black/[0.06] pt-10 sm:flex-row sm:justify-center sm:gap-0 sm:divide-x sm:divide-black/[0.06]">
-            {HERO_HIGHLIGHTS.map((item) => (
-              <div
-                key={item.title}
-                className="flex items-center justify-center gap-3 sm:px-10 lg:px-14"
-              >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#e4efe6] text-primary">
-                  <item.icon className="size-4.5" />
-                </span>
-                <div>
-                  <p className="text-sm font-bold text-[#16241d]">
-                    {item.title}
-                  </p>
-                  <p className="text-[13px] text-[#71806f]">{item.caption}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 상세 비교표 */}
-      <section className="bg-background px-6 pb-16 md:pb-24">
-        <div className="mx-auto max-w-[1200px]">
-          <PlanComparisonTable showHeader />
-
-          <div className="mt-10 flex flex-col items-center gap-4 text-center">
-            <KakaoSignInButton
-              label="지금 시작하기 →"
-              className="h-[52px] w-auto rounded-xl px-10 text-base font-semibold shadow-lg shadow-primary/25"
-            />
-            <p className="text-[13px] text-[#71806f]">
+          <Reveal>
+            <div className="mt-14 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <KakaoSignInButton label="지금 시작하기 →" className={CTA_ON_LIGHT} />
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-[56px] w-auto rounded-full border-black/15 bg-white px-9 text-base font-bold text-[var(--landing-ink)] shadow-none transition-all duration-300 hover:-translate-y-0.5 hover:bg-white"
+                nativeButton={false}
+                render={<a href="#how-it-works">서비스 소개 보기</a>}
+              />
+            </div>
+            <p className="mt-4 text-center text-[13px] text-[#71806f]">
               결제 기능은 아직 준비 중입니다. 지금 가입하면 정식 출시 때 가장
               먼저 안내드릴게요.
             </p>
+          </Reveal>
+
+          <div className="mt-16 border-t border-black/[0.06] pt-12">
+            <HighlightPills items={HERO_HIGHLIGHTS} />
           </div>
         </div>
       </section>
 
-      {/* 왜 필요한가 + 마무리 CTA */}
-      <section className="bg-background px-6 py-16 md:py-24">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="mx-auto mb-12 flex max-w-3xl flex-col items-center gap-4 text-center">
-            <EyebrowBadge icon={Users2}>크리에이터의 더 안전한 내일을 위해</EyebrowBadge>
-            <h2 className="text-3xl leading-snug font-extrabold tracking-tight text-[#111111] break-keep sm:text-4xl">
-              구독자가 늘수록,
-              <br />
-              댓글창은 혼자 감당하기 버거워집니다
-            </h2>
-            <p className="text-[15px] leading-relaxed text-[#5b6a61]">
-              소속사나 법무팀 없이 채널을 운영하는
-              크리에이터를 위해 만들어졌습니다.{" "}
-              <br className="hidden sm:inline" />
-              매번 댓글창을 직접 훑어보지 않아도, 위험한 댓글은 자동으로
-              걸러서 보여드려요.
-            </p>
+      {/* ── 상세 비교표 ─────────────────────────────────────────── */}
+      <section className="px-6 pb-20 md:pb-28">
+        <div className="mx-auto max-w-[1240px]">
+          <Reveal>
+            <LandingComparisonTable />
+          </Reveal>
+
+          <Reveal>
+            <div className="mt-12 flex flex-col items-center gap-4 text-center">
+              <KakaoSignInButton label="지금 시작하기 →" className={CTA_ON_LIGHT} />
+              <p className="text-[13px] text-[#71806f]">
+                결제 기능은 아직 준비 중입니다. 지금 가입하면 정식 출시 때 가장
+                먼저 안내드릴게요.
+              </p>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── 왜 필요한가 + 마무리 CTA ─────────────────────────────── */}
+      <section className="px-6 pb-8 md:pb-12">
+        <div className="mx-auto max-w-[1240px]">
+          <Reveal>
+            <div className="mx-auto mb-14 flex max-w-3xl flex-col items-center gap-5 text-center">
+              <EyebrowBadge icon={Users2}>크리에이터의 더 안전한 내일을 위해</EyebrowBadge>
+              <h2 className="text-[clamp(32px,4.5vw,54px)] leading-[1.14] font-extrabold tracking-[-0.02em] text-[var(--landing-ink)] break-keep">
+                구독자가 늘수록,
+                <br />
+                댓글창은 혼자 감당하기 버거워집니다
+              </h2>
+              <p className="text-[15px] leading-relaxed text-[#5b6a61] sm:text-base">
+                소속사나 법무팀 없이 채널을 운영하는
+                크리에이터를 위해 만들어졌습니다.{" "}
+                <br className="hidden sm:inline" />
+                매번 댓글창을 직접 훑어보지 않아도, 위험한 댓글은 자동으로
+                걸러서 보여드려요.
+              </p>
+            </div>
+          </Reveal>
+
+          <div className="mb-20 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {FEATURE_CARDS.map((feature, index) => {
+              // 컬러 로테이션 — 라임·포레스트 카드가 하나씩 섞여 스티커 보드 느낌을 낸다
+              const tone = [
+                "bg-white ring-1 ring-black/[0.05]",
+                "bg-[var(--landing-lime)]",
+                "bg-[var(--landing-forest)]",
+                "bg-white ring-1 ring-black/[0.05]",
+              ][index];
+              const isForest = tone.includes("--landing-forest");
+
+              return (
+                <Reveal key={feature.title} delay={index * 100} className="h-full">
+                  <div
+                    className={`flex h-full flex-col rounded-[2rem] p-7 transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_30px_60px_-30px_rgba(20,33,27,0.4)] ${tone}`}
+                  >
+                    <span
+                      className={`flex size-13 items-center justify-center rounded-2xl ${
+                        isForest
+                          ? "bg-[var(--landing-lime)] text-[var(--landing-ink)]"
+                          : "bg-[var(--landing-ink)] text-[var(--landing-lime)]"
+                      }`}
+                    >
+                      <feature.icon className="size-6" />
+                    </span>
+                    <p
+                      className={`mt-6 text-lg font-extrabold ${
+                        isForest ? "text-white" : "text-[var(--landing-ink)]"
+                      }`}
+                    >
+                      {feature.title}
+                    </p>
+                    <p
+                      className={`mt-2.5 text-sm leading-relaxed ${
+                        isForest ? "text-white/70" : "text-[#5b6a61]"
+                      }`}
+                    >
+                      {feature.body}
+                    </p>
+                  </div>
+                </Reveal>
+              );
+            })}
           </div>
+        </div>
+      </section>
 
-          <div className="mb-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {FEATURE_CARDS.map((feature) => (
-              <div
-                key={feature.title}
-                className="rounded-2xl border border-black/[0.06] bg-white px-6 py-7 text-left shadow-sm"
-              >
-                <span className="flex size-14 items-center justify-center rounded-full bg-[#e4efe6] text-primary">
-                  <feature.icon className="size-6" />
-                </span>
-                <p className="mt-5 text-[17px] font-extrabold text-[#16241d]">
-                  {feature.title}
-                </p>
-                <p className="mt-2.5 text-sm leading-relaxed text-[#5b6a61]">
-                  {feature.body}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div className="relative overflow-hidden rounded-3xl bg-[#e9f2ea] px-8 py-14 text-center">
+      {/* ── 마무리 CTA: 딥그린 포스터 블록 ───────────────────────── */}
+      <section className="px-3 pb-20 sm:px-4 md:pb-28">
+        <Reveal>
+          <div className="relative overflow-hidden rounded-[2rem] bg-[var(--landing-forest)] px-6 py-20 sm:rounded-[2.75rem] md:py-28">
             <div
               aria-hidden
-              className="pointer-events-none absolute -bottom-32 -left-24 size-96 rounded-full bg-white/50 blur-3xl"
-            />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -top-24 right-1/4 size-64 rounded-full bg-white/40 blur-3xl"
+              className="pointer-events-none absolute -top-40 right-[10%] size-[420px] rounded-full bg-[var(--landing-forest-deep)] opacity-80 blur-[90px]"
             />
 
             <div
               aria-hidden
-              className={`${handwritingFont.className} absolute top-1/2 right-10 hidden -translate-y-1/2 rotate-[-8deg] text-2xl leading-[1.1] font-semibold text-[#49564e] lg:block`}
+              className={`${handwritingFont.className} absolute top-1/2 right-12 hidden -translate-y-1/2 rotate-[-8deg] text-2xl leading-[1.1] font-semibold text-[var(--landing-lime)] lg:block`}
             >
               <p>Good</p>
               <p>Creators</p>
@@ -501,47 +542,32 @@ export default async function LandingPage({
               <p>Tomorrow</p>
             </div>
 
-            <div className="relative">
-              <p className="text-[13px] font-bold text-primary">
+            <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
+              <p className="text-[13px] font-extrabold tracking-wide text-[var(--landing-lime)]">
                 지금, 더 안전한 창작 활동을 시작하세요
               </p>
-              <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#111111] break-keep sm:text-4xl">
+              <h2 className="mt-4 text-[clamp(30px,4.5vw,54px)] leading-[1.14] font-extrabold tracking-[-0.02em] text-white break-keep">
                 좋은 크리에이터의 내일을 함께 만듭니다
               </h2>
-              <p className="mt-3 text-[15px] text-[#4b5a51]">
+              <p className="mt-4 text-[15px] text-white/70 sm:text-base">
                 지금 바로 Reevely와 함께 더 건강한 커뮤니티를 만들어보세요.
               </p>
 
-              <div className="mt-7 flex flex-col items-center gap-3">
+              <div className="mt-9 flex flex-col items-center gap-3">
                 <KakaoSignInButton
                   label="무료로 시작하기 →"
-                  className="h-[52px] w-auto rounded-xl px-10 text-base font-semibold shadow-lg shadow-primary/25"
+                  className={CTA_ON_DARK}
                 />
-                <p className="text-xs text-[#71806f]">
+                <p className="text-xs text-white/50">
                   카카오 로그인 후 유튜브 채널을 연동합니다.
                 </p>
               </div>
             </div>
           </div>
+        </Reveal>
 
-          <div className="mt-14 flex flex-col gap-6 border-t border-black/[0.06] pt-10 sm:flex-row sm:justify-center sm:gap-0 sm:divide-x sm:divide-black/[0.06]">
-            {CLOSING_HIGHLIGHTS.map((item) => (
-              <div
-                key={item.title}
-                className="flex items-center justify-center gap-3 sm:px-10 lg:px-14"
-              >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#e4efe6] text-primary">
-                  <item.icon className="size-4.5" />
-                </span>
-                <div>
-                  <p className="text-sm font-bold text-[#16241d]">
-                    {item.title}
-                  </p>
-                  <p className="text-[13px] text-[#71806f]">{item.caption}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="mx-auto mt-16 max-w-[1240px]">
+          <HighlightPills items={CLOSING_HIGHLIGHTS} />
         </div>
       </section>
 

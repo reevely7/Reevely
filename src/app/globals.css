@@ -192,3 +192,99 @@
     system-ui,
     sans-serif;
 }
+
+/* ─── 랜딩 리디자인 (2026-09-17) ───────────────────────────────
+   포스터형 컬러 블로킹 랜딩 전용 토큰·모션. 앱 내부 화면과 분리해
+   landing- 접두사로만 쓴다. */
+:root {
+  --landing-forest: #2e5a48;
+  --landing-forest-deep: #23473a;
+  --landing-lime: #d9f36a;
+  --landing-ink: #14211b;
+}
+
+/* 페이지 로드 시 히어로 요소가 순서대로 떠오르는 스태거.
+   delay는 인라인 style로 지정한다. */
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.landing-rise {
+  animation: landing-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 히어로 앱 목업 상단 진행 바 — 3초에 걸쳐 좌→우로 채워진다 */
+@keyframes landing-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.landing-progress-fill {
+  transform-origin: left center;
+  animation: landing-progress var(--cycle-ms, 3000ms) linear both;
+}
+
+/* 목업 주변 카드가 제자리에서 아주 천천히 떠다니는 플로팅.
+   회전값은 --peek-rotate로 받아 기울기를 유지한 채 흔들린다 */
+@keyframes landing-peek-float {
+  0%,
+  100% {
+    transform: rotate(var(--peek-rotate, 0deg)) translateY(0);
+  }
+  50% {
+    transform: rotate(var(--peek-rotate, 0deg)) translateY(-9px);
+  }
+}
+
+.landing-peek-float {
+  animation: landing-peek-float 5s ease-in-out infinite;
+}
+
+/* 목업 화면 전환 시 페이드+살짝 상승 */
+@keyframes landing-screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.landing-screen-in {
+  animation: landing-screen-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 스크롤 등장 — Reveal 컴포넌트가 뷰포트 진입 시 is-visible을 붙인다 */
+.landing-reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.landing-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
