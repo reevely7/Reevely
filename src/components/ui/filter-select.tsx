@@ -18,10 +18,12 @@ export function FilterSelect({
   value,
   onValueChange,
   options,
+  triggerHeightClassName = "data-[size=default]:h-9",
 }: {
   value: string;
   onValueChange: (value: string) => void;
   options: Option[];
+  triggerHeightClassName?: string;
 }) {
   const labelByValue = Object.fromEntries(
     options.map((option) => [option.value || ALL_VALUE, option.label]),
@@ -34,7 +36,9 @@ export function FilterSelect({
         onValueChange(next === ALL_VALUE || next === null ? "" : next)
       }
     >
-      <SelectTrigger className="data-[size=default]:h-9 w-fit min-w-28 rounded-md border-border bg-background px-3 text-xs">
+      <SelectTrigger
+        className={`${triggerHeightClassName} w-fit min-w-28 rounded-md border-border bg-background px-3 text-xs`}
+      >
         <SelectValue>
           {(selected: string) => labelByValue[selected] ?? selected}
         </SelectValue>

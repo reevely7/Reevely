@@ -20,6 +20,7 @@ export function VideoSortFilter() {
     <FilterSelect
       value={sort}
       onValueChange={updateSort}
+      triggerHeightClassName="data-[size=default]:h-11"
       options={[
         { value: "latest", label: "최신순" },
         { value: "malicious", label: "악성 댓글 많은순" },

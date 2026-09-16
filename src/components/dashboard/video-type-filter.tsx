@@ -20,6 +20,7 @@ export function VideoTypeFilter() {
     <FilterSelect
       value={searchParams.get("type") ?? ""}
       onValueChange={updateType}
+      triggerHeightClassName="data-[size=default]:h-11"
       options={[
         { value: "", label: "전체" },
         { value: "video", label: "동영상" },

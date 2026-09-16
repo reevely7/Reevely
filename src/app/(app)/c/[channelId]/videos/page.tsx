@@ -47,7 +47,11 @@ export default async function VideoSearchPage({
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
           <VideoTypeFilter />
           <VideoSortFilter />
-          <CommentSearch paramKey="q" placeholder="영상 제목 검색" />
+          <CommentSearch
+            paramKey="q"
+            placeholder="영상 제목 검색"
+            widthClassName="sm:w-96"
+          />
         </div>
       </header>
 
