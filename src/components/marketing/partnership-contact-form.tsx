@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { EyebrowBadge } from "@/components/landing/eyebrow-badge";
 import { CONTACT_EMAILS } from "@/lib/contact";
 
 const MAX_LENGTH = 1000;
@@ -12,6 +13,9 @@ const COLLABORATION_TYPES = [
   "커뮤니티·미디어 협업",
   "기타",
 ];
+
+const INPUT_CLASS =
+  "w-full rounded-xl border border-black/10 px-3.5 py-2.5 text-sm text-[var(--landing-ink)] outline-none transition-colors focus:border-[var(--landing-forest)]";
 
 // 별도 백엔드 없이 mailto 링크로 메일 클라이언트를 열어 제안 내용을
 // 전달한다 — 이 서비스에는 아직 제휴 문의를 저장할 DB 테이블이 없다.
@@ -44,12 +48,10 @@ export function PartnershipContactForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-black/[0.06] bg-white p-6 shadow-sm sm:p-7"
+      className="rounded-[2rem] bg-white p-7 ring-1 ring-black/[0.05] sm:p-9"
     >
-      <p className="text-[13px] font-bold tracking-[0.1em] text-primary uppercase">
-        Get in Touch
-      </p>
-      <h3 className="mt-2 text-2xl font-extrabold tracking-tight text-[#111111]">
+      <EyebrowBadge>Get in Touch</EyebrowBadge>
+      <h3 className="mt-4 text-[clamp(26px,3vw,34px)] leading-[1.15] font-extrabold tracking-[-0.02em] text-[var(--landing-ink)]">
         제안하기
       </h3>
       <p className="mt-2 text-sm leading-relaxed text-[#5b6a61]">
@@ -58,10 +60,10 @@ export function PartnershipContactForm() {
         답변드리겠습니다.
       </p>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      <div className="mt-7 grid gap-4 sm:grid-cols-2">
         <label className="block text-sm">
-          <span className="mb-1.5 block font-semibold text-[#16241d]">
-            회사명 / 단체명 <span className="text-primary">*</span>
+          <span className="mb-1.5 block font-semibold text-[var(--landing-ink)]">
+            회사명 / 단체명 <span className="text-[#3e6856]">*</span>
           </span>
           <input
             type="text"
@@ -69,13 +71,13 @@ export function PartnershipContactForm() {
             value={companyName}
             onChange={(event) => setCompanyName(event.target.value)}
             placeholder="예: 리블리 엔터테인먼트"
-            className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm text-[#16241d] outline-none focus:border-primary"
+            className={INPUT_CLASS}
           />
         </label>
 
         <label className="block text-sm">
-          <span className="mb-1.5 block font-semibold text-[#16241d]">
-            담당자명 <span className="text-primary">*</span>
+          <span className="mb-1.5 block font-semibold text-[var(--landing-ink)]">
+            담당자명 <span className="text-[#3e6856]">*</span>
           </span>
           <input
             type="text"
@@ -83,13 +85,13 @@ export function PartnershipContactForm() {
             value={contactName}
             onChange={(event) => setContactName(event.target.value)}
             placeholder="이름을 입력해주세요"
-            className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm text-[#16241d] outline-none focus:border-primary"
+            className={INPUT_CLASS}
           />
         </label>
 
         <label className="block text-sm">
-          <span className="mb-1.5 block font-semibold text-[#16241d]">
-            이메일 주소 <span className="text-primary">*</span>
+          <span className="mb-1.5 block font-semibold text-[var(--landing-ink)]">
+            이메일 주소 <span className="text-[#3e6856]">*</span>
           </span>
           <input
             type="email"
@@ -97,19 +99,19 @@ export function PartnershipContactForm() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="name@company.com"
-            className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm text-[#16241d] outline-none focus:border-primary"
+            className={INPUT_CLASS}
           />
         </label>
 
         <label className="block text-sm">
-          <span className="mb-1.5 block font-semibold text-[#16241d]">
-            협업 유형 <span className="text-primary">*</span>
+          <span className="mb-1.5 block font-semibold text-[var(--landing-ink)]">
+            협업 유형 <span className="text-[#3e6856]">*</span>
           </span>
           <select
             required
             value={type}
             onChange={(event) => setType(event.target.value)}
-            className="w-full rounded-lg border border-black/10 bg-white px-3.5 py-2.5 text-sm text-[#16241d] outline-none focus:border-primary"
+            className={`${INPUT_CLASS} bg-white`}
           >
             {COLLABORATION_TYPES.map((option) => (
               <option key={option} value={option}>
@@ -120,8 +122,8 @@ export function PartnershipContactForm() {
         </label>
 
         <label className="block text-sm sm:col-span-2">
-          <span className="mb-1.5 block font-semibold text-[#16241d]">
-            제안 내용 <span className="text-primary">*</span>
+          <span className="mb-1.5 block font-semibold text-[var(--landing-ink)]">
+            제안 내용 <span className="text-[#3e6856]">*</span>
           </span>
           <textarea
             required
@@ -130,7 +132,7 @@ export function PartnershipContactForm() {
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             placeholder="제휴 제안 내용을 자유롭게 작성해주세요. (목표, 협업 방식, 기대 효과 등)"
-            className="w-full resize-none rounded-lg border border-black/10 px-3.5 py-2.5 text-sm text-[#16241d] outline-none focus:border-primary"
+            className={`${INPUT_CLASS} resize-none`}
           />
           <span className="mt-1 block text-right text-xs text-[#8a9791]">
             {message.length} / {MAX_LENGTH}
@@ -140,7 +142,7 @@ export function PartnershipContactForm() {
 
       <button
         type="submit"
-        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-primary/25 transition-colors hover:bg-primary-hover"
+        className="mt-2 flex h-[56px] w-full items-center justify-center gap-1.5 rounded-full bg-[var(--landing-ink)] px-6 text-base font-bold text-white shadow-none transition-all duration-300 hover:-translate-y-0.5 hover:bg-[var(--landing-forest)]"
       >
         제휴 제안 보내기 →
       </button>

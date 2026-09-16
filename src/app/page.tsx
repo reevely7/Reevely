@@ -13,6 +13,11 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 
 import { KakaoSignInButton } from "@/components/auth/kakao-sign-in-button";
+import {
+  CTA_ON_DARK,
+  CTA_ON_LIGHT,
+  CTA_OUTLINE_ON_DARK,
+} from "@/components/landing/cta-styles";
 import { EyebrowBadge } from "@/components/landing/eyebrow-badge";
 import { HeroAppMockup } from "@/components/landing/hero-app-mockup";
 import { LandingComparisonTable } from "@/components/landing/landing-comparison-table";
@@ -110,12 +115,6 @@ const CLOSING_HIGHLIGHTS = [
     caption: "좋은 크리에이터와 함께 성장합니다",
   },
 ];
-
-// 포스터형 CTA 버튼 — 다크(잉크) 배경 위주 섹션과 화이트 섹션에서 공유.
-const CTA_ON_DARK =
-  "h-[56px] w-auto rounded-full bg-[var(--landing-lime)] px-9 text-base font-extrabold text-[var(--landing-ink)] shadow-none transition-all duration-300 hover:-translate-y-0.5 hover:bg-white";
-const CTA_ON_LIGHT =
-  "h-[56px] w-auto rounded-full bg-[var(--landing-ink)] px-9 text-base font-bold text-white shadow-none transition-all duration-300 hover:-translate-y-0.5 hover:bg-[var(--landing-forest)]";
 
 function HighlightPills({
   items,
@@ -276,7 +275,7 @@ export default async function LandingPage({
                   <Button
                     variant="outline"
                     size="lg"
-                    className="h-[56px] w-auto rounded-full border-white/25 bg-transparent px-9 text-base font-bold text-white shadow-none transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white"
+                    className={CTA_OUTLINE_ON_DARK}
                     nativeButton={false}
                     render={<a href="#how-it-works">서비스 소개 보기</a>}
                   />

@@ -14,6 +14,8 @@ import {
 import { useMemo, useState } from "react";
 import type { ComponentType } from "react";
 
+import { EyebrowBadge } from "@/components/landing/eyebrow-badge";
+import { Reveal } from "@/components/landing/reveal";
 import { CONTACT_EMAILS } from "@/lib/contact";
 
 type CategoryKey =
@@ -127,7 +129,9 @@ function FaqItem({
         aria-expanded={isOpen}
         className="flex w-full items-center justify-between gap-4 py-4 text-left"
       >
-        <span className="text-[15px] font-bold text-[#16241d]">{faq.q}</span>
+        <span className="text-[15px] font-bold text-[var(--landing-ink)]">
+          {faq.q}
+        </span>
         <ChevronDown
           className={`size-4 shrink-0 text-[#8a9791] transition-transform ${
             isOpen ? "rotate-180" : ""
@@ -163,130 +167,159 @@ export function SupportHelpCenter() {
 
   return (
     <>
-      <div className="bg-background px-6 pt-2 pb-10 md:pb-14">
-        <div className="mx-auto flex w-full max-w-xl items-center gap-3 rounded-xl border border-black/[0.08] bg-white px-4 py-3 shadow-sm">
+      <div className="px-6 pt-10 pb-6 md:pt-14">
+        <div className="mx-auto flex w-full max-w-xl items-center gap-3 rounded-full bg-white px-5 py-3.5 ring-1 ring-black/[0.06]">
           <Search className="size-4 shrink-0 text-[#8a9791]" />
           <input
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="궁금한 내용을 검색해 보세요 (예: 댓글 분석, 요금제, 채널 연동)"
-            className="w-full text-sm text-[#16241d] outline-none placeholder:text-[#8a9791]"
+            className="w-full text-sm text-[var(--landing-ink)] outline-none placeholder:text-[#8a9791]"
           />
         </div>
       </div>
 
-      <section className="bg-background px-6 pt-4 pb-4 md:pt-6">
+      <section className="px-6 pt-4 pb-4 md:pt-6">
         <div className="mx-auto max-w-[1200px]">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 className="text-2xl font-extrabold tracking-tight text-[#111111]">
-              도움말 카테고리
-            </h2>
-            <a
-              href={`mailto:${CONTACT_EMAILS.support}`}
-              className="text-sm font-semibold text-primary hover:underline"
-            >
-              원하는 답을 찾지 못하셨나요? 이메일 문의하기
-            </a>
-          </div>
+          <Reveal>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <EyebrowBadge>Help Center</EyebrowBadge>
+                <h2 className="mt-3 text-[clamp(24px,3vw,32px)] font-extrabold tracking-[-0.02em] text-[var(--landing-ink)]">
+                  도움말 카테고리
+                </h2>
+              </div>
+              <a
+                href={`mailto:${CONTACT_EMAILS.support}`}
+                className="text-sm font-semibold text-[#3e6856] hover:underline"
+              >
+                원하는 답을 찾지 못하셨나요? 이메일 문의하기
+              </a>
+            </div>
+          </Reveal>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {CATEGORIES.map((category) => {
+            {CATEGORIES.map((category, index) => {
               const isActive = activeCategory === category.key;
               return (
-                <button
-                  key={category.key}
-                  type="button"
-                  onClick={() =>
-                    setActiveCategory(isActive ? null : category.key)
-                  }
-                  className={`flex items-start gap-4 rounded-2xl border px-5 py-5 text-left shadow-sm transition-colors ${
-                    isActive
-                      ? "border-primary bg-[#f3faf4]"
-                      : "border-black/[0.06] bg-white hover:bg-[#f7f9f7]"
-                  }`}
-                >
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#e4efe6] text-primary">
-                    <category.icon className="size-4.5" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-extrabold text-[#16241d]">
-                      {category.title}
-                    </p>
-                    <p className="mt-1 text-xs leading-relaxed text-[#5b6a61]">
-                      {category.body}
-                    </p>
-                  </div>
-                </button>
+                <Reveal key={category.key} delay={index * 60} className="h-full">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveCategory(isActive ? null : category.key)
+                    }
+                    className={`flex h-full w-full items-start gap-4 rounded-[2rem] px-6 py-6 text-left transition-all duration-300 ${
+                      isActive
+                        ? "bg-[var(--landing-forest)] shadow-[0_30px_60px_-30px_rgba(20,33,27,0.5)]"
+                        : "bg-white ring-1 ring-black/[0.05] hover:-translate-y-1 hover:shadow-[0_20px_40px_-24px_rgba(20,33,27,0.3)]"
+                    }`}
+                  >
+                    <span
+                      className={`flex size-11 shrink-0 items-center justify-center rounded-2xl ${
+                        isActive
+                          ? "bg-[var(--landing-lime)] text-[var(--landing-ink)]"
+                          : "bg-[var(--landing-ink)] text-[var(--landing-lime)]"
+                      }`}
+                    >
+                      <category.icon className="size-5" />
+                    </span>
+                    <div>
+                      <p
+                        className={`text-sm font-extrabold ${
+                          isActive ? "text-white" : "text-[var(--landing-ink)]"
+                        }`}
+                      >
+                        {category.title}
+                      </p>
+                      <p
+                        className={`mt-1 text-xs leading-relaxed ${
+                          isActive ? "text-white/70" : "text-[#5b6a61]"
+                        }`}
+                      >
+                        {category.body}
+                      </p>
+                    </div>
+                  </button>
+                </Reveal>
               );
             })}
           </div>
         </div>
       </section>
 
-      <section className="bg-background px-6 py-12 md:py-16">
+      <section className="px-6 py-12 md:py-16">
         <div className="mx-auto max-w-[1200px]">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 className="text-2xl font-extrabold tracking-tight text-[#111111]">
-              자주 묻는 질문
-              {activeCategory && (
-                <span className="ml-2 text-sm font-medium text-[#5b6a61]">
-                  · {CATEGORY_LABEL[activeCategory]}
-                </span>
-              )}
-            </h2>
-            {activeCategory && (
-              <button
-                type="button"
-                onClick={() => setActiveCategory(null)}
-                className="text-sm font-semibold text-primary hover:underline"
-              >
-                전체 질문 보기
-              </button>
-            )}
-          </div>
-
-          <div className="mt-6 rounded-2xl border border-black/[0.06] bg-white px-6 shadow-sm sm:px-7">
-            {filteredFaqs.length > 0 ? (
-              filteredFaqs.map((faq, index) => (
-                <FaqItem
-                  key={faq.q}
-                  faq={faq}
-                  isOpen={openIndex === index}
-                  onToggle={() =>
-                    setOpenIndex(openIndex === index ? null : index)
-                  }
-                />
-              ))
-            ) : (
-              <p className="py-8 text-center text-sm text-[#5b6a61]">
-                검색 결과가 없습니다. 이메일로 문의해 주세요.
-              </p>
-            )}
-          </div>
-
-          <div className="mt-8 flex flex-col items-center gap-4 rounded-2xl bg-[#e9f2ea] px-8 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
-            <div className="flex items-center gap-4">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-primary">
-                <Mail className="size-5" />
-              </span>
+          <Reveal>
+            <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-[15px] font-extrabold text-[#16241d]">
-                  해결되지 않았나요?
-                </p>
-                <p className="mt-1 text-sm text-[#5b6a61]">
-                  더 궁금한 점이 있다면 언제든지 문의해 주세요. 영업일 기준
-                  1~2일 이내 답변드립니다.
-                </p>
+                <EyebrowBadge>FAQ</EyebrowBadge>
+                <h2 className="mt-3 text-[clamp(24px,3vw,32px)] font-extrabold tracking-[-0.02em] text-[var(--landing-ink)]">
+                  자주 묻는 질문
+                  {activeCategory && (
+                    <span className="ml-2 text-sm font-medium text-[#5b6a61]">
+                      · {CATEGORY_LABEL[activeCategory]}
+                    </span>
+                  )}
+                </h2>
               </div>
+              {activeCategory && (
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory(null)}
+                  className="text-sm font-semibold text-[#3e6856] hover:underline"
+                >
+                  전체 질문 보기
+                </button>
+              )}
             </div>
-            <a
-              href={`mailto:${CONTACT_EMAILS.support}`}
-              className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-white shadow-md shadow-primary/25 hover:bg-primary-hover"
-            >
-              이메일 문의하기 →
-            </a>
-          </div>
+          </Reveal>
+
+          <Reveal delay={100}>
+            <div className="mt-6 rounded-[2rem] bg-white px-6 ring-1 ring-black/[0.05] sm:px-7">
+              {filteredFaqs.length > 0 ? (
+                filteredFaqs.map((faq, index) => (
+                  <FaqItem
+                    key={faq.q}
+                    faq={faq}
+                    isOpen={openIndex === index}
+                    onToggle={() =>
+                      setOpenIndex(openIndex === index ? null : index)
+                    }
+                  />
+                ))
+              ) : (
+                <p className="py-8 text-center text-sm text-[#5b6a61]">
+                  검색 결과가 없습니다. 이메일로 문의해 주세요.
+                </p>
+              )}
+            </div>
+          </Reveal>
+
+          <Reveal delay={150}>
+            <div className="mt-8 flex flex-col items-center gap-4 rounded-[2rem] bg-[var(--landing-lime)] px-8 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
+              <div className="flex items-center gap-4">
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--landing-ink)] text-[var(--landing-lime)]">
+                  <Mail className="size-5" />
+                </span>
+                <div>
+                  <p className="text-[15px] font-extrabold text-[var(--landing-ink)]">
+                    해결되지 않았나요?
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--landing-ink)]/70">
+                    더 궁금한 점이 있다면 언제든지 문의해 주세요. 영업일 기준
+                    1~2일 이내 답변드립니다.
+                  </p>
+                </div>
+              </div>
+              <a
+                href={`mailto:${CONTACT_EMAILS.support}`}
+                className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--landing-ink)] px-6 text-sm font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[var(--landing-forest)]"
+              >
+                이메일 문의하기 →
+              </a>
+            </div>
+          </Reveal>
         </div>
       </section>
     </>

@@ -21,39 +21,45 @@ const ROWS: Array<{ text: string; tag: keyof typeof TAG_STYLES }> = [
 
 export function AboutHeroPreview() {
   return (
-    <div className="w-[300px] rounded-2xl border border-black/[0.06] bg-white p-3.5 shadow-xl sm:w-[340px]">
-      <div className="flex items-center justify-between px-1 pb-2.5">
-        <div className="flex items-center gap-1.5">
-          <YoutubeIcon className="size-4 text-red-500" />
-          <span className="text-[13px] font-bold text-[#16241d]">
-            Youtube 댓글
-          </span>
-        </div>
-        <span className="inline-flex items-center gap-1 rounded-full bg-[#e4efe6] px-2 py-1 text-[10px] font-semibold text-primary">
-          <Sparkles className="size-3" />
-          AI 분석 중...
-        </span>
-      </div>
-      <div className="space-y-1.5">
-        {ROWS.map((row) => (
-          <div
-            key={row.text}
-            className="flex items-center gap-2 rounded-lg bg-[#f7f9f7] px-2.5 py-2"
-          >
-            <span
-              className="size-5 shrink-0 rounded-full bg-[#d7e2d9]"
-              aria-hidden
-            />
-            <span className="min-w-0 flex-1 truncate text-[11px] text-[#4b5a51]">
-              {row.text}
-            </span>
-            <span
-              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${TAG_STYLES[row.tag]}`}
-            >
-              {row.tag}
+    <div className="relative w-[300px] sm:w-[340px]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -inset-6 -z-10 rounded-[3rem] bg-[var(--landing-lime)]/15 blur-2xl"
+      />
+      <div className="rounded-[1.5rem] bg-white/95 p-4 shadow-[0_40px_90px_-30px_rgba(8,20,14,0.55)] ring-1 ring-black/[0.05] backdrop-blur-sm">
+        <div className="flex items-center justify-between px-1 pb-2.5">
+          <div className="flex items-center gap-1.5">
+            <YoutubeIcon className="size-4 text-red-500" />
+            <span className="text-[13px] font-bold text-[#16241d]">
+              Youtube 댓글
             </span>
           </div>
-        ))}
+          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--landing-ink)] px-2 py-1 text-[10px] font-bold text-[var(--landing-lime)]">
+            <Sparkles className="size-3" />
+            AI 분석 중...
+          </span>
+        </div>
+        <div className="space-y-1.5">
+          {ROWS.map((row) => (
+            <div
+              key={row.text}
+              className="flex items-center gap-2 rounded-xl bg-[#f7f9f7] px-2.5 py-2"
+            >
+              <span
+                className="size-5 shrink-0 rounded-full bg-[#d7e2d9]"
+                aria-hidden
+              />
+              <span className="min-w-0 flex-1 truncate text-[11px] text-[#4b5a51]">
+                {row.text}
+              </span>
+              <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${TAG_STYLES[row.tag]}`}
+              >
+                {row.tag}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
