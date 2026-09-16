@@ -85,17 +85,12 @@ export default async function LandingPage({
             nativeButton={false}
             render={<a href="/admin/login">관리자 페이지</a>}
           />
-          <KakaoSignInButton
-            label="로그인"
+          <Button
             variant="ghost"
             size="sm"
             className="w-auto"
-          />
-          <KakaoSignInButton
-            label="회원가입"
-            variant="outline"
-            size="sm"
-            className="w-auto"
+            nativeButton={false}
+            render={<a href="/login">로그인</a>}
           />
         </div>
       </header>

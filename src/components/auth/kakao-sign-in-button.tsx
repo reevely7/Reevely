@@ -27,6 +27,9 @@ export function KakaoSignInButton({
       provider: "kakao",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          prompt: "login",
+        },
       },
     });
   }

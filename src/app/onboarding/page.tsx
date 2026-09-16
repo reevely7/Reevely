@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { LogoutButton } from "@/components/auth/logout-button";
 import { getChannelsByUserId } from "@/lib/db/queries/channels";
+import { isSignupCompleted } from "@/lib/auth/signup-status";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function OnboardingPage() {
@@ -12,6 +13,10 @@ export default async function OnboardingPage() {
 
   if (!user) {
     redirect("/");
+  }
+
+  if (!isSignupCompleted(user)) {
+    redirect("/signup/complete");
   }
 
   const channels = await getChannelsByUserId(user.id);
