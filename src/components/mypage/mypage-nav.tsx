@@ -4,10 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const TABS = [
+  { href: "/mypage/profile", label: "프로필" },
   { href: "/mypage", label: "구독 작성자" },
   { href: "/mypage/subscription", label: "구독 플랜" },
   { href: "/mypage/account", label: "계정/채널" },
-  { href: "/mypage/profile", label: "프로필" },
 ];
 
 export function MypageNav() {

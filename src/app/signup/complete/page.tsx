@@ -4,9 +4,10 @@ import { LogoutButton } from "@/components/auth/logout-button";
 import { Button } from "@/components/ui/button";
 import { isSignupCompleted } from "@/lib/auth/signup-status";
 import { createClient } from "@/lib/supabase/server";
+import { NICKNAME_ERROR_MESSAGES, validateNickname } from "@/lib/validation/nickname";
 
 const ERROR_MESSAGES: Record<string, string> = {
-  nickname: "닉네임을 입력해주세요.",
+  ...NICKNAME_ERROR_MESSAGES,
   terms: "이용약관 및 개인정보처리방침에 동의해주세요.",
   age: "만 14세 이상만 가입할 수 있습니다.",
 };
@@ -19,8 +20,9 @@ async function completeSignup(formData: FormData) {
   const agreeAge = formData.get("agreeAge") === "on";
   const agreeMarketing = formData.get("agreeMarketing") === "on";
 
-  if (!nickname) {
-    redirect("/signup/complete?error=nickname");
+  const nicknameError = validateNickname(nickname);
+  if (nicknameError) {
+    redirect(`/signup/complete?error=${nicknameError}`);
   }
   if (!agreeTerms) {
     redirect("/signup/complete?error=terms");

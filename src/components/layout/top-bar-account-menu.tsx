@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Bell, ChevronDown, CreditCard, Settings, User } from "lucide-react";
+import { ChevronDown, CreditCard, User } from "lucide-react";
 
 import { LogoutButton } from "@/components/auth/logout-button";
 import {
@@ -14,11 +14,9 @@ import {
 export function TopBarAccountMenu({
   nickname,
   email,
-  channelId,
 }: {
   nickname: string | null;
   email: string | null;
-  channelId: string;
 }) {
   const [open, setOpen] = useState(false);
   const displayName = nickname || "마이페이지";
@@ -65,15 +63,7 @@ export function TopBarAccountMenu({
           className={menuItemClassName}
         >
           <User className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-          내 프로필
-        </Link>
-        <Link
-          href="/mypage/account"
-          onClick={() => setOpen(false)}
-          className={menuItemClassName}
-        >
-          <Settings className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-          계정 설정
+          마이페이지
         </Link>
         <Link
           href="/mypage/subscription/plans"
@@ -82,14 +72,6 @@ export function TopBarAccountMenu({
         >
           <CreditCard className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
           요금제 관리
-        </Link>
-        <Link
-          href={`/c/${channelId}/notifications`}
-          onClick={() => setOpen(false)}
-          className={menuItemClassName}
-        >
-          <Bell className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-          알림 설정
         </Link>
 
         <div className="border-t border-border pt-1">

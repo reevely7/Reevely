@@ -66,7 +66,6 @@ export default async function ChannelLayout({
         <TopBarAccountMenu
           nickname={nickname}
           email={user.email ?? null}
-          channelId={channelId}
         />
         <NotificationBell
           notifications={recentNotifications}
@@ -88,7 +87,6 @@ export default async function ChannelLayout({
             <TopBarAccountMenu
               nickname={nickname}
               email={user.email ?? null}
-              channelId={channelId}
             />
             <NotificationBell
               notifications={recentNotifications}

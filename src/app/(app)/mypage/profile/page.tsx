@@ -4,8 +4,13 @@ import { redirect } from "next/navigation";
 import { MypageNav } from "@/components/mypage/mypage-nav";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
+import { NICKNAME_ERROR_MESSAGES, validateNickname } from "@/lib/validation/nickname";
 
-export default async function MypageProfilePage() {
+export default async function MypageProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -17,9 +22,21 @@ export default async function MypageProfilePage() {
 
   const nickname = (user.user_metadata?.nickname as string | undefined) ?? "";
 
+  const { error } = await searchParams;
+  const errorMessage =
+    error && error in NICKNAME_ERROR_MESSAGES
+      ? NICKNAME_ERROR_MESSAGES[error as keyof typeof NICKNAME_ERROR_MESSAGES]
+      : null;
+
   async function updateNickname(formData: FormData) {
     "use server";
     const value = String(formData.get("nickname") ?? "").trim();
+
+    const nicknameError = validateNickname(value);
+    if (nicknameError) {
+      redirect(`/mypage/profile?error=${nicknameError}`);
+    }
+
     const supabase = await createClient();
     await supabase.auth.updateUser({ data: { nickname: value } });
     revalidatePath("/mypage/profile");
@@ -41,6 +58,11 @@ export default async function MypageProfilePage() {
 
       <section className="max-w-sm space-y-3 rounded-2xl bg-card px-5 py-4">
         <h2 className="text-sm font-medium text-card-foreground">닉네임</h2>
+        {errorMessage ? (
+          <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            {errorMessage}
+          </p>
+        ) : null}
         <form action={updateNickname} className="flex items-center gap-2">
           <input
             type="text"
@@ -53,7 +75,7 @@ export default async function MypageProfilePage() {
           <Button type="submit">저장</Button>
         </form>
         <p className="text-xs text-muted-foreground">
-          설정하면 사이드바에 채널명 대신 표시됩니다.
+          한글 최대 8자 또는 영문 최대 12자, 숫자만으로는 설정할 수 없어요.
         </p>
       </section>
     </main>

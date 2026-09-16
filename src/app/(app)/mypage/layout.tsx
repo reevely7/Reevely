@@ -57,7 +57,6 @@ export default async function MypageLayout({
         <TopBarAccountMenu
           nickname={nickname}
           email={user.email ?? null}
-          channelId={defaultChannel.id}
         />
         <NotificationBell
           notifications={recentNotifications}
@@ -78,7 +77,6 @@ export default async function MypageLayout({
             <TopBarAccountMenu
               nickname={nickname}
               email={user.email ?? null}
-              channelId={defaultChannel.id}
             />
             <NotificationBell
               notifications={recentNotifications}
