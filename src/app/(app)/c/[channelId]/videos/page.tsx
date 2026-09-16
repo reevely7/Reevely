@@ -2,10 +2,13 @@ import Link from "next/link";
 import { Clapperboard } from "lucide-react";
 
 import { CommentSearch } from "@/components/dashboard/comment-search";
+import { Pagination } from "@/components/dashboard/pagination";
 import { VideoSortFilter } from "@/components/dashboard/video-sort-filter";
 import { VideoTypeFilter } from "@/components/dashboard/video-type-filter";
 import { requireChannelOwnership } from "@/lib/auth/require-channel-ownership";
-import { searchVideos } from "@/lib/db/queries/comments";
+import { countVideos, searchVideos } from "@/lib/db/queries/comments";
+
+const PAGE_SIZE = 20;
 
 function formatDate(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -17,21 +20,33 @@ export default async function VideoSearchPage({
   searchParams,
 }: {
   params: Promise<{ channelId: string }>;
-  searchParams: Promise<{ q?: string; type?: string; sort?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    type?: string;
+    sort?: string;
+    page?: string;
+  }>;
 }) {
   const { channelId } = await params;
   await requireChannelOwnership(channelId);
-  const { q, type, sort } = await searchParams;
+  const { q, type, sort, page: pageParam } = await searchParams;
   const query = q?.trim() ?? "";
   const videoType = type === "video" || type === "shorts" ? type : undefined;
   const sortOrder = sort === "malicious" ? "malicious" : "latest";
-  const results = await searchVideos(
-    channelId,
-    query,
-    query ? 50 : 20,
-    videoType,
-    sortOrder,
-  );
+  const page = Math.max(1, Number(pageParam) || 1);
+
+  const [results, totalCount] = await Promise.all([
+    searchVideos(
+      channelId,
+      query,
+      PAGE_SIZE,
+      (page - 1) * PAGE_SIZE,
+      videoType,
+      sortOrder,
+    ),
+    countVideos(channelId, query, videoType),
+  ]);
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
@@ -103,6 +118,10 @@ export default async function VideoSearchPage({
               </Link>
             ))}
           </div>
+
+          {totalPages > 1 && (
+            <Pagination currentPage={page} totalPages={totalPages} />
+          )}
         </div>
       )}
     </main>

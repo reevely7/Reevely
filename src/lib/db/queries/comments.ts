@@ -362,6 +362,7 @@ export async function searchVideos(
   channelId: string,
   query: string,
   limit: number,
+  offset: number,
   videoType?: "video" | "shorts",
   sort: "latest" | "malicious" = "latest",
 ) {
@@ -395,12 +396,39 @@ export async function searchVideos(
     .where(and(...conditions))
     .groupBy(comments.videoId)
     .orderBy(orderBy)
-    .limit(limit);
+    .limit(limit)
+    .offset(offset);
 
   return rows.map((row) => ({
     ...row,
     lastCommentAt: new Date(row.lastCommentAt),
   }));
+}
+
+// 영상별 보기 페이지 페이지네이션용 — searchVideos와 같은 필터 조건에
+// 일치하는 영상(distinct videoId) 총 개수
+export async function countVideos(
+  channelId: string,
+  query: string,
+  videoType?: "video" | "shorts",
+) {
+  const conditions = [
+    eq(comments.channelId, channelId),
+    eq(comments.isMalicious, true),
+  ];
+  if (query) {
+    conditions.push(ilike(comments.videoTitle, `%${query}%`));
+  }
+  if (videoType) {
+    conditions.push(eq(comments.videoType, videoType));
+  }
+
+  const [row] = await db
+    .select({ count: sql<number>`count(distinct ${comments.videoId})::int` })
+    .from(comments)
+    .where(and(...conditions));
+
+  return row?.count ?? 0;
 }
 
 // 대시보드 "최근 악성 댓글 몰린 영상" 위젯용 — 기간 내 영상별 악성 댓글 수 상위
