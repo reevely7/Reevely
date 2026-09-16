@@ -5,9 +5,9 @@ const LABELS: Record<string, string> = {
 };
 
 const CLASSES: Record<string, string> = {
-  high: "bg-risk-high-bg text-risk-high",
-  medium: "bg-risk-medium-bg text-risk-medium",
-  low: "bg-risk-low-bg text-risk-low",
+  high: "bg-[#C55556] text-risk-high-foreground",
+  medium: "bg-[#EFD3A1] text-risk-medium",
+  low: "bg-[#D6EACB] text-risk-low",
 };
 
 export function RiskBadge({ riskLevel }: { riskLevel: string }) {

@@ -1,4 +1,3 @@
-import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 import Link from "next/link";
 import { AiOutlineSafetyCertificate } from "react-icons/ai";
 import { PiWarningCircle } from "react-icons/pi";
@@ -94,8 +93,8 @@ export function SummaryTiles({
         const DecorativeIcon = tile.decorativeIcon ?? tile.icon;
         const kpi = kpis[tile.key];
         const trend = computeTrend(kpi.value, kpi.previous);
-        const TrendIcon =
-          trend.direction === "up" ? ArrowUp : trend.direction === "down" ? ArrowDown : Minus;
+        const trendSign =
+          trend.direction === "up" ? "+" : trend.direction === "down" ? "-" : "";
 
         const content = (
           <>
@@ -118,9 +117,26 @@ export function SummaryTiles({
             </p>
             <span className="flex items-center gap-1.5 pl-9 text-xs">
               <span
-                className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 font-medium ${TREND_BADGE_CLASSNAME}`}
+                className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${TREND_BADGE_CLASSNAME}`}
               >
-                <TrendIcon className="size-3" aria-hidden />
+                {trend.direction === "flat" ? (
+                  <span className="text-[9px] leading-none" aria-hidden>
+                    －
+                  </span>
+                ) : (
+                  <span
+                    aria-hidden
+                    className="inline-block size-0"
+                    style={{
+                      borderLeft: "4px solid transparent",
+                      borderRight: "4px solid transparent",
+                      ...(trend.direction === "up"
+                        ? { borderBottom: "4.2px solid currentColor" }
+                        : { borderTop: "4.2px solid currentColor" }),
+                    }}
+                  />
+                )}
+                {trendSign}
                 {trend.percent}%
               </span>
               <span className="text-muted-foreground">지난주 대비</span>

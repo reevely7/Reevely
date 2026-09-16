@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { DailyTrendCard } from "@/components/dashboard/daily-trend-card";
+import { DashboardWeekNav } from "@/components/dashboard/dashboard-week-nav";
 import { PlanUsageCard } from "@/components/dashboard/plan-usage-card";
 import { RecentCommentsPreview } from "@/components/dashboard/recent-comments-preview";
 import { SummaryTiles } from "@/components/dashboard/summary-tiles";
@@ -13,6 +14,7 @@ import {
   countArchivedCommentsByUserId,
   countMaliciousCommentsInRange,
   countNeedsReviewInRange,
+  getDailyAnalyzedCounts,
   getDailyMaliciousCounts,
   getFlaggedComments,
   getTopAuthorsByMaliciousCount,
@@ -32,27 +34,40 @@ const RECENT_COMMENTS_LIMIT = 5;
 const TREND_DAYS = 7;
 const TOP_LIST_LIMIT = 5;
 
-function formatHeaderDate(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
+function parseLocalDate(value: string): Date {
+  const [y, m, d] = value.split("-").map(Number);
+  return new Date(y, m - 1, d);
 }
 
 export default async function DashboardPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ channelId: string }>;
+  searchParams: Promise<{ to?: string }>;
 }) {
   const { channelId } = await params;
+  const { to } = await searchParams;
   const channel = await getChannelById(channelId);
   if (!channel) notFound();
 
-  const now = new Date();
+  const realNow = new Date();
+  // 대시보드는 항상 정확히 7일 범위만 보여준다 — "to"가 있으면 그 날짜를 마지막
+  // 날로 고정하고(그날 전체 포함), 없으면 지금 이 순간까지를 기본값으로 쓴다.
+  // URL에 남아있는 미래 날짜(예: 이전 버그로 생긴 값)는 오늘 기준 기본값으로 되돌린다.
+  const parsedTo = to ? parseLocalDate(to) : null;
+  const useDefaultRange = !parsedTo || parsedTo >= realNow;
+  const rangeEnd = useDefaultRange ? realNow : parsedTo;
+  const now = useDefaultRange
+    ? realNow
+    : new Date(rangeEnd.getTime() + 24 * 60 * 60 * 1000);
   const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
   const [
     recentComments,
     dailyCounts,
+    dailyTotalCounts,
     thisWeekCount,
     lastWeekCount,
     thisWeekAnalyzed,
@@ -72,6 +87,7 @@ export default async function DashboardPage({
   ] = await Promise.all([
     getFlaggedComments(channelId, { sort: "risk" }, 1, RECENT_COMMENTS_LIMIT),
     getDailyMaliciousCounts(channelId, oneWeekAgo, now),
+    getDailyAnalyzedCounts(channelId, oneWeekAgo, now),
     countMaliciousCommentsInRange(channelId, oneWeekAgo, now),
     countMaliciousCommentsInRange(channelId, twoWeeksAgo, oneWeekAgo),
     countAnalyzedCommentsInRange(channelId, oneWeekAgo, now),
@@ -79,7 +95,7 @@ export default async function DashboardPage({
     countNeedsReviewInRange(channelId, oneWeekAgo, now),
     countNeedsReviewInRange(channelId, twoWeeksAgo, oneWeekAgo),
     getTopAuthorsByMaliciousCount(channelId, TOP_LIST_LIMIT),
-    getTopVideosByMaliciousCount(channelId, oneWeekAgo, TOP_LIST_LIMIT),
+    getTopVideosByMaliciousCount(channelId, oneWeekAgo, now, TOP_LIST_LIMIT),
     getSubscriptionByUserId(channel.userId),
     getMonthlyAnalysisLimitForUser(channel.userId),
     countAnalyzedCommentsThisMonthByUserId(channel.userId),
@@ -100,7 +116,7 @@ export default async function DashboardPage({
   const protectedCountThisWeek = Math.max(0, thisWeekCount - thisWeekNeedsReview);
   const protectedCountLastWeek = Math.max(0, lastWeekCount - lastWeekNeedsReview);
 
-  const greeting = pickGreeting(now);
+  const greeting = pickGreeting(realNow);
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
@@ -111,10 +127,8 @@ export default async function DashboardPage({
           </p>
           <p className="text-sm text-muted-foreground">{greeting.message}</p>
         </div>
-        <div className="text-left sm:mt-8 sm:text-right">
-          <p className="text-base text-muted-foreground">
-            {formatHeaderDate(oneWeekAgo)} - {formatHeaderDate(now)}
-          </p>
+        <div className="sm:mt-8">
+          <DashboardWeekNav rangeStart={oneWeekAgo} rangeEnd={rangeEnd} />
         </div>
       </header>
 
@@ -132,7 +146,9 @@ export default async function DashboardPage({
         <RecentCommentsPreview rows={recentComments} channelId={channelId} />
         <DailyTrendCard
           dailyCounts={dailyCounts}
+          dailyTotalCounts={dailyTotalCounts}
           days={TREND_DAYS}
+          rangeEnd={rangeEnd}
           thisWeekCount={thisWeekCount}
           lastWeekCount={lastWeekCount}
           channelId={channelId}

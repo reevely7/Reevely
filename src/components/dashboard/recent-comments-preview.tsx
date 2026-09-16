@@ -28,7 +28,7 @@ export function RecentCommentsPreview({
     <div className="rounded-lg border border-[#CAD6CF] bg-card px-5 py-4">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-medium text-card-foreground">
-          최근 위험 알림
+          최근 위험 댓글
         </p>
         <Link
           href={`/c/${channelId}/comments`}

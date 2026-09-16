@@ -207,19 +207,30 @@ export async function getCategoryBreakdownInRange(
   );
 }
 
+// SQL date_trunc('day', ...)는 DB 세션 타임존(UTC)으로 하루를 나누는데, 서버는
+// 한국시간(Asia/Seoul)으로 동작한다. 자정 근처(0~9시 KST)에 작성된 댓글은
+// UTC 기준으론 아직 전날이라 엉뚱한 날짜에 묶이므로, 서버 로컬 시각 기준으로
+// 직접 묶는다 — daily-trend-card.tsx의 toDayKey와 동일한 기준이라야 맞는다.
+function groupByLocalDay(dates: Date[]): { day: Date; count: number }[] {
+  const counts = new Map<string, { day: Date; count: number }>();
+  for (const date of dates) {
+    const localMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const key = localMidnight.getTime().toString();
+    const existing = counts.get(key);
+    if (existing) existing.count += 1;
+    else counts.set(key, { day: localMidnight, count: 1 });
+  }
+  return Array.from(counts.values()).sort((a, b) => a.day.getTime() - b.day.getTime());
+}
+
 // 대시보드 추이 스파크라인용 — 기간 내 일별 악성 댓글 건수 (일자 오름차순)
 export async function getDailyMaliciousCounts(
   channelId: string,
   from: Date,
   to: Date,
 ) {
-  const dayExpr = sql<string>`date_trunc('day', ${comments.createdAt})`;
-
-  return db
-    .select({
-      day: dayExpr,
-      count: sql<number>`count(*)::int`,
-    })
+  const rows = await db
+    .select({ createdAt: comments.createdAt })
     .from(comments)
     .where(
       and(
@@ -228,9 +239,31 @@ export async function getDailyMaliciousCounts(
         gte(comments.createdAt, from),
         lt(comments.createdAt, to),
       ),
-    )
-    .groupBy(dayExpr)
-    .orderBy(dayExpr);
+    );
+
+  return groupByLocalDay(rows.map((row) => row.createdAt));
+}
+
+// 대시보드 "최근 7일 추이" 차트의 "전체 댓글" 시리즈용 — 기간 내 일별 분석 완료된
+// 전체 댓글 건수(악성 여부 무관)
+export async function getDailyAnalyzedCounts(
+  channelId: string,
+  from: Date,
+  to: Date,
+) {
+  const rows = await db
+    .select({ createdAt: comments.createdAt })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.channelId, channelId),
+        isNotNull(comments.isMalicious),
+        gte(comments.createdAt, from),
+        lt(comments.createdAt, to),
+      ),
+    );
+
+  return groupByLocalDay(rows.map((row) => row.createdAt));
 }
 
 // 대시보드 "요주의 작성자" 위젯용 — 악성 댓글 수 기준 상위 작성자.
@@ -263,6 +296,7 @@ export async function getTopAuthorsByMaliciousCount(
 export async function getTopVideosByMaliciousCount(
   channelId: string,
   from: Date,
+  to: Date,
   limit: number,
 ) {
   return db
@@ -278,6 +312,7 @@ export async function getTopVideosByMaliciousCount(
         eq(comments.channelId, channelId),
         eq(comments.isMalicious, true),
         gte(comments.createdAt, from),
+        lt(comments.createdAt, to),
       ),
     )
     .groupBy(comments.videoId)
