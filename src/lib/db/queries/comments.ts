@@ -208,6 +208,37 @@ export async function getCategoryBreakdownInRange(
   );
 }
 
+// 주간 요약 "쇼츠 vs 동영상 비교" 위젯용 — 기간 내 영상 유형별 전체 댓글 수와
+// 그중 악성 댓글 수 (위험 비율 계산용). videoType이 null인 레거시/비유튜브
+// 데이터는 비교 대상이 아니라 제외한다
+export async function getVideoTypeBreakdownInRange(
+  channelId: string,
+  from: Date,
+  to: Date,
+) {
+  const rows = await db
+    .select({
+      videoType: comments.videoType,
+      total: sql<number>`count(*)::int`,
+      malicious: sql<number>`count(*) filter (where ${comments.isMalicious})::int`,
+    })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.channelId, channelId),
+        isNotNull(comments.isMalicious),
+        gte(comments.createdAt, from),
+        lt(comments.createdAt, to),
+      ),
+    )
+    .groupBy(comments.videoType);
+
+  return rows.filter(
+    (row): row is { videoType: "video" | "shorts"; total: number; malicious: number } =>
+      row.videoType !== null,
+  );
+}
+
 // SQL date_trunc('day', ...)는 DB 세션 타임존(UTC)으로 하루를 나누는데, 서버는
 // 한국시간(Asia/Seoul)으로 동작한다. 자정 근처(0~9시 KST)에 작성된 댓글은
 // UTC 기준으론 아직 전날이라 엉뚱한 날짜에 묶이므로, 서버 로컬 시각 기준으로
@@ -267,18 +298,22 @@ export async function getDailyAnalyzedCounts(
   return groupByLocalDay(rows.map((row) => row.createdAt));
 }
 
-// 대시보드 "요주의 작성자" 위젯용 — 악성 댓글 수 기준 상위 작성자.
-// from을 안 넘기면 누적 전체 기간, 넘기면 해당 시점 이후로 범위를 좁힌다.
+// 대시보드 "요주의 작성자" 위젯 · 주간 요약 "반복 위험 작성자 TOP" 위젯용 —
+// 악성 댓글 수 기준 상위 작성자. from을 안 넘기면 누적 전체 기간, 넘기면 해당
+// 시점 이후로 범위를 좁힌다. to까지 넘기면 [from, to) 사이로 한정한다(주간 요약처럼
+// 특정 한 주만 봐야 할 때 씀).
 export async function getTopAuthorsByMaliciousCount(
   channelId: string,
   limit: number,
   from?: Date,
+  to?: Date,
 ) {
   const conditions = [
     eq(comments.channelId, channelId),
     eq(comments.isMalicious, true),
   ];
   if (from) conditions.push(gte(comments.createdAt, from));
+  if (to) conditions.push(lt(comments.createdAt, to));
 
   return db
     .select({
@@ -489,7 +524,7 @@ export async function countAnalyzedCommentsInRange(
   return row?.count ?? 0;
 }
 
-// 대시보드 KPI 타일 "검토 필요" 지난주 대비 계산용 — 기간 내 검토 필요 상태인 악성 댓글 수
+// 대시보드 KPI 타일 "검토 필요" 이전 7일 대비 계산용 — 기간 내 검토 필요 상태인 악성 댓글 수
 export async function countNeedsReviewInRange(
   channelId: string,
   from: Date,

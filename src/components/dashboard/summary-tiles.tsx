@@ -27,7 +27,7 @@ const TILES: Array<{
     key: "totalComments",
     label: "전체 댓글",
     suffix: "",
-    // 이 숫자는 이번 주 분석 완료된 전체 댓글(악성+정상)인데, /comments 목록은
+    // 이 숫자는 최근 7일간 분석 완료된 전체 댓글(악성+정상)인데, /comments 목록은
     // 항상 악성(플래그) 댓글만 보여줘서(getFlaggedComments가 isMalicious=true
     // 고정) 링크를 걸면 숫자와 목록 건수가 안 맞는다. 그래서 이 타일만
     // 클릭 불가능한 정보성 카드로 둔다.
@@ -139,7 +139,7 @@ export function SummaryTiles({
                 {trendSign}
                 {trend.percent}%
               </span>
-              <span className="text-muted-foreground">지난주 대비</span>
+              <span className="text-muted-foreground">이전 7일 대비</span>
             </span>
           </>
         );

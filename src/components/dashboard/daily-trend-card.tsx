@@ -130,12 +130,12 @@ export function DailyTrendCard({
         </>
       ) : (
         <p className="flex flex-1 items-center justify-center py-4 text-center text-sm text-muted-foreground">
-          이번 주에는 댓글이 없습니다.
+          최근 7일간 댓글이 없습니다.
         </p>
       )}
 
       <p className="text-xs text-muted-foreground">
-        이번 주 악성 댓글 {thisWeekCount}건 · 지난주 대비{" "}
+        최근 7일 악성 댓글 {thisWeekCount}건 · 이전 7일 대비{" "}
         {formatWeekDiff(thisWeekCount, lastWeekCount)}
       </p>
     </div>

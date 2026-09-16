@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   countAnalyzedCommentsInRange,
   countArchivedCommentsByChannelId,
@@ -6,8 +8,18 @@ import {
   countReviewQueue,
   getCategoryBreakdownInRange,
   getDailyMaliciousCounts,
+  getTopAuthorsByMaliciousCount,
+  getTopVideosByMaliciousCount,
+  getVideoTypeBreakdownInRange,
 } from "@/lib/db/queries/comments";
 import { getNotifications } from "@/lib/db/queries/notifications";
+
+const TOP_RANK_LIMIT = 3;
+
+const VIDEO_TYPE_LABELS: Record<"video" | "shorts", string> = {
+  video: "동영상",
+  shorts: "쇼츠",
+};
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -43,11 +55,11 @@ function buildInsights({
   if (lastWeekCount > 0) {
     const percent = percentChange(thisWeekCount, lastWeekCount);
     if (percent > 0) {
-      insights.push(`위험 댓글이 지난주보다 ${percent}% 증가했습니다.`);
+      insights.push(`위험 댓글이 이전 7일보다 ${percent}% 증가했습니다.`);
     } else if (percent < 0) {
-      insights.push(`위험 댓글이 지난주보다 ${Math.abs(percent)}% 감소했습니다.`);
+      insights.push(`위험 댓글이 이전 7일보다 ${Math.abs(percent)}% 감소했습니다.`);
     } else {
-      insights.push("위험 댓글이 지난주와 동일한 수준입니다.");
+      insights.push("위험 댓글이 이전 7일과 동일한 수준입니다.");
     }
   } else if (thisWeekCount > 0) {
     insights.push(`위험 댓글 ${thisWeekCount}건이 새로 발생했습니다.`);
@@ -60,12 +72,12 @@ function buildInsights({
   if (archivedLastWeek > 0) {
     const percent = percentChange(archivedThisWeek, archivedLastWeek);
     if (percent > 0) {
-      insights.push(`증거 보관 건수가 지난주보다 ${percent}% 증가했습니다.`);
+      insights.push(`증거 보관 건수가 이전 7일보다 ${percent}% 증가했습니다.`);
     } else if (percent < 0) {
-      insights.push(`증거 보관 건수가 지난주보다 ${Math.abs(percent)}% 감소했습니다.`);
+      insights.push(`증거 보관 건수가 이전 7일보다 ${Math.abs(percent)}% 감소했습니다.`);
     }
   } else if (archivedThisWeek > 0) {
-    insights.push(`이번 주 새로 보관한 증거가 ${archivedThisWeek}건 있습니다.`);
+    insights.push(`최근 7일간 새로 보관한 증거가 ${archivedThisWeek}건 있습니다.`);
   }
 
   return insights;
@@ -93,6 +105,9 @@ export default async function SummaryPage({
     categoryBreakdown,
     dailyCounts,
     notifications,
+    topAuthors,
+    topVideos,
+    videoTypeBreakdown,
   ] = await Promise.all([
     countAnalyzedCommentsInRange(channelId, oneWeekAgo, now),
     countMaliciousCommentsInRange(channelId, oneWeekAgo, now),
@@ -104,6 +119,9 @@ export default async function SummaryPage({
     getCategoryBreakdownInRange(channelId, oneWeekAgo, now),
     getDailyMaliciousCounts(channelId, oneWeekAgo, now),
     getNotifications(channelId),
+    getTopAuthorsByMaliciousCount(channelId, TOP_RANK_LIMIT, oneWeekAgo, now),
+    getTopVideosByMaliciousCount(channelId, oneWeekAgo, now, TOP_RANK_LIMIT),
+    getVideoTypeBreakdownInRange(channelId, oneWeekAgo, now),
   ]);
 
   const repeatAuthorCount = notifications.filter(
@@ -139,148 +157,264 @@ export default async function SummaryPage({
   const categoryTotal = categoryBreakdown.reduce((sum, row) => sum + row.count, 0);
 
   return (
-    <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
-      <header>
-        <p className="text-xl font-semibold tracking-tight text-foreground">
-          주간 요약
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {formatDate(oneWeekAgo)} ~ {formatDate(now)}, 지난주 대비 변화입니다.
-        </p>
+    <main className="flex flex-1 flex-col gap-4 px-6 py-6 sm:px-10">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xl font-semibold tracking-tight text-foreground">
+            주간 요약
+          </p>
+          <p className="text-xs text-muted-foreground">
+            이번 주의 활동을 한눈에 확인하세요.
+          </p>
+        </div>
+        <span className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground">
+          {formatDate(oneWeekAgo)} ~ {formatDate(now)}
+        </span>
       </header>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl bg-card px-5 py-4">
-          <p className="text-xs text-muted-foreground">총 댓글</p>
-          <p className="mt-1 text-3xl font-semibold text-card-foreground">
-            {totalThisWeek}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        {/* 왼쪽: 신경 써야 할 것 */}
+        <div className="flex flex-col gap-2.5">
+          <p className="text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
+            신경 써야 할 것
           </p>
-        </div>
-        <div className="rounded-2xl bg-card px-5 py-4">
-          <p className="text-xs text-muted-foreground">위험 댓글</p>
-          <p className="mt-1 text-3xl font-semibold text-card-foreground">
-            {thisWeekCount}
-          </p>
-        </div>
-        <div className="rounded-2xl bg-card px-5 py-4">
-          <p className="text-xs text-muted-foreground">검토 필요</p>
-          <p className="mt-1 text-3xl font-semibold text-card-foreground">
-            {reviewQueueCount}
-          </p>
-        </div>
-        <div className="rounded-2xl bg-card px-5 py-4">
-          <p className="text-xs text-muted-foreground">증거 보관</p>
-          <p className="mt-1 text-3xl font-semibold text-card-foreground">
-            {archivedTotal}
-          </p>
-        </div>
-      </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
-        <div className="flex flex-col gap-4 rounded-2xl bg-card px-5 py-4">
-          <p className="text-sm font-medium text-card-foreground">
-            일별 위험 댓글 추이
-          </p>
-          <div className="flex min-h-32 flex-1 gap-3 py-2">
-            {bars.map((bar, i) => (
-              <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
-                <div className="flex w-full flex-1 items-end">
-                  <div
-                    className="w-full rounded-sm bg-primary/70"
-                    style={{ height: `${Math.max(4, (bar.count / maxDaily) * 100)}%` }}
-                    title={`${bar.count}건`}
-                  />
-                </div>
-                <span className="text-[11px] text-muted-foreground">
-                  {bar.weekday}
-                </span>
+          <div className="rounded-2xl bg-card px-4 py-3">
+            <p className="text-sm font-medium text-card-foreground">
+              반복 위험 작성자 TOP{TOP_RANK_LIMIT}
+            </p>
+            {topAuthors.length === 0 ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                최근 7일간 반복된 위험 작성자가 없습니다.
+              </p>
+            ) : (
+              <div className="mt-2 flex flex-col">
+                {topAuthors.map((author, i) => (
+                  <Link
+                    key={author.authorChannelId}
+                    href={`/c/${channelId}/authors/${encodeURIComponent(author.authorChannelId)}`}
+                    className="flex items-center gap-3 border-b border-border py-2 text-sm transition-colors last:border-b-0 hover:bg-accent/50"
+                  >
+                    <span className="w-4 shrink-0 font-mono text-xs text-muted-foreground">
+                      {i + 1}
+                    </span>
+                    <span className="flex-1 truncate text-card-foreground">
+                      @{author.authorDisplayName ?? "알 수 없음"}
+                    </span>
+                    <span className="shrink-0 font-mono text-xs font-semibold text-risk-high">
+                      {author.count}건
+                    </span>
+                  </Link>
+                ))}
               </div>
-            ))}
+            )}
+          </div>
+
+          <div className="rounded-2xl bg-card px-4 py-3">
+            <p className="text-sm font-medium text-card-foreground">
+              위험 댓글 집중 영상 TOP{TOP_RANK_LIMIT}
+            </p>
+            {topVideos.length === 0 ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                최근 7일간 위험 댓글이 몰린 영상이 없습니다.
+              </p>
+            ) : (
+              <div className="mt-2 flex flex-col">
+                {topVideos.map((video, i) => (
+                  <Link
+                    key={video.videoId}
+                    href={`/c/${channelId}/dashboard?video=${video.videoId}`}
+                    className="flex items-center gap-3 border-b border-border py-2 text-sm transition-colors last:border-b-0 hover:bg-accent/50"
+                  >
+                    <span className="w-4 shrink-0 font-mono text-xs text-muted-foreground">
+                      {i + 1}
+                    </span>
+                    <span className="flex-1 truncate text-card-foreground">
+                      {video.videoTitle ?? video.videoId}
+                    </span>
+                    <span className="shrink-0 font-mono text-xs font-semibold text-risk-high">
+                      {video.count}건
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl bg-card px-4 py-3">
+            <p className="mb-2 text-sm font-medium text-card-foreground">
+              최근 7일 인사이트
+            </p>
+            {insights.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                최근 7일 요약은 데이터가 쌓이면 자동으로 생성됩니다.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {insights.map((line, i) => (
+                  <li key={i} className="text-sm text-card-foreground">
+                    • {line}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="mt-2 text-xs text-muted-foreground">
+              → 지속적인 모니터링이 필요합니다.
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-card px-4 py-3">
+            <p className="mb-2 text-sm font-medium text-card-foreground">
+              지난 주간 요약 이력
+            </p>
+            {history.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                최근 7일 요약은 데이터가 쌓이면 자동으로 생성됩니다.
+              </p>
+            ) : (
+              <div className="flex flex-col">
+                {history.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className="border-b border-border py-2 last:border-b-0"
+                  >
+                    <p className="text-sm text-card-foreground">
+                      {notification.message}
+                    </p>
+                    <p className="mt-1 font-mono text-xs text-muted-foreground">
+                      {formatDate(notification.createdAt)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="rounded-2xl bg-card px-5 py-4">
-          <p className="mb-3 text-sm font-medium text-card-foreground">
-            위험 유형별 비율
+        {/* 오른쪽: 전체 데이터 */}
+        <div className="flex flex-col gap-2.5">
+          <p className="text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
+            전체 데이터
           </p>
-          {categoryBreakdown.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              이번 주 악성 댓글이 없습니다.
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="rounded-2xl bg-card px-4 py-3">
+              <p className="text-xs text-muted-foreground">총 댓글</p>
+              <p className="mt-1 text-2xl font-semibold text-card-foreground">
+                {totalThisWeek}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-card px-4 py-3">
+              <p className="text-xs text-muted-foreground">위험 댓글</p>
+              <p className="mt-1 text-2xl font-semibold text-card-foreground">
+                {thisWeekCount}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-card px-4 py-3">
+              <p className="text-xs text-muted-foreground">검토 필요</p>
+              <p className="mt-1 text-2xl font-semibold text-card-foreground">
+                {reviewQueueCount}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-card px-4 py-3">
+              <p className="text-xs text-muted-foreground">증거 보관</p>
+              <p className="mt-1 text-2xl font-semibold text-card-foreground">
+                {archivedTotal}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 rounded-2xl bg-card px-4 py-3">
+            <p className="text-sm font-medium text-card-foreground">
+              일별 위험 댓글 추이
             </p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {categoryBreakdown.map((row) => (
-                <div key={row.category} className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-card-foreground">{row.category}</span>
-                    <span className="font-mono text-muted-foreground">
-                      {row.count}
-                    </span>
+            <div className="flex h-14 gap-2">
+              {bars.map((bar, i) => (
+                <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
+                  <div className="flex w-full flex-1 items-end">
+                    {bar.count > 0 && (
+                      <div
+                        className="w-full rounded-sm bg-primary/70"
+                        style={{ height: `${(bar.count / maxDaily) * 100}%` }}
+                        title={`${bar.count}건`}
+                      />
+                    )}
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-border">
-                    <div
-                      className="h-full bg-primary/70"
-                      style={{
-                        width: categoryTotal
-                          ? `${(row.count / categoryTotal) * 100}%`
-                          : "0%",
-                      }}
-                    />
-                  </div>
+                  <span className="text-[11px] text-muted-foreground">
+                    {bar.weekday}
+                  </span>
                 </div>
               ))}
             </div>
-          )}
-        </div>
-      </div>
-
-      <div className="rounded-2xl bg-card px-5 py-4">
-        <p className="mb-3 text-sm font-medium text-card-foreground">
-          이번 주 인사이트
-        </p>
-        {insights.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            이번 주 요약은 데이터가 쌓이면 자동으로 생성됩니다.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {insights.map((line, i) => (
-              <li key={i} className="text-sm text-card-foreground">
-                • {line}
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="mt-3 text-xs text-muted-foreground">
-          → 지속적인 모니터링이 필요합니다.
-        </p>
-      </div>
-
-      <div>
-        <p className="mb-3 text-sm font-medium text-foreground">
-          지난 주간 요약 및 주요 인사이트
-        </p>
-        {history.length === 0 ? (
-          <p className="rounded-2xl bg-card px-5 py-8 text-center text-sm text-muted-foreground">
-            이번 주 요약은 데이터가 쌓이면 자동으로 생성됩니다.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {history.map((notification) => (
-              <div
-                key={notification.id}
-                className="rounded-2xl bg-card px-5 py-4"
-              >
-                <p className="text-sm text-card-foreground">
-                  {notification.message}
-                </p>
-                <p className="mt-1 font-mono text-xs text-muted-foreground">
-                  {formatDate(notification.createdAt)}
-                </p>
-              </div>
-            ))}
           </div>
-        )}
+
+          <div className="rounded-2xl bg-card px-4 py-3">
+            <p className="mb-2 text-sm font-medium text-card-foreground">
+              위험 유형별 비율
+            </p>
+            {categoryBreakdown.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                최근 7일간 악성 댓글이 없습니다.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {categoryBreakdown.map((row) => (
+                  <div key={row.category} className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-card-foreground">{row.category}</span>
+                      <span className="font-mono text-muted-foreground">
+                        {row.count}
+                      </span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-border">
+                      <div
+                        className="h-full bg-primary/70"
+                        style={{
+                          width: categoryTotal
+                            ? `${(row.count / categoryTotal) * 100}%`
+                            : "0%",
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl bg-card px-4 py-3">
+            <p className="text-sm font-medium text-card-foreground">
+              쇼츠 vs 동영상 비교
+            </p>
+            {videoTypeBreakdown.length === 0 ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                최근 7일간 분석된 댓글이 없습니다.
+              </p>
+            ) : (
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {(["video", "shorts"] as const).map((type) => {
+                  const row = videoTypeBreakdown.find((r) => r.videoType === type);
+                  const total = row?.total ?? 0;
+                  const malicious = row?.malicious ?? 0;
+                  const ratio = total > 0 ? Math.round((malicious / total) * 100) : 0;
+                  return (
+                    <div key={type} className="rounded-xl border border-border px-3 py-2.5">
+                      <p className="text-xs text-muted-foreground">
+                        {VIDEO_TYPE_LABELS[type]}
+                      </p>
+                      <p className="mt-0.5 text-xl font-semibold text-card-foreground">
+                        {ratio}%
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        위험 댓글 {malicious}건 · 전체 {total}건
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </main>
   );
