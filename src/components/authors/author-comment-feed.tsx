@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  AlertCircle,
-  Bell,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Play,
-  Search,
-} from "lucide-react";
+import { AlertCircle, Bell, ChevronRight, Clock, Play, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { DateRangeFilter } from "@/components/dashboard/date-range-filter";
@@ -23,6 +15,40 @@ const RISK_SORT_ORDER: Record<CommentRiskLevel, number> = {
 };
 
 const PAGE_SIZE = 20;
+const PAGINATION_SIBLINGS = 1;
+const PAGINATION_MAX_WITHOUT_ELLIPSIS = 9;
+
+// 댓글 목록 페이지네이션(src/components/dashboard/pagination.tsx)과 같은 번호
+// 배치 로직 — 다만 이 피드는 URL이 아니라 로컬 state로 페이지를 관리한다
+function getPageItems(
+  currentPage: number,
+  totalPages: number,
+): (number | "ellipsis")[] {
+  if (totalPages <= PAGINATION_MAX_WITHOUT_ELLIPSIS) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const pages: number[] = [];
+  for (let page = 1; page <= totalPages; page++) {
+    if (
+      page === 1 ||
+      page === totalPages ||
+      (page >= currentPage - PAGINATION_SIBLINGS &&
+        page <= currentPage + PAGINATION_SIBLINGS)
+    ) {
+      pages.push(page);
+    }
+  }
+
+  const items: (number | "ellipsis")[] = [];
+  let prev = 0;
+  for (const page of pages) {
+    if (prev && page - prev > 1) items.push("ellipsis");
+    items.push(page);
+    prev = page;
+  }
+  return items;
+}
 
 type AuthorComment = {
   id: string;
@@ -559,22 +585,45 @@ export function AuthorCommentFeed({
             type="button"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="이전 페이지"
+            className="rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <ChevronLeft className="size-4" aria-hidden />
             이전
           </button>
-          <span className="px-2 text-sm text-muted-foreground tabular-nums">
-            {page} / {totalPages}
-          </span>
+
+          {getPageItems(page, totalPages).map((item, index) =>
+            item === "ellipsis" ? (
+              <span
+                key={`ellipsis-${index}`}
+                className="px-1 text-sm text-muted-foreground"
+              >
+                …
+              </span>
+            ) : (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setPage(item)}
+                aria-current={item === page ? "page" : undefined}
+                className={`flex size-8 items-center justify-center rounded-md text-sm font-medium tabular-nums ${
+                  item === page
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border bg-background text-foreground hover:bg-accent"
+                }`}
+              >
+                {item}
+              </button>
+            ),
+          )}
+
           <button
             type="button"
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="다음 페이지"
+            className="rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
             다음
-            <ChevronRight className="size-4" aria-hidden />
           </button>
         </div>
       )}

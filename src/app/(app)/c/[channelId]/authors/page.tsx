@@ -123,7 +123,7 @@ export default async function AuthorSearchPage({
                       key={author.authorChannelId}
                       href={`/c/${channelId}/authors/${encodeURIComponent(author.authorChannelId)}`}
                     >
-                      <td className="py-3 pr-0 pl-6">
+                      <td className="py-4 pr-0 pl-6">
                         <div className="flex items-center gap-2.5">
                           <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-secondary text-xs font-semibold text-primary">
                             {initial}
@@ -133,13 +133,13 @@ export default async function AuthorSearchPage({
                           </span>
                         </div>
                       </td>
-                      <td className="py-3 pr-2 pl-0 whitespace-nowrap text-muted-foreground">
+                      <td className="py-4 pr-2 pl-0 whitespace-nowrap text-muted-foreground">
                         {formatDate(author.lastCommentAt)}
                       </td>
-                      <td className="px-2 py-3 text-card-foreground">
+                      <td className="px-2 py-4 text-card-foreground">
                         {author.totalCount}건
                       </td>
-                      <td className="py-3 pr-2 pl-12">
+                      <td className="py-4 pr-2 pl-12">
                         <div className="flex flex-wrap gap-1.5">
                           {isRepeatAuthor && (
                             <span className="rounded-full bg-risk-high-bg px-2 py-0.5 text-xs font-medium whitespace-nowrap text-risk-high">
@@ -153,12 +153,12 @@ export default async function AuthorSearchPage({
                           )}
                         </div>
                       </td>
-                      <td className="px-2 py-3">
+                      <td className="px-2 py-4">
                         <span className="rounded-full bg-risk-high-bg px-2.5 py-1 text-xs font-medium whitespace-nowrap text-risk-high">
                           악성 댓글 {author.count}건
                         </span>
                       </td>
-                      <td className="px-2 py-3 text-muted-foreground">
+                      <td className="px-2 py-4 text-muted-foreground">
                         <ChevronRight className="size-3.5" aria-hidden />
                       </td>
                     </AuthorTableRow>
