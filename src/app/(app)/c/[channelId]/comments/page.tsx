@@ -24,7 +24,6 @@ export default async function CommentsPage({
     platform?: string;
     video?: string;
     search?: string;
-    author?: string;
     dateFrom?: string;
     dateTo?: string;
     sort?: string;
@@ -43,7 +42,6 @@ export default async function CommentsPage({
     platform: sp.platform as CommentFiltersType["platform"],
     videoId: sp.video,
     search: sp.search,
-    author: sp.author,
     dateFrom: sp.dateFrom,
     dateTo: sp.dateTo,
     sort: sp.sort as CommentFiltersType["sort"],
@@ -70,8 +68,7 @@ export default async function CommentsPage({
           </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          <CommentSearch />
-          <CommentSearch paramKey="author" placeholder="작성자 검색" />
+          <CommentSearch placeholder="댓글 내용 또는 작성자 검색" />
         </div>
       </header>
 

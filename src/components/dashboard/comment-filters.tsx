@@ -58,10 +58,8 @@ export function CommentFilters({
       searchParams.get("platform") ||
       searchParams.get("video") ||
       searchParams.get("search") ||
-      searchParams.get("author") ||
       searchParams.get("dateFrom") ||
-      searchParams.get("dateTo") ||
-      (searchParams.get("sort") && searchParams.get("sort") !== "newest"),
+      searchParams.get("dateTo"),
   );
 
   function handleReset() {

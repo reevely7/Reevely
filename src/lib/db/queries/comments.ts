@@ -10,6 +10,7 @@ import {
   isNotNull,
   isNull,
   lt,
+  or,
   sql,
   type SQL,
 } from "drizzle-orm";
@@ -379,8 +380,8 @@ export type CommentFilters = {
   status?: "confirmed" | "needs_review" | "reported_false" | "whitelisted";
   platform?: "youtube" | "instagram";
   videoId?: string;
+  // 댓글 내용 또는 작성자 이름 중 하나라도 매칭되면 결과에 포함 (OR)
   search?: string;
-  author?: string;
   dateFrom?: string;
   dateTo?: string;
   sort?: "newest" | "risk";
@@ -407,9 +408,14 @@ function buildFlaggedConditions(channelId: string, filters: CommentFilters) {
     }
   }
   if (filters.videoId) conditions.push(eq(comments.videoId, filters.videoId));
-  if (filters.search) conditions.push(ilike(comments.text, `%${filters.search}%`));
-  if (filters.author)
-    conditions.push(ilike(comments.authorDisplayName, `%${filters.author}%`));
+  if (filters.search) {
+    conditions.push(
+      or(
+        ilike(comments.text, `%${filters.search}%`),
+        ilike(comments.authorDisplayName, `%${filters.search}%`),
+      )!,
+    );
+  }
   // dateFrom/dateTo는 "YYYY-MM-DD" 문자열. from은 그 날 00시 이상, to는 다음 날
   // 00시 미만으로 잡아 선택한 날짜 하루 전체가 포함되게 한다.
   if (filters.dateFrom)
