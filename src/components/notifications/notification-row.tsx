@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { RiskBadge } from "@/components/dashboard/risk-badge";
 
-type Notification = {
+export type Notification = {
   id: string;
   type:
     | "new_comment"
@@ -52,8 +52,8 @@ export function NotificationRow({
     }
   }
 
-  const wrapperClassName = `flex flex-col gap-2 rounded-2xl px-5 py-4 transition-colors hover:bg-accent/50 ${
-    notification.isRead ? "bg-card" : "bg-card ring-1 ring-primary/40"
+  const wrapperClassName = `flex flex-col gap-1 rounded-2xl px-4 py-3.5 transition-colors hover:bg-accent/50 ${
+    notification.isRead ? "bg-card" : "bg-primary/10"
   }`;
 
   if (notification.type !== "new_comment") {
@@ -66,18 +66,20 @@ export function NotificationRow({
         <div className="flex items-center gap-2">
           {!notification.isRead && (
             <span
-              className="size-2 shrink-0 rounded-full bg-primary"
+              className="size-1.5 shrink-0 rounded-full bg-primary"
               aria-hidden
             />
           )}
-          <span className="text-sm font-medium text-foreground">
+          <span className="text-[13px] font-bold text-foreground">
             {notification.title}
           </span>
-          <span className="ml-auto shrink-0 font-mono text-xs text-muted-foreground">
+          <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">
             {formatDateTime(notification.createdAt)}
           </span>
         </div>
-        <p className="text-sm text-card-foreground">{notification.message}</p>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          {notification.message}
+        </p>
       </Link>
     );
   }
@@ -91,36 +93,30 @@ export function NotificationRow({
       <div className="flex items-center gap-2">
         {!notification.isRead && (
           <span
-            className="size-2 shrink-0 rounded-full bg-primary"
+            className="size-1.5 shrink-0 rounded-full bg-primary"
             aria-hidden
           />
         )}
-        <span className="text-sm font-medium text-foreground">
-          {notification.authorDisplayName ?? "알 수 없음"}
+        <span className="text-[13px] font-bold text-foreground">
+          {notification.authorDisplayName ?? "알 수 없음"} 님이 새 댓글을 남겼습니다
         </span>
-        <span className="text-xs text-muted-foreground">
-          님이 새 댓글을 남겼습니다
-        </span>
-        <span className="ml-auto shrink-0 font-mono text-xs text-muted-foreground">
+        {notification.riskLevel && <RiskBadge riskLevel={notification.riskLevel} />}
+        <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">
           {formatDateTime(notification.createdAt)}
         </span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        {notification.riskLevel && (
-          <RiskBadge riskLevel={notification.riskLevel} />
-        )}
-        <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
-          {notification.category ?? "미분류"}
-        </span>
-      </div>
-
-      <p className="line-clamp-2 text-sm text-card-foreground">
+      <p className="text-xs leading-relaxed text-muted-foreground">
         {notification.reason ?? notification.commentText}
-      </p>
-
-      <p className="truncate text-xs text-muted-foreground">
-        {notification.videoTitle ?? notification.videoId}
+        {notification.category && (
+          <>
+            {" · "}
+            <b className="font-semibold text-card-foreground">
+              {notification.category}
+            </b>
+          </>
+        )}
+        {notification.videoTitle && ` · ${notification.videoTitle}`}
       </p>
     </Link>
   );

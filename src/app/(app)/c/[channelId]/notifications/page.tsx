@@ -1,7 +1,8 @@
 import { BellIcon } from "@/components/icons/bell-icon";
 import { MarkAllReadButton } from "@/components/notifications/mark-all-read-button";
-import { NotificationRow } from "@/components/notifications/notification-row";
+import { NotificationSummarySidebar } from "@/components/notifications/notification-summary-sidebar";
 import { NotificationTabs } from "@/components/notifications/notification-tabs";
+import { NotificationTimeline } from "@/components/notifications/notification-timeline";
 import { requireChannelOwnership } from "@/lib/auth/require-channel-ownership";
 import {
   countNotificationsByType,
@@ -64,14 +65,9 @@ export default async function NotificationsPage({
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
-          {notifications.map((notification) => (
-            <NotificationRow
-              key={notification.id}
-              notification={notification}
-              channelId={channelId}
-            />
-          ))}
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+          <NotificationTimeline notifications={notifications} channelId={channelId} />
+          <NotificationSummarySidebar countsByType={countsByType} />
         </div>
       )}
     </main>
