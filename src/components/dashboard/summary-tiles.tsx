@@ -25,7 +25,7 @@ const TILES: Array<{
 }> = [
   {
     key: "totalComments",
-    label: "총 댓글",
+    label: "전체 댓글",
     suffix: "",
     // 이 숫자는 이번 주 분석 완료된 전체 댓글(악성+정상)인데, /comments 목록은
     // 항상 악성(플래그) 댓글만 보여줘서(getFlaggedComments가 isMalicious=true

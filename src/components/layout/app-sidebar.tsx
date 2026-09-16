@@ -13,7 +13,7 @@ import {
   Settings,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { SyncCountdown } from "@/components/layout/sync-countdown";
@@ -50,6 +50,23 @@ export function AppSidebar({
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
+  const switcherRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isSwitcherOpen) return;
+
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        switcherRef.current &&
+        !switcherRef.current.contains(event.target as Node)
+      ) {
+        setIsSwitcherOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isSwitcherOpen]);
 
   // 페이지 이동하면 모바일 드로어/채널 전환 드롭다운은 자동으로 닫는다 (레이아웃이
   // 라우트 전환 사이에 유지되는 공유 레이아웃이라 상태가 저절로 리셋되지 않음).
@@ -117,7 +134,7 @@ export function AppSidebar({
           </div>
 
           {activeChannel && (
-            <div className="relative -mt-2">
+            <div ref={switcherRef} className="relative -mt-2">
               <button
                 type="button"
                 onClick={() => setIsSwitcherOpen((v) => !v)}
