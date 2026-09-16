@@ -25,11 +25,11 @@ export function LandingMobileNav() {
       {isOpen && (
         <div className="absolute inset-x-0 top-full z-40 flex flex-col gap-1 border-b border-border bg-background px-8 py-4 text-sm shadow-lg">
           <a
-            href="#intro"
+            href="#how-it-works"
             onClick={() => setIsOpen(false)}
             className="rounded-lg px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
           >
-            서비스소개
+            서비스 소개
           </a>
           <a
             href="#pricing"
@@ -38,18 +38,13 @@ export function LandingMobileNav() {
           >
             요금제
           </a>
-          <span
-            title="준비 중입니다"
-            className="cursor-default rounded-lg px-3 py-2 text-muted-foreground/50"
+          <a
+            href="/login"
+            onClick={() => setIsOpen(false)}
+            className="rounded-lg px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
           >
-            고객사례
-          </span>
-          <span
-            title="준비 중입니다"
-            className="cursor-default rounded-lg px-3 py-2 text-muted-foreground/50"
-          >
-            리소스
-          </span>
+            로그인
+          </a>
         </div>
       )}
     </div>
