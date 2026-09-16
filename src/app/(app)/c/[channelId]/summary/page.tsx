@@ -179,7 +179,7 @@ export default async function SummaryPage({
             신경 써야 할 것
           </p>
 
-          <div className="rounded-2xl bg-card px-4 py-3">
+          <div className="rounded-2xl border border-border bg-card px-4 py-3">
             <p className="text-sm font-medium text-card-foreground">
               반복 위험 작성자 TOP{TOP_RANK_LIMIT}
             </p>
@@ -210,7 +210,7 @@ export default async function SummaryPage({
             )}
           </div>
 
-          <div className="rounded-2xl bg-card px-4 py-3">
+          <div className="rounded-2xl border border-border bg-card px-4 py-3">
             <p className="text-sm font-medium text-card-foreground">
               위험 댓글 집중 영상 TOP{TOP_RANK_LIMIT}
             </p>
@@ -241,7 +241,7 @@ export default async function SummaryPage({
             )}
           </div>
 
-          <div className="rounded-2xl bg-card px-4 py-3">
+          <div className="rounded-2xl border border-border bg-card px-4 py-3">
             <p className="mb-2 text-sm font-medium text-card-foreground">
               최근 7일 인사이트
             </p>
@@ -263,7 +263,7 @@ export default async function SummaryPage({
             </p>
           </div>
 
-          <div className="rounded-2xl bg-card px-4 py-3">
+          <div className="rounded-2xl border border-border bg-card px-4 py-3">
             <p className="mb-2 text-sm font-medium text-card-foreground">
               지난 주간 요약 이력
             </p>
@@ -298,25 +298,25 @@ export default async function SummaryPage({
           </p>
 
           <div className="grid grid-cols-2 gap-2.5">
-            <div className="rounded-2xl bg-card px-4 py-3">
+            <div className="rounded-2xl border border-border bg-card px-4 py-3">
               <p className="text-xs text-muted-foreground">총 댓글</p>
               <p className="mt-1 text-2xl font-semibold text-card-foreground">
                 {totalThisWeek}
               </p>
             </div>
-            <div className="rounded-2xl bg-card px-4 py-3">
+            <div className="rounded-2xl border border-border bg-card px-4 py-3">
               <p className="text-xs text-muted-foreground">위험 댓글</p>
               <p className="mt-1 text-2xl font-semibold text-card-foreground">
                 {thisWeekCount}
               </p>
             </div>
-            <div className="rounded-2xl bg-card px-4 py-3">
+            <div className="rounded-2xl border border-border bg-card px-4 py-3">
               <p className="text-xs text-muted-foreground">검토 필요</p>
               <p className="mt-1 text-2xl font-semibold text-card-foreground">
                 {reviewQueueCount}
               </p>
             </div>
-            <div className="rounded-2xl bg-card px-4 py-3">
+            <div className="rounded-2xl border border-border bg-card px-4 py-3">
               <p className="text-xs text-muted-foreground">증거 보관</p>
               <p className="mt-1 text-2xl font-semibold text-card-foreground">
                 {archivedTotal}
@@ -324,7 +324,7 @@ export default async function SummaryPage({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 rounded-2xl bg-card px-4 py-3">
+          <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card px-4 py-3">
             <p className="text-sm font-medium text-card-foreground">
               일별 위험 댓글 추이
             </p>
@@ -348,7 +348,7 @@ export default async function SummaryPage({
             </div>
           </div>
 
-          <div className="rounded-2xl bg-card px-4 py-3">
+          <div className="rounded-2xl border border-border bg-card px-4 py-3">
             <p className="mb-2 text-sm font-medium text-card-foreground">
               위험 유형별 비율
             </p>
@@ -382,7 +382,7 @@ export default async function SummaryPage({
             )}
           </div>
 
-          <div className="rounded-2xl bg-card px-4 py-3">
+          <div className="rounded-2xl border border-border bg-card px-4 py-3">
             <p className="text-sm font-medium text-card-foreground">
               쇼츠 vs 동영상 비교
             </p>
