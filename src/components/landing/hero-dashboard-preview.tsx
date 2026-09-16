@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   TriangleAlert,
 } from "lucide-react";
+import Image from "next/image";
 import type { ComponentType } from "react";
 
 import { handwritingFont, wordmarkFont } from "@/lib/fonts";
@@ -141,10 +142,14 @@ export function HeroDashboardPreview() {
         <div className="flex">
           {/* 사이드바 */}
           <div className="hidden w-44 shrink-0 flex-col gap-1.5 border-r border-black/[0.05] px-3.5 py-5 sm:flex">
-            <div className="mb-4 flex items-center gap-2 px-1.5">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-primary">
-                <ShieldCheck className="size-4 text-white" />
-              </span>
+            <div className="mb-4 flex items-center gap-1.5 px-1.5">
+              <Image
+                src="/logo-mark.png"
+                alt=""
+                width={20}
+                height={20}
+                className="size-5"
+              />
               <span
                 className={`${wordmarkFont.className} relative top-px text-[15px] font-extrabold text-[#16241d]`}
               >

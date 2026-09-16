@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Users2,
 } from "lucide-react";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { Fragment } from "react";
 
@@ -157,10 +158,14 @@ export default async function LandingPage({
 
         {/* 상단 내비게이션 */}
         <header className="relative z-10 mx-auto flex w-full max-w-[1200px] items-center justify-between px-6 py-5">
-          <div className="flex items-center gap-2.5">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-primary shadow-md shadow-primary/25">
-              <ShieldCheck className="size-5 text-white" />
-            </span>
+          <div className="flex items-center gap-2">
+            <Image
+              src="/logo-mark.png"
+              alt=""
+              width={36}
+              height={36}
+              className="size-9"
+            />
             <span
               className={`${wordmarkFont.className} relative top-0.5 text-xl font-extrabold tracking-tight text-[#16241d]`}
             >
@@ -435,7 +440,7 @@ export default async function LandingPage({
               댓글창은 혼자 감당하기 버거워집니다
             </h2>
             <p className="text-[15px] leading-relaxed text-[#5b6a61]">
-              구독자 1만~50만, 소속사나 법무팀 없이 채널을 운영하는
+              소속사나 법무팀 없이 채널을 운영하는
               크리에이터를 위해 만들어졌습니다.{" "}
               <br className="hidden sm:inline" />
               매번 댓글창을 직접 훑어보지 않아도, 위험한 댓글은 자동으로
