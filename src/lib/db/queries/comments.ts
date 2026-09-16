@@ -828,6 +828,20 @@ export async function unarchiveComment(commentId: string, channelId: string) {
   return updated.length > 0;
 }
 
+export async function updateArchiveNote(
+  commentId: string,
+  channelId: string,
+  note: string | null,
+) {
+  const updated = await db
+    .update(comments)
+    .set({ archiveNote: note })
+    .where(and(eq(comments.id, commentId), eq(comments.channelId, channelId)))
+    .returning({ id: comments.id });
+
+  return updated.length > 0;
+}
+
 export async function archiveCommentsBulk(
   commentIds: string[],
   channelId: string,

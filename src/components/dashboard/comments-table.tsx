@@ -50,7 +50,7 @@ const VIDEO_TYPE_LABELS: Record<string, string> = {
   shorts: "쇼츠",
 };
 
-function formatDetectedAt(date: Date): string {
+function formatWrittenAt(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
@@ -457,9 +457,9 @@ export function CommentsTable({
                                 )}
                               </span>
                               <span className="flex items-center gap-2">
-                                <span className="text-muted-foreground">탐지 시각</span>
+                                <span className="text-muted-foreground">작성 시각</span>
                                 <span className="font-semibold text-card-foreground">
-                                  {formatDetectedAt(row.createdAt)}
+                                  {formatWrittenAt(row.createdAt)}
                                 </span>
                               </span>
                               <span className="flex items-center gap-2">

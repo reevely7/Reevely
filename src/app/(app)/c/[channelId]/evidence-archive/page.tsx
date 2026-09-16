@@ -4,7 +4,7 @@ import { Archive } from "lucide-react";
 import { EvidenceArchiveList } from "@/components/comments/evidence-archive-list";
 import { buttonVariants } from "@/components/ui/button";
 import { requireChannelOwnership } from "@/lib/auth/require-channel-ownership";
-import { getArchivedComments } from "@/lib/db/queries/comments";
+import { getArchivedComments, getCommentsByAuthor } from "@/lib/db/queries/comments";
 
 export default async function EvidenceArchivePage({
   params,
@@ -14,6 +14,19 @@ export default async function EvidenceArchivePage({
   const { channelId } = await params;
   await requireChannelOwnership(channelId);
   const archived = await getArchivedComments(channelId);
+
+  // 작성자별로 한 번만 조회해서 "이 작성자의 다른 댓글" 요약에 재사용한다
+  // (같은 작성자가 여러 건 보관돼 있어도 중복 쿼리하지 않음)
+  const uniqueAuthorChannelIds = Array.from(
+    new Set(archived.map((comment) => comment.authorChannelId)),
+  );
+  const authorHistoryEntries = await Promise.all(
+    uniqueAuthorChannelIds.map(async (authorChannelId) => {
+      const comments = await getCommentsByAuthor(channelId, authorChannelId);
+      return [authorChannelId, comments] as const;
+    }),
+  );
+  const authorHistory = Object.fromEntries(authorHistoryEntries);
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
@@ -40,7 +53,11 @@ export default async function EvidenceArchivePage({
           </Link>
         </div>
       ) : (
-        <EvidenceArchiveList archived={archived} channelId={channelId} />
+        <EvidenceArchiveList
+          archived={archived}
+          channelId={channelId}
+          authorHistory={authorHistory}
+        />
       )}
     </main>
   );

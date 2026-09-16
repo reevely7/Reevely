@@ -21,7 +21,7 @@ export function RiskBadge({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${CLASSES[riskLevel] ?? "bg-muted text-muted-foreground"}`}
+      className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${CLASSES[riskLevel] ?? "bg-muted text-muted-foreground"}`}
     >
       {withIcon && <BarChart3 className="size-3" aria-hidden />}
       {LABELS[riskLevel] ?? riskLevel}

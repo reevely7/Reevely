@@ -118,6 +118,8 @@ export const comments = pgTable(
     // (계정 전체 채널 합산) archivedAt으로 보관함 페이지 정렬에 쓴다
     isArchived: boolean("is_archived").notNull().default(false),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
+    // 증거 보관함에서 크리에이터가 직접 남기는 메모 (왜 보관했는지 등)
+    archiveNote: text("archive_note"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     analyzedAt: timestamp("analyzed_at", { withTimezone: true }),
   },

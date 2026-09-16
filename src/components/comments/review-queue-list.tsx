@@ -6,29 +6,31 @@ import { CircleHelp, Sparkles } from "lucide-react";
 import { StatusActionButton } from "@/components/comments/status-action-button";
 import { RiskBadge } from "@/components/dashboard/risk-badge";
 import { InstagramIcon } from "@/components/icons/instagram-icon";
-import { YoutubeIcon } from "@/components/icons/youtube-icon";
 
 const PLATFORM_LABELS: Record<string, string> = {
   youtube: "유튜브",
   instagram: "인스타그램",
 };
 
-const PLATFORM_ICONS: Record<string, typeof YoutubeIcon> = {
-  youtube: YoutubeIcon,
-  instagram: InstagramIcon,
-};
-
+// 댓글목록(comments-table.tsx)과 동일하게 유튜브는 실제 로고 이미지를 쓴다
 function PlatformIcon({ platform }: { platform: string }) {
-  const Icon = PLATFORM_ICONS[platform];
-  if (!Icon) return null;
-  return (
-    <span
-      className="inline-flex items-center text-muted-foreground"
-      title={PLATFORM_LABELS[platform] ?? platform}
-    >
-      <Icon className="size-4" />
-    </span>
-  );
+  const label = PLATFORM_LABELS[platform] ?? platform;
+  if (platform === "youtube") {
+    return (
+      <span className="inline-flex items-center" title={label}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/youtube-icon.png" alt="" className="h-4 w-[21px]" />
+      </span>
+    );
+  }
+  if (platform === "instagram") {
+    return (
+      <span className="inline-flex items-center text-muted-foreground" title={label}>
+        <InstagramIcon className="size-4" />
+      </span>
+    );
+  }
+  return null;
 }
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
