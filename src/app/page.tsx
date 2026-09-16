@@ -17,7 +17,6 @@ import { EyebrowBadge } from "@/components/landing/eyebrow-badge";
 import { HeroAppMockup } from "@/components/landing/hero-app-mockup";
 import { LandingComparisonTable } from "@/components/landing/landing-comparison-table";
 import { LandingMobileNav } from "@/components/landing/landing-mobile-nav";
-import { PlaceholderArt } from "@/components/landing/placeholder-art";
 import { PricingTable } from "@/components/landing/pricing-table";
 import { Reveal } from "@/components/landing/reveal";
 import { SiteFooter } from "@/components/landing/site-footer";
@@ -34,22 +33,22 @@ const STEPS = [
   {
     title: "채널을 연동해요",
     body: "유튜브 채널을 OAuth로 직접 연동합니다. 소스코드 없이 YouTube Data API 공식 연동이라 계정 정보는 저희를 거치지 않아요.",
-    artLabel: "3D 이미지 자리 — 유튜브와 리블리가 케이블로 연결되는 3D 오브젝트",
+    artSrc: "/landing/step-1-connect.png",
   },
   {
     title: "잠든 사이에도 확인해요",
     body: "크리에이터가 콘텐츠에 집중하는 동안, 백그라운드에서 새 댓글을 놓치지 않고 확인합니다.",
-    artLabel: "3D 이미지 자리 — 돋보기로 말풍선을 살펴보는 3D 오브젝트",
+    artSrc: "/landing/step-2-watch.png",
   },
   {
     title: "AI가 위험도를 판정해요",
     body: "댓글 하나하나를 분석해 위험도와 유형, 판정 근거를 함께 남깁니다.",
-    artLabel: "3D 이미지 자리 — 댓글을 판정하는 AI 로봇 3D 캐릭터",
+    artSrc: "/landing/step-3-judge.png",
   },
   {
     title: "대시보드에서 확인해요",
     body: "위험도별로 정리된 화면에서 확인하고, 필요하면 숨김 처리나 오탐 신고를 한 번으로 끝낼 수 있어요.",
-    artLabel: "3D 이미지 자리 — 위험도 차트가 떠 있는 3D 모니터",
+    artSrc: "/landing/step-4-dashboard.png",
   },
 ];
 
@@ -320,7 +319,15 @@ export default async function LandingPage({
                   <span className="inline-flex size-11 rotate-[-6deg] items-center justify-center self-start rounded-2xl bg-[var(--landing-ink)] text-[15px] font-extrabold text-[var(--landing-lime)] transition-transform duration-300 group-hover:rotate-6">
                     {String(index + 1).padStart(2, "0")}
                   </span>
-                  <PlaceholderArt label={step.artLabel} className="mt-6 h-36" />
+                  <div className="relative mt-6 h-36">
+                    <Image
+                      src={step.artSrc}
+                      alt=""
+                      fill
+                      sizes="(min-width: 1024px) 25vw, 50vw"
+                      className="object-contain"
+                    />
+                  </div>
                   <p className="mt-6 text-lg font-extrabold text-[var(--landing-ink)]">
                     {step.title}
                   </p>
