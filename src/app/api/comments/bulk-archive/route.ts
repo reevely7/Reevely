@@ -5,13 +5,14 @@ import { getChannelById } from "@/lib/db/queries/channels";
 import {
   archiveCommentsBulk,
   countArchivedCommentsByUserId,
+  MAX_BULK_SELECTION,
 } from "@/lib/db/queries/comments";
 import { getEvidenceArchiveLimitForUser } from "@/lib/db/queries/subscriptions";
 import { createClient } from "@/lib/supabase/server";
 
 const BodySchema = z.object({
   channelId: z.string(),
-  commentIds: z.array(z.string()).min(1).max(100),
+  commentIds: z.array(z.string()).min(1).max(MAX_BULK_SELECTION),
 });
 
 export async function PATCH(request: Request) {

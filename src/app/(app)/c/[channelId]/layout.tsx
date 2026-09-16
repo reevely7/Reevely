@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { NotificationBell } from "@/components/dashboard/notification-bell";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { TopBarAccountMenu } from "@/components/layout/top-bar-account-menu";
 import { requireChannels } from "@/lib/auth/require-channels";
 import { getNextSyncAt } from "@/lib/db/queries/channels";
 import { countReviewQueue } from "@/lib/db/queries/comments";
@@ -63,12 +63,11 @@ export default async function ChannelLayout({
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
       <header className="hidden shrink-0 items-center justify-end gap-4 border-b border-[#CAD6CF] bg-[#EEEFF1] px-6 py-2 md:flex">
-        <Link
-          href="/mypage"
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          {nickname || "마이페이지"}
-        </Link>
+        <TopBarAccountMenu
+          nickname={nickname}
+          email={user.email ?? null}
+          channelId={channelId}
+        />
         <NotificationBell
           notifications={recentNotifications}
           unreadCount={unreadNotificationCount}
@@ -86,12 +85,11 @@ export default async function ChannelLayout({
         />
         <div className="flex flex-1 flex-col overflow-y-auto bg-background">
           <header className="flex shrink-0 items-center justify-end gap-4 border-b border-[#CAD6CF] bg-[#EEEFF1] px-6 py-2 sm:px-10 md:hidden">
-            <Link
-              href="/mypage"
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              {nickname || "마이페이지"}
-            </Link>
+            <TopBarAccountMenu
+              nickname={nickname}
+              email={user.email ?? null}
+              channelId={channelId}
+            />
             <NotificationBell
               notifications={recentNotifications}
               unreadCount={unreadNotificationCount}

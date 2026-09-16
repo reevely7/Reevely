@@ -77,7 +77,7 @@ export function CommentFilters({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1.5">
       <div className="flex flex-wrap items-center gap-2">
         <FilterSelect
           value={searchParams.get("risk") ?? ""}
@@ -139,20 +139,22 @@ export function CommentFilters({
             필터 초기화
           </button>
         )}
-
-        <Button
-          size="sm"
-          variant={hideOriginal ? "default" : "outline"}
-          onClick={toggleHideOriginal}
-          className="ml-auto"
-        >
-          원문 숨김 {hideOriginal ? "ON" : "OFF"}
-        </Button>
       </div>
 
       <p className="text-sm text-muted-foreground">
         전체 {totalCount}건 중 {filteredCount}건 표시 중
       </p>
+
+      <div className="relative -top-3 flex justify-end">
+        <Button
+          size="sm"
+          variant={hideOriginal ? "default" : "outline"}
+          onClick={toggleHideOriginal}
+          className="h-8"
+        >
+          원문 숨김 {hideOriginal ? "ON" : "OFF"}
+        </Button>
+      </div>
     </div>
   );
 }

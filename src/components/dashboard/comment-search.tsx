@@ -7,11 +7,13 @@ import { useEffect, useState } from "react";
 type Props = {
   paramKey?: string;
   placeholder?: string;
+  widthClassName?: string;
 };
 
 export function CommentSearch({
   paramKey = "search",
   placeholder = "댓글 내용 검색",
+  widthClassName = "sm:w-72",
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -47,7 +49,7 @@ export function CommentSearch({
   }, [value]);
 
   return (
-    <div className="relative w-full sm:w-72">
+    <div className={`relative w-full ${widthClassName}`}>
       <Search
         className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
         aria-hidden

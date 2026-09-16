@@ -7,6 +7,7 @@ import {
   countFlaggedComments,
   getFlaggedComments,
   getFlaggedFilterOptions,
+  MAX_BULK_SELECTION,
   type CommentFilters as CommentFiltersType,
 } from "@/lib/db/queries/comments";
 
@@ -68,17 +69,25 @@ export default async function CommentsPage({
           </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          <CommentSearch placeholder="댓글 내용 검색" />
+          <CommentSearch placeholder="댓글 내용 검색" widthClassName="sm:w-96" />
         </div>
       </header>
 
-      <CommentFilters
-        categories={filterOptions.categories}
-        totalCount={allCount}
-        filteredCount={totalCount}
-      />
+      <div className="flex flex-col gap-1.5">
+        <CommentFilters
+          categories={filterOptions.categories}
+          totalCount={allCount}
+          filteredCount={totalCount}
+        />
 
-      <CommentsTable rows={rows} channelId={channelId} hideOriginal={hideOriginal} />
+        <CommentsTable
+          rows={rows}
+          channelId={channelId}
+          hideOriginal={hideOriginal}
+          totalCount={totalCount}
+          maxBulkSelection={MAX_BULK_SELECTION}
+        />
+      </div>
 
       {totalPages > 1 && (
         <Pagination currentPage={page} totalPages={totalPages} />

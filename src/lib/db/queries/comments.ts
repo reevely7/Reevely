@@ -527,6 +527,30 @@ export async function getFlaggedComments(
     .offset((page - 1) * pageSize);
 }
 
+// 댓글 목록 "전체 선택"용 — 필터에 일치하는 댓글을 페이지 구분 없이 한 번에
+// 벌크 처리(상태 변경·증거 보관)할 수 있게 id만 가져온다. 벌크 API 자체도
+// 같은 상한(MAX_BULK_SELECTION)으로 요청을 거부하므로 여기서도 동일하게 자른다.
+export const MAX_BULK_SELECTION = 1000;
+
+export async function getFlaggedCommentIds(
+  channelId: string,
+  filters: CommentFilters,
+) {
+  const conditions = buildFlaggedConditions(channelId, filters);
+
+  const rows = await db
+    .select({ id: comments.id })
+    .from(comments)
+    .where(and(...conditions))
+    .orderBy(sql`${comments.createdAt} desc`)
+    .limit(MAX_BULK_SELECTION + 1);
+
+  return {
+    ids: rows.slice(0, MAX_BULK_SELECTION).map((row) => row.id),
+    truncated: rows.length > MAX_BULK_SELECTION,
+  };
+}
+
 export async function countFlaggedComments(
   channelId: string,
   filters: CommentFilters,

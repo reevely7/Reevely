@@ -2,12 +2,15 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getChannelById } from "@/lib/db/queries/channels";
-import { updateCommentStatusBulk } from "@/lib/db/queries/comments";
+import {
+  MAX_BULK_SELECTION,
+  updateCommentStatusBulk,
+} from "@/lib/db/queries/comments";
 import { createClient } from "@/lib/supabase/server";
 
 const BodySchema = z.object({
   channelId: z.string(),
-  commentIds: z.array(z.string()).min(1).max(100),
+  commentIds: z.array(z.string()).min(1).max(MAX_BULK_SELECTION),
   status: z.enum(["confirmed", "reported_false", "whitelisted"]),
 });
 

@@ -5,28 +5,27 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   AlertTriangle,
+  Check,
   ChevronDown,
-  CreditCard,
   Lock,
   Menu,
   Plus,
   Settings,
-  User,
   X,
 } from "lucide-react";
 import { useState } from "react";
 
-import { LogoutButton } from "@/components/auth/logout-button";
-import { BellIcon } from "@/components/icons/bell-icon";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { SyncCountdown } from "@/components/layout/sync-countdown";
 import { wordmarkFont } from "@/lib/fonts";
 import { formatClockTime } from "@/lib/format/clock-time";
+import { formatSubscriberCount } from "@/lib/format/subscriber-count";
 
 type SidebarChannel = {
   id: string;
   channelTitle: string;
   thumbnailUrl: string | null;
+  subscriberCount: number | null;
   status: "active" | "locked";
   reauthRequiredAt: Date | null;
   lastSyncedAt: Date | null;
@@ -94,7 +93,7 @@ export function AppSidebar({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 -translate-x-full flex-col justify-between border-r border-[#CAD6CF] bg-sidebar px-4 py-5 text-sidebar-foreground transition-transform duration-200 md:static md:z-auto md:w-60 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 -translate-x-full flex-col justify-between border-r border-[#CAD6CF] bg-sidebar px-4 py-5 text-sidebar-foreground transition-transform duration-200 md:static md:z-auto md:w-64 md:translate-x-0 ${
           isOpen ? "translate-x-0" : ""
         }`}
       >
@@ -118,25 +117,38 @@ export function AppSidebar({
           </div>
 
           {activeChannel && (
-            <div className="relative">
+            <div className="relative -mt-2">
               <button
                 type="button"
                 onClick={() => setIsSwitcherOpen((v) => !v)}
                 aria-expanded={isSwitcherOpen}
-                className="flex w-full items-center justify-between gap-2 rounded-lg border border-sidebar-border px-2.5 py-2 text-left hover:bg-sidebar-accent"
+                className="flex w-full items-center justify-between gap-2 rounded-lg border border-sidebar-border px-2.5 py-3.5 text-left hover:bg-sidebar-accent"
               >
-                <span className="flex min-w-0 items-center gap-2">
-                  {activeChannel.thumbnailUrl && (
+                <span className="flex min-w-0 items-center gap-2.5">
+                  {activeChannel.thumbnailUrl ? (
                     <Image
                       src={activeChannel.thumbnailUrl}
                       alt={activeChannel.channelTitle}
-                      width={22}
-                      height={22}
-                      className="rounded-full"
+                      width={36}
+                      height={36}
+                      className="shrink-0 rounded-full"
                     />
+                  ) : (
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground">
+                      {activeChannel.channelTitle.charAt(0).toUpperCase()}
+                    </span>
                   )}
-                  <span className="truncate text-sm">
-                    {activeChannel.channelTitle}
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold">
+                      {activeChannel.channelTitle}
+                    </span>
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/youtube-icon.png" alt="" className="h-3 w-4" />
+                      YouTube
+                      {activeChannel.subscriberCount != null &&
+                        ` · 구독자 ${formatSubscriberCount(activeChannel.subscriberCount)}`}
+                    </span>
                   </span>
                 </span>
                 <ChevronDown
@@ -146,7 +158,10 @@ export function AppSidebar({
               </button>
 
               {isSwitcherOpen && (
-                <div className="absolute top-full left-0 z-10 mt-1 w-full rounded-lg border border-sidebar-border bg-sidebar py-1 shadow-lg">
+                <div className="absolute top-full left-0 z-10 mt-1 w-full min-w-[260px] rounded-lg border border-sidebar-border bg-sidebar py-1.5 shadow-lg">
+                  <p className="px-3 py-2 text-xs font-medium text-muted-foreground">
+                    연동된 채널
+                  </p>
                   {channels.map((c) => (
                     <Link
                       key={c.id}
@@ -156,12 +171,37 @@ export function AppSidebar({
                           : `/c/${c.id}/dashboard`
                       }
                       onClick={() => setIsSwitcherOpen(false)}
-                      className={`flex items-center gap-2 px-3 py-2 text-sm hover:bg-sidebar-accent ${
+                      className={`mx-2 mb-1 flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm last:mb-0 ${
                         c.id === activeChannel.id
-                          ? "text-primary"
-                          : "text-sidebar-foreground"
+                          ? "bg-sidebar-accent"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent/50"
                       }`}
                     >
+                      {c.thumbnailUrl ? (
+                        <Image
+                          src={c.thumbnailUrl}
+                          alt={c.channelTitle}
+                          width={28}
+                          height={28}
+                          className="shrink-0 rounded-full"
+                        />
+                      ) : (
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
+                          {c.channelTitle.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium">
+                          {c.channelTitle}
+                        </span>
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src="/youtube-icon.png" alt="" className="h-3 w-4" />
+                          YouTube
+                          {c.subscriberCount != null &&
+                            ` · 구독자 ${formatSubscriberCount(c.subscriberCount)}`}
+                        </span>
+                      </span>
                       {c.status === "locked" && (
                         <Lock
                           className="size-3.5 shrink-0 text-muted-foreground"
@@ -174,32 +214,26 @@ export function AppSidebar({
                           aria-hidden
                         />
                       )}
-                      <span className="truncate">{c.channelTitle}</span>
+                      {c.id === activeChannel.id && (
+                        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                          <Check className="size-3" aria-hidden />
+                        </span>
+                      )}
                     </Link>
                   ))}
-                  <Link
-                    href={
-                      atChannelLimit
-                        ? "/mypage/account?error=channel_limit"
-                        : "/channel-connect/start"
-                    }
-                    onClick={() => setIsSwitcherOpen(false)}
-                    className="flex items-center gap-2 border-t border-sidebar-border px-3 py-2 text-sm text-primary hover:bg-sidebar-accent"
-                  >
-                    <Plus className="size-3.5 shrink-0" aria-hidden />
-                    채널 추가
-                  </Link>
-                  <div className="border-t border-sidebar-border py-1">
+                  <div className="mx-3 mt-3 border-t border-sidebar-border/50" />
+                  <div className="pt-1">
                     <Link
-                      href="/mypage/profile"
+                      href={
+                        atChannelLimit
+                          ? "/mypage/account?error=channel_limit"
+                          : "/channel-connect/start"
+                      }
                       onClick={() => setIsSwitcherOpen(false)}
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent"
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-sidebar-accent"
                     >
-                      <User
-                        className="size-3.5 shrink-0 text-muted-foreground"
-                        aria-hidden
-                      />
-                      내 프로필
+                      <Plus className="size-3.5 shrink-0" aria-hidden />
+                      새 채널 연동하기
                     </Link>
                     <Link
                       href="/mypage/account"
@@ -210,30 +244,8 @@ export function AppSidebar({
                         className="size-3.5 shrink-0 text-muted-foreground"
                         aria-hidden
                       />
-                      계정 설정
+                      채널 관리
                     </Link>
-                    <Link
-                      href="/mypage/subscription/plans"
-                      onClick={() => setIsSwitcherOpen(false)}
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent"
-                    >
-                      <CreditCard
-                        className="size-3.5 shrink-0 text-muted-foreground"
-                        aria-hidden
-                      />
-                      요금제 관리
-                    </Link>
-                    <Link
-                      href={`/c/${activeChannel.id}/notifications`}
-                      onClick={() => setIsSwitcherOpen(false)}
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent"
-                    >
-                      <BellIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                      알림 설정
-                    </Link>
-                  </div>
-                  <div className="border-t border-sidebar-border p-2">
-                    <LogoutButton className="w-full justify-center border-sidebar-border bg-transparent text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground" />
                   </div>
                 </div>
               )}

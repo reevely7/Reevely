@@ -3,6 +3,7 @@
 import { Fragment, useState } from "react";
 import { ChevronDown, ChevronRight, Inbox, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 import { ArchiveActionButton } from "@/components/comments/archive-action-button";
 import { BulkActionBar } from "@/components/comments/bulk-action-bar";
@@ -158,15 +159,31 @@ export function CommentsTable({
   rows,
   channelId,
   hideOriginal,
+  totalCount,
+  maxBulkSelection,
 }: {
   rows: Row[];
   channelId: string;
   hideOriginal: boolean;
+  totalCount: number;
+  maxBulkSelection: number;
 }) {
+  const searchParams = useSearchParams();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [allFilteredSelected, setAllFilteredSelected] = useState(false);
+  const [isSelectingAll, setIsSelectingAll] = useState(false);
+  const [selectAllTruncated, setSelectAllTruncated] = useState(false);
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+    setAllFilteredSelected(false);
+    setSelectAllTruncated(false);
+  }
 
   function toggleSelected(id: string) {
+    setAllFilteredSelected(false);
+    setSelectAllTruncated(false);
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -175,12 +192,26 @@ export function CommentsTable({
     });
   }
 
-  function toggleSelectAll() {
-    setSelectedIds((prev) =>
-      prev.size === rows.length
-        ? new Set()
-        : new Set(rows.map((row) => row.id)),
-    );
+  async function toggleSelectAll() {
+    if (allFilteredSelected) {
+      clearSelection();
+      return;
+    }
+    await selectAllFiltered();
+  }
+
+  async function selectAllFiltered() {
+    setIsSelectingAll(true);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("channelId", channelId);
+    const res = await fetch(`/api/comments/ids?${params.toString()}`);
+    if (res.ok) {
+      const data = (await res.json()) as { ids: string[]; truncated: boolean };
+      setSelectedIds(new Set(data.ids));
+      setAllFilteredSelected(true);
+      setSelectAllTruncated(data.truncated);
+    }
+    setIsSelectingAll(false);
   }
 
   if (rows.length === 0) {
@@ -199,8 +230,15 @@ export function CommentsTable({
       <BulkActionBar
         channelId={channelId}
         selectedIds={Array.from(selectedIds)}
-        onClear={() => setSelectedIds(new Set())}
+        onClear={clearSelection}
       />
+
+      {allFilteredSelected && selectAllTruncated && (
+        <p className="text-xs text-muted-foreground">
+          한 번에 최대 {maxBulkSelection}건까지 선택할 수 있어, 전체{" "}
+          {totalCount}건 중 {maxBulkSelection}건만 선택되었습니다.
+        </p>
+      )}
 
       <div className="overflow-x-auto rounded-2xl border border-[#CAD6CF] bg-card">
         <table className="w-full min-w-[820px] border-collapse text-left text-[13px]">
@@ -209,10 +247,11 @@ export function CommentsTable({
               <th className="w-8 px-4 py-4 font-semibold">
                 <input
                   type="checkbox"
-                  checked={selectedIds.size === rows.length}
+                  checked={allFilteredSelected}
                   onChange={toggleSelectAll}
+                  disabled={isSelectingAll}
                   aria-label="전체 선택"
-                  className="size-3.5 accent-primary"
+                  className="relative top-0.5 size-3.5 accent-primary disabled:opacity-50"
                 />
               </th>
               <th className="w-8 px-2 py-4 font-semibold" />
@@ -248,7 +287,7 @@ export function CommentsTable({
                         checked={isSelected}
                         onChange={() => toggleSelected(row.id)}
                         aria-label="댓글 선택"
-                        className="size-3.5 accent-primary"
+                        className="relative top-0.5 size-3.5 accent-primary"
                       />
                     </td>
                     <td className="px-2 py-3 text-muted-foreground">
