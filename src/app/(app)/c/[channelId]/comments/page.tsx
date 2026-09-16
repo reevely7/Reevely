@@ -29,11 +29,13 @@ export default async function CommentsPage({
     dateTo?: string;
     sort?: string;
     page?: string;
+    hideOriginal?: string;
   }>;
 }) {
   const { channelId } = await params;
   await requireChannelOwnership(channelId);
   const sp = await searchParams;
+  const hideOriginal = sp.hideOriginal !== "0";
   const filters: CommentFiltersType = {
     riskLevel: sp.risk as CommentFiltersType["riskLevel"],
     category: sp.category,
@@ -80,7 +82,7 @@ export default async function CommentsPage({
         filteredCount={totalCount}
       />
 
-      <CommentsTable rows={rows} channelId={channelId} />
+      <CommentsTable rows={rows} channelId={channelId} hideOriginal={hideOriginal} />
 
       {totalPages > 1 && (
         <Pagination currentPage={page} totalPages={totalPages} />

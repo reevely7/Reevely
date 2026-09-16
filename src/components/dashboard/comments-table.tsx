@@ -7,10 +7,8 @@ import Link from "next/link";
 import { ArchiveActionButton } from "@/components/comments/archive-action-button";
 import { BulkActionBar } from "@/components/comments/bulk-action-bar";
 import { StatusActionButton } from "@/components/comments/status-action-button";
-import { Button } from "@/components/ui/button";
 import { RiskBadge } from "@/components/dashboard/risk-badge";
 import { InstagramIcon } from "@/components/icons/instagram-icon";
-import { YoutubeIcon } from "@/components/icons/youtube-icon";
 
 type Row = {
   id: string;
@@ -34,11 +32,6 @@ type Row = {
 const PLATFORM_LABELS: Record<string, string> = {
   youtube: "유튜브",
   instagram: "인스타그램",
-};
-
-const PLATFORM_ICONS: Record<string, typeof YoutubeIcon> = {
-  youtube: YoutubeIcon,
-  instagram: InstagramIcon,
 };
 
 const VIDEO_TYPE_LABELS: Record<string, string> = {
@@ -93,16 +86,23 @@ function ProtectedBadge() {
 }
 
 function PlatformIcon({ platform }: { platform: string }) {
-  const Icon = PLATFORM_ICONS[platform];
-  if (!Icon) return null;
-  return (
-    <span
-      className="inline-flex items-center text-muted-foreground"
-      title={PLATFORM_LABELS[platform] ?? platform}
-    >
-      <Icon className="size-4" />
-    </span>
-  );
+  const label = PLATFORM_LABELS[platform] ?? platform;
+  if (platform === "youtube") {
+    return (
+      <span className="inline-flex items-center" title={label}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/youtube-icon.png" alt="" className="relative top-0.5 h-6 w-8" />
+      </span>
+    );
+  }
+  if (platform === "instagram") {
+    return (
+      <span className="inline-flex items-center text-muted-foreground" title={label}>
+        <InstagramIcon className="size-4" />
+      </span>
+    );
+  }
+  return null;
 }
 
 function InfoTile({
@@ -157,13 +157,14 @@ function InfoTile({
 export function CommentsTable({
   rows,
   channelId,
+  hideOriginal,
 }: {
   rows: Row[];
   channelId: string;
+  hideOriginal: boolean;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [hideOriginal, setHideOriginal] = useState(true);
 
   function toggleSelected(id: string) {
     setSelectedIds((prev) => {
@@ -195,27 +196,17 @@ export function CommentsTable({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <BulkActionBar
-          channelId={channelId}
-          selectedIds={Array.from(selectedIds)}
-          onClear={() => setSelectedIds(new Set())}
-        />
-        <Button
-          size="sm"
-          variant={hideOriginal ? "default" : "outline"}
-          onClick={() => setHideOriginal((v) => !v)}
-          className="ml-auto"
-        >
-          원문 숨김 {hideOriginal ? "ON" : "OFF"}
-        </Button>
-      </div>
+      <BulkActionBar
+        channelId={channelId}
+        selectedIds={Array.from(selectedIds)}
+        onClear={() => setSelectedIds(new Set())}
+      />
 
-      <div className="overflow-x-auto rounded-2xl bg-card">
+      <div className="overflow-x-auto rounded-2xl border border-[#CAD6CF] bg-card">
         <table className="w-full min-w-[820px] border-collapse text-left text-[13px]">
           <thead>
-            <tr className="border-b border-border text-[11px] text-muted-foreground">
-              <th className="w-8 px-4 py-3 font-medium">
+            <tr className="border-b border-border bg-[#EEEFF1] text-[11px] text-muted-foreground">
+              <th className="w-8 px-4 py-4 font-medium">
                 <input
                   type="checkbox"
                   checked={selectedIds.size === rows.length}
@@ -224,14 +215,14 @@ export function CommentsTable({
                   className="size-3.5 accent-primary"
                 />
               </th>
-              <th className="w-8 px-2 py-3 font-medium" />
-              <th className="px-2 py-3 font-medium">위험도</th>
-              <th className="w-8 px-2 py-3 font-medium">플랫폼</th>
-              <th className="px-2 py-3 font-medium">댓글 내용 또는 AI 요약</th>
-              <th className="max-w-[8rem] px-2 py-3 font-medium">작성자</th>
-              <th className="px-2 py-3 font-medium whitespace-nowrap">유형</th>
-              <th className="px-2 py-3 font-medium whitespace-nowrap">날짜</th>
-              <th className="px-2 py-3 font-medium whitespace-nowrap">상태</th>
+              <th className="w-8 px-2 py-4 font-medium" />
+              <th className="px-2 py-4 font-medium">위험도</th>
+              <th className="px-2 py-4 font-medium whitespace-nowrap">플랫폼</th>
+              <th className="px-2 py-4 font-medium">댓글 내용 또는 AI 요약</th>
+              <th className="max-w-[8rem] px-2 py-4 font-medium">작성자</th>
+              <th className="px-2 py-4 font-medium whitespace-nowrap">유형</th>
+              <th className="px-2 py-4 font-medium whitespace-nowrap">날짜</th>
+              <th className="px-2 py-4 font-medium whitespace-nowrap">상태</th>
             </tr>
           </thead>
           <tbody>
@@ -246,7 +237,7 @@ export function CommentsTable({
                 <Fragment key={row.id}>
                   <tr
                     onClick={() => setExpandedId(isExpanded ? null : row.id)}
-                    className={`cursor-pointer border-b border-border border-l-2 last:border-0 ${isExpanded ? "border-l-primary bg-highlight/10" : "border-l-transparent hover:bg-accent/50"}`}
+                    className={`cursor-pointer border-b border-border/40 border-l-2 last:border-0 ${isExpanded ? "border-l-primary bg-highlight/10" : "border-l-transparent hover:bg-accent/50"}`}
                   >
                     <td
                       className="px-4 py-3"

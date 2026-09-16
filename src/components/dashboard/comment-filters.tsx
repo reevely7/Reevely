@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 import { DateRangeFilter } from "@/components/dashboard/date-range-filter";
+import { Button } from "@/components/ui/button";
 import { FilterSelect } from "@/components/ui/filter-select";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -65,6 +66,18 @@ export function CommentFilters({
 
   function handleReset() {
     router.push(pathname);
+  }
+
+  const hideOriginal = searchParams.get("hideOriginal") !== "0";
+
+  function toggleHideOriginal() {
+    const params = new URLSearchParams(searchParams.toString());
+    if (hideOriginal) {
+      params.set("hideOriginal", "0");
+    } else {
+      params.delete("hideOriginal");
+    }
+    router.push(`${pathname}?${params.toString()}`);
   }
 
   return (
@@ -133,24 +146,24 @@ export function CommentFilters({
           onChange={updateDateRange}
         />
 
-        <FilterSelect
-          value={searchParams.get("sort") ?? "newest"}
-          onValueChange={(value) => updateParam("sort", value)}
-          options={[
-            { value: "newest", label: "최신순" },
-            { value: "risk", label: "위험도순" },
-          ]}
-        />
-
         {hasActiveFilters && (
           <button
             type="button"
             onClick={handleReset}
-            className="ml-2 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
           >
             필터 초기화
           </button>
         )}
+
+        <Button
+          size="sm"
+          variant={hideOriginal ? "default" : "outline"}
+          onClick={toggleHideOriginal}
+          className="ml-auto"
+        >
+          원문 숨김 {hideOriginal ? "ON" : "OFF"}
+        </Button>
       </div>
 
       <p className="text-sm text-muted-foreground">
