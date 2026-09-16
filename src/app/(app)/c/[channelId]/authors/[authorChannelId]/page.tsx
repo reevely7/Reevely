@@ -15,11 +15,11 @@ function formatDate(date: Date): string {
   return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
 }
 
-// RiskBadge와 같은 파스텔 톤(#C55556 / #EFD3A1 / #D6EACB)을 재사용 — 진한
+// RiskBadge와 같은 파스텔 톤(#C55556 / #F6E29B / #D6EACB)을 재사용 — 진한
 // risk-* 토큰 대신 써서 배지-막대 색이 서로 어긋나지 않게 한다
 const RISK_BAR_CLASSES: Record<CommentRiskLevel, string> = {
   high: "bg-[#C55556]",
-  medium: "bg-[#EFD3A1]",
+  medium: "bg-[#F6E29B]",
   low: "bg-[#D6EACB]",
 };
 

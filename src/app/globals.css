@@ -46,6 +46,7 @@
   --color-risk-medium: var(--risk-medium);
   --color-risk-medium-foreground: var(--risk-medium-foreground);
   --color-risk-medium-bg: var(--risk-medium-bg);
+  --color-risk-medium-solid: var(--risk-medium-solid);
   --color-risk-low: var(--risk-low);
   --color-risk-low-foreground: var(--risk-low-foreground);
   --color-risk-low-bg: var(--risk-low-bg);
@@ -110,12 +111,21 @@
   --risk-high: #dc2626;
   --risk-high-foreground: #ffffff;
   --risk-high-bg: rgba(220, 38, 38, 0.12);
-  --risk-medium: #b45309;
+  --risk-medium: #946800;
   --risk-medium-foreground: #ffffff;
-  --risk-medium-bg: rgba(217, 119, 6, 0.14);
+  --risk-medium-bg: rgba(202, 138, 4, 0.16);
+  /* 텍스트로 쓸 만큼 어둡게 내리면 노랑은 갈색처럼 보이므로, 점·막대 등
+     텍스트 대비가 필요 없는 순수 도형 채우기에는 이 밝은 톤을 대신 쓴다 */
+  --risk-medium-solid: #eab308;
   --risk-low: #2f6b4d;
   --risk-low-foreground: #ffffff;
   --risk-low-bg: rgba(62, 133, 98, 0.12);
+
+  /* 도넛 차트처럼 색 면적이 넓게 깔리는 그래프 전용 파스텔 톤 — 배지·범례의
+     진한 risk-* 색과는 분리해서, 그래프만 따로 부드럽게 조정할 수 있게 한다 */
+  --risk-high-pastel: #db8181;
+  --risk-medium-pastel: #eec25f;
+  --risk-low-pastel: #6fb997;
 
   /* "확정/정상" 상태 배지 — 초록 계열 (risk-low와 계열은 같지만 별도 변수라
      이후 톤을 따로 미세조정할 수 있음) */
