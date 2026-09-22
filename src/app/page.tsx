@@ -416,10 +416,6 @@ export default async function LandingPage({
                 render={<a href="#how-it-works">서비스 소개 보기</a>}
               />
             </div>
-            <p className="mt-4 text-center text-[13px] text-[#71806f]">
-              결제 기능은 아직 준비 중입니다. 지금 가입하면 정식 출시 때 가장
-              먼저 안내드릴게요.
-            </p>
           </Reveal>
 
           <div className="mt-16 border-t border-black/[0.06] pt-12">
@@ -438,10 +434,6 @@ export default async function LandingPage({
           <Reveal>
             <div className="mt-12 flex flex-col items-center gap-4 text-center">
               <KakaoSignInButton label="지금 시작하기 →" className={CTA_ON_LIGHT} />
-              <p className="text-[13px] text-[#71806f]">
-                결제 기능은 아직 준비 중입니다. 지금 가입하면 정식 출시 때 가장
-                먼저 안내드릴게요.
-              </p>
             </div>
           </Reveal>
         </div>

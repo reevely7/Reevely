@@ -40,6 +40,9 @@ AI 기반 악성 댓글 탐지 및 증거관리 SaaS.
 - AI 분석: OpenAI **`gpt-4o-mini`** — `gpt-4.1-nano`와 27개 경계선 케이스로 실측 비교한
   결과, nano는 허위사실·성희롱 등 핵심 카테고리에서 미탐지가 잦아 기각함. 모델을
   바꾸려면 반드시 이런 실측 비교 후 결정할 것.
+- 결제: Toss Payments 정기결제(빌링키 발급 + 매월 자동 청구, `src/lib/billing/toss-client.ts`).
+  업그레이드는 즉시결제, 다운그레이드는 다음 결제일 예약, 해지 가능
+  (`/api/billing/{upgrade,plan,cancel}`, `src/app/api/cron/process-billing/route.ts`).
 
 ## 데이터 접근 구조 원칙 (반드시 지킬 것)
 
@@ -53,8 +56,9 @@ AI 기반 악성 댓글 탐지 및 증거관리 SaaS.
 **만드는 것**: 유튜브 채널 1개 OAuth 연동 · 댓글 가져오기 · AI 위험도/유형 판정 ·
 대시보드 리스트(위험도별 색상, 판정 근거, confidence 표시) · 오탐 신고 버튼 ·
 작성자별 댓글 이력 조회(`authorChannelId` 기준으로 같은 작성자가 남긴 다른 악성
-댓글을 한 페이지에서 확인, `/authors/[authorChannelId]`) · 인앱 알림 시스템
-(`/notifications`, 대시보드 헤더 벨 아이콘 드롭다운. 전부 cron 분석 파이프라인
+댓글을 한 페이지에서 확인, `authors/[authorChannelId]`) · 요금제(무료/베이직/플러스/프로)
+결제·구독 관리(Toss Payments, `mypage/subscription`) · 인앱 알림 시스템
+(`notifications`, 대시보드 헤더 벨 아이콘 드롭다운. 전부 cron 분석 파이프라인
 안에서 생성되고, 별도 이메일·푸시 발송은 하지 않는 인앱 전용):
   - `new_comment` — 구독한 작성자의 새 악성 댓글 (작성자 페이지 "새 댓글 알림 받기")
   - `repeat_author` — 미구독 작성자가 누적 3번째 악성 댓글을 남기면 구독 제안
@@ -62,9 +66,16 @@ AI 기반 악성 댓글 탐지 및 증거관리 SaaS.
   - `video_spike` — 한 분석 배치 안에서 특정 영상에 악성 댓글 3건 이상 몰리면
   - `weekly_digest` — 주간 위험 댓글 요약 (전용 cron 없이 매시간 cron 안에서
     "마지막 생성 후 7일 지났을 때만" 실행)
+  - `analysis_quota_reached` — 월 분석량 한도 도달 시 1회
+  - `payment_failed` / `payment_downgraded` — 정기결제 실패, 실패 누적에 따른 강제 다운그레이드
+  - `reauth_required` — 유튜브 연동 토큰 재인증이 필요할 때
+
+관리자(admin) 전용 대시보드(`src/app/admin/`)도 별도로 존재 — 유저·채널·구독
+현황, AI 판정 품질, 감사 로그, 시스템 상태 조회용 내부 도구이며 크리에이터
+대상 MVP 범위 밖.
 
 **만들지 않는 것 (나중 단계)**: 증거 PDF 생성, 삭제 요청 워크플로우,
-외부 공유 링크, 인스타그램 연동, 결제/구독, 우회표현(초성·은어) 탐지 고도화,
+외부 공유 링크, 인스타그램 연동, 우회표현(초성·은어) 탐지 고도화,
 알림 이메일/푸시 발송(외부 서비스 연동 필요)
 
 ## DB 스키마
@@ -143,42 +154,53 @@ AI 기반 악성 댓글 탐지 및 증거관리 SaaS.
 ```
 src/
   app/
+    (app)/c/[channelId]/                   채널별 화면 (채널 전환 시 URL의 channelId가 바뀜)
+      dashboard/                            메인 대시보드
+      review/                               검토 필요 큐
+      authors/[authorChannelId]/            작성자별 댓글 이력·알림 구독
+      notifications/                        알림 목록
+      evidence-archive/                     증거 보관함
+      comments/, summary/, videos/          댓글·요약·영상 관련 화면
+    (app)/mypage/                           연동 해제·계정 삭제(account/), 구독/결제 관리(subscription/)
+    admin/(dashboard)/                      관리자 전용 (users, channels, subscriptions, content,
+                                             audit-log, system, ai-quality) — MVP 범위 밖 내부 도구
     api/cron/process-comments/route.ts     Vercel Cron 진입점 (30분마다, 플랜별 고정 sync 주기)
     api/cron/cleanup-expired-comments/route.ts  Vercel Cron (하루 1회) — 플랜별 데이터
                                             보관 기간 지난 댓글 삭제, 증거 보관함 저장분은 제외
+    api/cron/process-billing/route.ts      Vercel Cron — 정기결제 청구, 실패 시 알림
     api/comments/[id]/status/route.ts      오탐 신고·검토 확정 (PATCH)
     api/comments/[id]/archive/route.ts     증거 보관함 추가/해제 (PATCH)
+    api/billing/{upgrade,plan,cancel}/route.ts  플랜 즉시결제/다운그레이드 예약/해지
     api/authors/[authorChannelId]/subscription/route.ts  알림 구독 on/off (PATCH)
     api/notifications/[id]/read/route.ts   알림 읽음 처리 (PATCH)
     api/notifications/read-all/route.ts    알림 전체 읽음 처리 (PATCH)
     auth/callback/route.ts                 카카오 로그인 콜백 (세션 교환만, 채널 연동은 별도 플로우)
     channel-connect/start/route.ts         유튜브 채널 연동 시작 (구글 OAuth, CSRF state 쿠키 발급)
     channel-connect/callback/route.ts      유튜브 채널 연동 콜백 (구글 OAuth 코드 교환 후 연동)
+    billing/success/, billing/fail/        Toss 결제 성공/실패 콜백
     onboarding/                            채널 연동 확인 화면
-    dashboard/                             메인 대시보드
-    review/                                검토 필요 큐
-    authors/[authorChannelId]/             작성자별 댓글 이력·알림 구독
-    notifications/                         알림 목록
-    settings/                              연동 해제·계정 삭제
-    components/ui/                         shadcn/ui 컴포넌트
   components/
+    ui/             shadcn/ui 컴포넌트
     auth/          로그인·로그아웃 버튼
     comments/       오탐 신고/검토 확정 버튼(status-action-button), 증거 보관함
                     추가/해제 버튼(archive-action-button)
     dashboard/      요약 카드, 필터, 테이블, 알림 벨(드롭다운)
     authors/        작성자별 댓글 피드(필터·내보내기·알림 구독)
     notifications/  알림 목록 행, 전체 읽음 버튼
-    icons/          커스텀 SVG 아이콘 (bell-icon 등)
+    mypage/         플랜 액션 버튼(업그레이드/다운그레이드/해지), 결제 체크아웃 버튼
     settings/       계정 삭제 확인 버튼
+    admin/          관리자 대시보드 UI
+    icons/          커스텀 SVG 아이콘 (bell-icon 등)
   lib/
     db/
       index.ts       Drizzle 클라이언트 (server-only)
       schema.ts      테이블 정의
-      queries/        DB 쿼리 함수 (comments, channels, notifications)
+      queries/        DB 쿼리 함수 (comments, channels, notifications, subscriptions, admin-*)
     supabase/        client.ts(브라우저)/server.ts(서버)/middleware.ts — Auth
     youtube/         채널 연동, 댓글 sync, 토큰 갱신
       exchange-auth-code.ts  구글 인가 코드(code) → access/refresh 토큰 교환
     ai/              OpenAI 판정 로직
+    billing/         Toss Payments 클라이언트 (빌링키 발급, 청구)
     crypto/          refresh token 암호화
   proxy.ts           세션 갱신 (Next.js 16, 구 middleware.ts)
 ```
